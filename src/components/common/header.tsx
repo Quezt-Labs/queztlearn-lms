@@ -17,11 +17,13 @@ import {
 import { useCurrentUser } from "@/hooks";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/components/providers/theme-provider";
+import { useRouter } from "next/navigation";
 
 export function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const { data: user, isLoading: userLoading } = useCurrentUser();
   const { theme, setTheme } = useTheme();
+  const router = useRouter();
 
   const isDark = theme === "dark";
 
@@ -94,7 +96,7 @@ export function Header() {
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/admin/settings")}>
               <Settings className="mr-2 h-4 w-4" />
               <span>Settings</span>
             </DropdownMenuItem>

@@ -138,6 +138,38 @@ export const useCreateOrganizationConfig = () => {
   });
 };
 
+// Get Organization Configuration (Admin endpoint)
+export const useOrganizationConfigAdmin = () => {
+  return useQuery({
+    queryKey: ["organizationConfig", "admin"],
+    queryFn: () => api.getOrganizationConfigAdmin().then((res) => res.data),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+// Update Organization Configuration Hook (Admin endpoint)
+export const useUpdateOrganizationConfig = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateOrganizationConfigData) =>
+      api.updateOrganizationConfig(data).then((res) => res.data),
+    onSuccess: (data: CreateOrganizationConfigResponse) => {
+      if (data.success && data.data) {
+        // Invalidate and update cache
+        queryClient.invalidateQueries({ queryKey: ["organizationConfig"] });
+        queryClient.setQueryData(
+          queryKeys.organizationConfig(data.data.slug),
+          data
+        );
+      }
+    },
+    onError: (error) => {
+      console.error("Failed to update organization configuration:", error);
+    },
+  });
+};
+
 // Auth Registration Hooks
 export const useRegister = () => {
   return useMutation({
