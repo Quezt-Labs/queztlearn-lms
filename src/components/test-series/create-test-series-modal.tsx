@@ -22,6 +22,9 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { useCreateTestSeries, ExamType, TestSeries } from "@/hooks/test-series";
+import { FileUpload } from "@/components/common/file-upload";
+import Image from "next/image";
+import { X } from "lucide-react";
 
 interface CreateTestSeriesModalProps {
   open: boolean;
@@ -61,6 +64,7 @@ export function CreateTestSeriesModal({
   });
 
   const createMutation = useCreateTestSeries();
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,6 +114,19 @@ export function CreateTestSeriesModal({
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
     setFormData({ ...formData, title, slug });
+  };
+
+  const handleImageUpload = (fileData: {
+    key: string;
+    url: string;
+    bucket: string;
+    originalName: string;
+    size: number;
+    mimeType: string;
+  }) => {
+    setIsUploadingImage(true);
+    setFormData({ ...formData, imageUrl: fileData.url });
+    setIsUploadingImage(false);
   };
 
   return (
@@ -194,18 +211,48 @@ export function CreateTestSeriesModal({
             />
           </div>
 
-          {/* Image URL */}
+          {/* Image Upload */}
           <div className="space-y-2">
-            <Label htmlFor="imageUrl">Image URL</Label>
-            <Input
-              id="imageUrl"
-              type="url"
-              placeholder="https://example.com/image.jpg"
-              value={formData.imageUrl}
-              onChange={(e) =>
-                setFormData({ ...formData, imageUrl: e.target.value })
-              }
-            />
+            <Label>Test Series Image (Optional)</Label>
+            <div className="space-y-4">
+              {/* Image Preview */}
+              {formData.imageUrl && (
+                <div className="relative h-48 w-full rounded-lg border overflow-hidden">
+                  <Image
+                    src={formData.imageUrl}
+                    alt="Test series preview"
+                    className="object-cover"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 400px"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2"
+                    onClick={() => setFormData({ ...formData, imageUrl: "" })}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+
+              {/* File Upload */}
+              <FileUpload
+                onUploadComplete={handleImageUpload}
+                accept="image/*"
+                maxSize={10} // 10MB for images
+                folder="test-series-images"
+                className="w-full"
+              />
+
+              {isUploadingImage && (
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  <span>Uploading image...</span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Free/Paid Toggle */}
