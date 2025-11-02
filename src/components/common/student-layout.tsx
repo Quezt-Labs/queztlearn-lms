@@ -44,7 +44,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
         <main
           className={
             !isAttemptRoute
-              ? "flex-1 overflow-y-auto overflow-x-hidden md:p-6 md:pb-6 bg-[radial-gradient(80rem_50rem_at_120%_-10%,--theme(--color-primary/6),transparent_60%),radial-gradient(60rem_40rem_at_-10%_-20%,--theme(--color-muted/40),transparent_50%)] relative z-0"
+              ? "flex-1 overflow-y-auto overflow-x-hidden bg-[radial-gradient(80rem_50rem_at_120%_-10%,--theme(--color-primary/6),transparent_60%),radial-gradient(60rem_40rem_at_-10%_-20%,--theme(--color-muted/40),transparent_50%)] relative z-0"
               : "flex-1 overflow-auto p-0"
           }
         >

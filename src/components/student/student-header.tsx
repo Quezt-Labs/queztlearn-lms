@@ -23,7 +23,7 @@ export function StudentHeader() {
   const user = tokenManager.getUser();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+    <header className="md:mx-6 sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container flex h-16 items-center px-4 gap-4">
         {/* Logo and Organization Name */}
         <Link href="/student/dashboard" className="flex items-center gap-3">

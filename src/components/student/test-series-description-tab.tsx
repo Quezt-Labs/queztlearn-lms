@@ -444,7 +444,7 @@ export function TestSeriesDescriptionTab({
           transition={{ duration: 0.5, delay: 0.3 }}
           className="lg:sticky lg:top-28 lg:self-start lg:z-10 space-y-4"
         >
-          <Card className="shadow-xl border-2 bg-background relative">
+          <Card className="shadow-xl border-2 bg-background relative p-0">
             <CardContent className="p-6 space-y-6">
               {/* Social Proof Badge */}
               {enrollmentCount !== undefined && enrollmentCount > 0 && (
