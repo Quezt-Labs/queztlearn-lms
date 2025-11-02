@@ -12,15 +12,21 @@ import {
   Calendar,
   Globe,
   Tag,
+  Loader2,
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useRazorpayPayment } from "@/hooks/use-razorpay-payment";
+import { useVerifyBatchPayment } from "@/hooks/api";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface BatchDescriptionTabProps {
   batch: {
+    id: string;
     description?: string | null;
     imageUrl?: string;
     totalPrice: number;
@@ -31,6 +37,7 @@ interface BatchDescriptionTabProps {
     exam: string;
     startDate: Date | string;
     endDate: Date | string;
+    isPurchased?: boolean;
   };
   finalPrice: number;
   savings: number;
@@ -43,8 +50,76 @@ export function BatchDescriptionTab({
   savings,
   isHotDeal,
 }: BatchDescriptionTabProps) {
+  const router = useRouter();
+  const { initializePayment, isLoading } = useRazorpayPayment();
+  const { mutateAsync: verifyPayment } = useVerifyBatchPayment();
   const startDate = new Date(batch.startDate);
   const endDate = new Date(batch.endDate);
+
+  const handleEnrollClick = async () => {
+    if (batch.isPurchased) {
+      router.push(`/student/my-learning`);
+      return;
+    }
+
+    initializePayment(
+      batch.id,
+      batch.name,
+      finalPrice,
+      async (razorpayResponse, orderId) => {
+        try {
+          console.log("Razorpay Response:", razorpayResponse);
+          console.log("Order ID:", orderId);
+
+          toast.loading("Verifying payment...");
+
+          const verificationResult = await verifyPayment({
+            orderId: orderId,
+            razorpayPaymentId: razorpayResponse.razorpay_payment_id,
+            razorpayOrderId: razorpayResponse.razorpay_order_id,
+            razorpaySignature: razorpayResponse.razorpay_signature,
+          });
+
+          toast.dismiss();
+
+          console.log("Verification Result:", verificationResult);
+
+          if (verificationResult.success) {
+            toast.success("Payment successful! 🎉", {
+              description: "Redirecting to your learning dashboard...",
+            });
+            setTimeout(() => {
+              router.push(`/student/my-learning`);
+            }, 1000);
+          } else {
+            throw new Error(
+              verificationResult.message || "Payment verification failed"
+            );
+          }
+        } catch (error: any) {
+          toast.dismiss();
+          console.error("Payment verification failed:", error);
+
+          // Show more detailed error message
+          const errorMessage =
+            error?.response?.data?.message ||
+            error?.message ||
+            "Payment verification failed";
+
+          toast.error("Payment verification failed", {
+            description: `${errorMessage}. Payment ID: ${razorpayResponse.razorpay_payment_id}`,
+            duration: 10000, // Show for 10 seconds
+          });
+        }
+      },
+      (error) => {
+        console.error("Payment failed:", error);
+        toast.error("Payment failed", {
+          description: error?.message || "Please try again or contact support.",
+        });
+      }
+    );
+  };
 
   return (
     <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
@@ -205,12 +280,28 @@ export function BatchDescriptionTab({
 
               {/* Action Buttons */}
               <div className="space-y-3">
-                <Button className="w-full" size="lg">
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Enroll Now
-                </Button>
-                <Button variant="outline" className="w-full" size="lg">
-                  Add to Cart
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={handleEnrollClick}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : batch.isPurchased ? (
+                    <>
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      Go to My Learning
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Enroll Now
+                    </>
+                  )}
                 </Button>
               </div>
 

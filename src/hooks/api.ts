@@ -280,7 +280,7 @@ export const useStudentLogin = () => {
         queryClient.setQueryData(queryKeys.user, data.data.user);
 
         // Redirect to student dashboard
-        router.push("/student/dashboard");
+        router.push("/student/my-learning");
       }
     },
     onError: (error) => {
@@ -978,5 +978,29 @@ export const useGetExploreTestSeriesById = (id: string) => {
     queryFn: () =>
       apiClient.get(`/api/test-series/${id}`).then((res) => res.data),
     enabled: !!id,
+  });
+};
+
+// Create batch checkout order for payment
+export const useCreateBatchCheckout = () => {
+  return useMutation({
+    mutationFn: (batchId: string) =>
+      apiClient
+        .post(`/api/batches/${batchId}/checkout`)
+        .then((res) => res.data),
+  });
+};
+
+export const useVerifyBatchPayment = () => {
+  return useMutation({
+    mutationFn: (data: {
+      orderId: string;
+      razorpayPaymentId: string;
+      razorpayOrderId: string;
+      razorpaySignature: string;
+    }) =>
+      apiClient
+        .post(`/api/batches/verify-payment`, data)
+        .then((res) => res.data),
   });
 };
