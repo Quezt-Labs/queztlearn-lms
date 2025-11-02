@@ -264,6 +264,15 @@ export const api = {
       "/admin/organization-config",
       data
     ),
+
+  updateOrganizationConfig: (data: CreateOrganizationConfigData) =>
+    apiClient.put<CreateOrganizationConfigResponse>(
+      "/admin/organization-config",
+      data
+    ),
+
+  getOrganizationConfigAdmin: () =>
+    apiClient.get<OrganizationConfigResponse>("/admin/organization-config"),
 };
 
 export default apiClient;
