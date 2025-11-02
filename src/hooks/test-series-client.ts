@@ -42,6 +42,9 @@ export type ClientTestSeriesListItem = {
   durationDays: number;
   isEnrolled: boolean;
   enrollmentDetails?: Record<string, unknown>;
+  enrollmentCount?: number; // Social proof
+  averageScore?: number; // Engagement metric
+  totalAttempts?: number; // Engagement metric
 };
 
 export type ClientTestInSeries = {
@@ -73,6 +76,8 @@ const clientTsKeys = {
     [...clientTsKeys.root, "detail", identifier] as const,
   tests: (seriesId: string) =>
     [...clientTsKeys.root, "tests", seriesId] as const,
+  stats: (seriesId: string) =>
+    [...clientTsKeys.root, "stats", seriesId] as const,
 };
 
 // Hooks
@@ -201,6 +206,30 @@ export const useClientVerifyPayment = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: clientTsKeys.root });
     },
+  });
+};
+
+export const useClientTestSeriesStats = (seriesId?: string) => {
+  return useQuery({
+    queryKey: clientTsKeys.stats(seriesId ?? ""),
+    queryFn: async () => {
+      // Try client endpoint first, fallback to mock if not available
+      try {
+        const { data } = await apiClient.get<
+          ClientApiResponse<{
+            enrollmentCount?: number;
+            averageScore?: number;
+            totalAttempts?: number;
+          }>
+        >(`/api/test-series/${seriesId}/stats`);
+        return data;
+      } catch (error) {
+        // If endpoint doesn't exist, return null (will use fallback UI)
+        return null;
+      }
+    },
+    enabled: Boolean(seriesId),
+    retry: false,
   });
 };
 
