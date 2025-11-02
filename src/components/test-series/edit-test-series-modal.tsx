@@ -17,7 +17,13 @@ import { Switch } from "@/components/ui/switch";
 import { useUpdateTestSeries, TestSeries } from "@/hooks/test-series";
 import { FileUpload } from "@/components/common/file-upload";
 import Image from "next/image";
-import { X } from "lucide-react";
+import { X, Plus } from "lucide-react";
+
+interface FAQ {
+  id: string;
+  title: string;
+  description: string;
+}
 
 interface EditTestSeriesModalProps {
   open: boolean;
@@ -47,6 +53,15 @@ export function EditTestSeriesModal({
 
   const updateMutation = useUpdateTestSeries();
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [faqs, setFaqs] = useState<FAQ[]>(
+    (testSeries.faq || []).map((faq, index) => ({
+      id: `faq-${index}-${Date.now()}`,
+      title: faq.title,
+      description: faq.description,
+    }))
+  );
+  const [newFaq, setNewFaq] = useState({ title: "", description: "" });
+  const [isAddingFaq, setIsAddingFaq] = useState(false);
 
   useEffect(() => {
     if (testSeries) {
@@ -62,6 +77,14 @@ export function EditTestSeriesModal({
         durationDays: testSeries.durationDays,
         isActive: testSeries.isActive,
       });
+      // Initialize FAQs from testSeries
+      setFaqs(
+        (testSeries.faq || []).map((faq, index) => ({
+          id: `faq-${index}-${Date.now()}`,
+          title: faq.title,
+          description: faq.description,
+        }))
+      );
     }
   }, [testSeries]);
 
@@ -78,6 +101,10 @@ export function EditTestSeriesModal({
             features: testSeries.description?.features || [],
           },
           imageUrl: formData.imageUrl || undefined,
+          faq: faqs.map((faq) => ({
+            title: faq.title,
+            description: faq.description,
+          })),
           totalPrice: formData.isFree ? 0 : formData.totalPrice,
           discountPercentage: formData.isFree ? 0 : formData.discountPercentage,
         },
@@ -109,6 +136,23 @@ export function EditTestSeriesModal({
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
     setFormData({ ...formData, title, slug });
+  };
+
+  const handleAddFaq = () => {
+    if (newFaq.title.trim() && newFaq.description.trim()) {
+      const faq: FAQ = {
+        id: Date.now().toString(),
+        title: newFaq.title,
+        description: newFaq.description,
+      };
+      setFaqs((prev) => [...prev, faq]);
+      setNewFaq({ title: "", description: "" });
+      setIsAddingFaq(false);
+    }
+  };
+
+  const handleRemoveFaq = (id: string) => {
+    setFaqs((prev) => prev.filter((faq) => faq.id !== id));
   };
 
   return (
@@ -294,6 +338,104 @@ export function EditTestSeriesModal({
               }
             />
             <Label htmlFor="isActive">Active (visible to students)</Label>
+          </div>
+
+          {/* FAQ Section */}
+          <div className="space-y-2">
+            <Label>Frequently Asked Questions (Optional)</Label>
+
+            {faqs.length > 0 && (
+              <div className="space-y-3 mb-4">
+                {faqs.map((faq) => (
+                  <div key={faq.id} className="p-3 border rounded-lg">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-sm">{faq.title}</h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {faq.description}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveFaq(faq.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {isAddingFaq ? (
+              <div className="space-y-3 p-3 border rounded-lg">
+                <div className="space-y-2">
+                  <Label htmlFor="faq-title">Question</Label>
+                  <Input
+                    id="faq-title"
+                    placeholder="What is this test series about?"
+                    value={newFaq.title}
+                    onChange={(e) =>
+                      setNewFaq((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="faq-description">Answer</Label>
+                  <Textarea
+                    id="faq-description"
+                    placeholder="This test series covers..."
+                    value={newFaq.description}
+                    onChange={(e) =>
+                      setNewFaq((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
+                    rows={3}
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleAddFaq}
+                    disabled={
+                      !newFaq.title.trim() || !newFaq.description.trim()
+                    }
+                  >
+                    Add FAQ
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setIsAddingFaq(false);
+                      setNewFaq({ title: "", description: "" });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAddingFaq(true)}
+                className="w-full"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add FAQ
+              </Button>
+            )}
           </div>
 
           <DialogFooter>

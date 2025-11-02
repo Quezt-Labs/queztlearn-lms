@@ -16,6 +16,11 @@ export type ExamType =
 export type QuestionType = "MCQ" | "TRUE_FALSE" | "FILL_BLANK" | "NUMERICAL";
 export type DifficultyLevel = "EASY" | "MEDIUM" | "HARD";
 
+export interface TestSeriesFAQ {
+  title: string;
+  description: string;
+}
+
 export interface TestSeries {
   id: string;
   organizationId: string;
@@ -27,6 +32,7 @@ export interface TestSeries {
   };
   slug: string;
   imageUrl?: string;
+  faq?: TestSeriesFAQ[];
   totalPrice: number;
   discountPercentage: number;
   finalPrice?: number; // Optional as API returns discountedPrice

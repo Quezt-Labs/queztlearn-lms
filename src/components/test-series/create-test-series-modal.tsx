@@ -24,7 +24,13 @@ import { Switch } from "@/components/ui/switch";
 import { useCreateTestSeries, ExamType, TestSeries } from "@/hooks/test-series";
 import { FileUpload } from "@/components/common/file-upload";
 import Image from "next/image";
-import { X } from "lucide-react";
+import { X, Plus } from "lucide-react";
+
+interface FAQ {
+  id: string;
+  title: string;
+  description: string;
+}
 
 interface CreateTestSeriesModalProps {
   open: boolean;
@@ -65,6 +71,9 @@ export function CreateTestSeriesModal({
 
   const createMutation = useCreateTestSeries();
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const [newFaq, setNewFaq] = useState({ title: "", description: "" });
+  const [isAddingFaq, setIsAddingFaq] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +88,10 @@ export function CreateTestSeriesModal({
         },
         slug: formData.slug,
         imageUrl: formData.imageUrl || undefined,
+        faq: faqs.map((faq) => ({
+          title: faq.title,
+          description: faq.description,
+        })),
         totalPrice: formData.isFree ? 0 : formData.totalPrice,
         discountPercentage: formData.isFree ? 0 : formData.discountPercentage,
         isFree: formData.isFree,
@@ -99,6 +112,9 @@ export function CreateTestSeriesModal({
         durationDays: 365,
         isActive: true,
       });
+      setFaqs([]);
+      setNewFaq({ title: "", description: "" });
+      setIsAddingFaq(false);
       onOpenChange(false);
       onSuccess?.(result.data);
     } catch (error) {
@@ -127,6 +143,23 @@ export function CreateTestSeriesModal({
     setIsUploadingImage(true);
     setFormData({ ...formData, imageUrl: fileData.url });
     setIsUploadingImage(false);
+  };
+
+  const handleAddFaq = () => {
+    if (newFaq.title.trim() && newFaq.description.trim()) {
+      const faq: FAQ = {
+        id: Date.now().toString(),
+        title: newFaq.title,
+        description: newFaq.description,
+      };
+      setFaqs((prev) => [...prev, faq]);
+      setNewFaq({ title: "", description: "" });
+      setIsAddingFaq(false);
+    }
+  };
+
+  const handleRemoveFaq = (id: string) => {
+    setFaqs((prev) => prev.filter((faq) => faq.id !== id));
   };
 
   return (
@@ -342,6 +375,104 @@ export function CreateTestSeriesModal({
               }
             />
             <Label htmlFor="isActive">Active (visible to students)</Label>
+          </div>
+
+          {/* FAQ Section */}
+          <div className="space-y-2">
+            <Label>Frequently Asked Questions (Optional)</Label>
+
+            {faqs.length > 0 && (
+              <div className="space-y-3 mb-4">
+                {faqs.map((faq) => (
+                  <div key={faq.id} className="p-3 border rounded-lg">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-sm">{faq.title}</h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {faq.description}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveFaq(faq.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {isAddingFaq ? (
+              <div className="space-y-3 p-3 border rounded-lg">
+                <div className="space-y-2">
+                  <Label htmlFor="faq-title">Question</Label>
+                  <Input
+                    id="faq-title"
+                    placeholder="What is this test series about?"
+                    value={newFaq.title}
+                    onChange={(e) =>
+                      setNewFaq((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="faq-description">Answer</Label>
+                  <Textarea
+                    id="faq-description"
+                    placeholder="This test series covers..."
+                    value={newFaq.description}
+                    onChange={(e) =>
+                      setNewFaq((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
+                    rows={3}
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleAddFaq}
+                    disabled={
+                      !newFaq.title.trim() || !newFaq.description.trim()
+                    }
+                  >
+                    Add FAQ
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setIsAddingFaq(false);
+                      setNewFaq({ title: "", description: "" });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsAddingFaq(true)}
+                className="w-full"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add FAQ
+              </Button>
+            )}
           </div>
 
           <DialogFooter>
