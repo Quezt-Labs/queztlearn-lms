@@ -948,3 +948,13 @@ export const useGetExploreTestSeriesById = (id: string) => {
     enabled: !!id,
   });
 };
+
+// Create batch checkout order for payment
+export const useCreateBatchCheckout = () => {
+  return useMutation({
+    mutationFn: (batchId: string) =>
+      apiClient
+        .post(`/api/batches/${batchId}/checkout`)
+        .then((res) => res.data),
+  });
+};
