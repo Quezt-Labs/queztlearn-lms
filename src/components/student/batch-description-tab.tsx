@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useRazorpayPayment } from "@/hooks/use-razorpay-payment";
+import { useVerifyBatchPayment } from "@/hooks/api";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -51,6 +52,7 @@ export function BatchDescriptionTab({
 }: BatchDescriptionTabProps) {
   const router = useRouter();
   const { initializePayment, isLoading } = useRazorpayPayment();
+  const { mutateAsync: verifyPayment } = useVerifyBatchPayment();
   const startDate = new Date(batch.startDate);
   const endDate = new Date(batch.endDate);
 
@@ -64,14 +66,51 @@ export function BatchDescriptionTab({
       batch.id,
       batch.name,
       finalPrice,
-      (paymentId) => {
-        console.log("Payment successful, ID:", paymentId);
-        toast.success("Payment successful! 🎉", {
-          description: "Redirecting to your learning dashboard...",
-        });
-        setTimeout(() => {
-          router.push(`/student/my-learning?enrolled=true`);
-        }, 1000);
+      async (razorpayResponse, orderId) => {
+        try {
+          console.log("Razorpay Response:", razorpayResponse);
+          console.log("Order ID:", orderId);
+
+          toast.loading("Verifying payment...");
+
+          const verificationResult = await verifyPayment({
+            orderId: orderId,
+            razorpayPaymentId: razorpayResponse.razorpay_payment_id,
+            razorpayOrderId: razorpayResponse.razorpay_order_id,
+            razorpaySignature: razorpayResponse.razorpay_signature,
+          });
+
+          toast.dismiss();
+
+          console.log("Verification Result:", verificationResult);
+
+          if (verificationResult.success) {
+            toast.success("Payment successful! 🎉", {
+              description: "Redirecting to your learning dashboard...",
+            });
+            setTimeout(() => {
+              router.push(`/student/my-learning`);
+            }, 1000);
+          } else {
+            throw new Error(
+              verificationResult.message || "Payment verification failed"
+            );
+          }
+        } catch (error: any) {
+          toast.dismiss();
+          console.error("Payment verification failed:", error);
+
+          // Show more detailed error message
+          const errorMessage =
+            error?.response?.data?.message ||
+            error?.message ||
+            "Payment verification failed";
+
+          toast.error("Payment verification failed", {
+            description: `${errorMessage}. Payment ID: ${razorpayResponse.razorpay_payment_id}`,
+            duration: 10000, // Show for 10 seconds
+          });
+        }
       },
       (error) => {
         console.error("Payment failed:", error);

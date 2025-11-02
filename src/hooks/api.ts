@@ -958,3 +958,17 @@ export const useCreateBatchCheckout = () => {
         .then((res) => res.data),
   });
 };
+
+export const useVerifyBatchPayment = () => {
+  return useMutation({
+    mutationFn: (data: {
+      orderId: string;
+      razorpayPaymentId: string;
+      razorpayOrderId: string;
+      razorpaySignature: string;
+    }) =>
+      apiClient
+        .post(`/api/batches/verify-payment`, data)
+        .then((res) => res.data),
+  });
+};

@@ -34,7 +34,10 @@ export const useRazorpayPayment = () => {
       batchId: string,
       batchName: string,
       amount: number,
-      onSuccess?: (paymentId: string) => void,
+      onVerify: (
+        razorpayResponse: RazorpayResponse,
+        orderId: string
+      ) => Promise<void>,
       onFailure?: (error: any) => void
     ) => {
       try {
@@ -45,7 +48,7 @@ export const useRazorpayPayment = () => {
           throw new Error("Failed to create order");
         }
 
-        const { orderId, key, currency } = response.data;
+        const { orderId, key, currency, razorpayOrderId } = response.data;
 
         // Load Razorpay script if not already loaded
         if (!window.Razorpay) {
@@ -67,10 +70,11 @@ export const useRazorpayPayment = () => {
           currency: currency || "INR",
           name: "QueztLearn",
           description: batchName,
-          order_id: orderId,
-          handler: function (response: RazorpayResponse) {
-            console.log("Payment successful:", response);
-            onSuccess?.(response.razorpay_payment_id);
+          order_id: razorpayOrderId,
+          handler: async function (razorpayResponse: RazorpayResponse) {
+            console.log("Payment successful:", razorpayResponse);
+            // Call verification callback with razorpay response and orderId
+            await onVerify(razorpayResponse, orderId);
           },
           prefill: {
             name: "",
@@ -87,6 +91,8 @@ export const useRazorpayPayment = () => {
             },
           },
         };
+
+        console.log(options);
 
         // Open Razorpay checkout
         const razorpay = new window.Razorpay(options);
