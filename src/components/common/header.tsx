@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Bell, User, Settings, Moon, Sun } from "lucide-react";
+import { Bell, User, Settings, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -20,7 +18,6 @@ import { useTheme } from "@/components/providers/theme-provider";
 import { useRouter } from "next/navigation";
 
 export function Header() {
-  const [searchQuery, setSearchQuery] = useState("");
   const { data: user, isLoading: userLoading } = useCurrentUser();
   const { theme, setTheme } = useTheme();
   const router = useRouter();
@@ -29,21 +26,11 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between px-6 border-b bg-background/60 backdrop-blur-xl supports-backdrop-filter:bg-background/60">
-      {/* Search */}
-      <div className="flex flex-1 items-center space-x-4">
-        <div className="relative w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search courses, students..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-      </div>
+      {/* Left side - empty for now */}
+      <div></div>
 
       {/* Right side */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-4 ml-auto">
         {/* Theme Switch */}
         <div className="flex items-center space-x-2">
           <Sun className="h-4 w-4 text-muted-foreground" />
