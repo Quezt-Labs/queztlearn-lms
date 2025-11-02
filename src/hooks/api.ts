@@ -248,7 +248,7 @@ export const useStudentLogin = () => {
         queryClient.setQueryData(queryKeys.user, data.data.user);
 
         // Redirect to student dashboard
-        router.push("/student/dashboard");
+        router.push("/student/my-learning");
       }
     },
     onError: (error) => {
