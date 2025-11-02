@@ -45,6 +45,7 @@ interface Batch {
   language: string;
   totalPrice: number;
   discountPercentage: number;
+  status: "ACTIVE" | "INACTIVE";
   faq: Array<{
     title: string;
     description: string;

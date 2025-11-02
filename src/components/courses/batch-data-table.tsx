@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import apiClient from "@/lib/api/client";
+import { queryKeys } from "@/hooks/api";
 import {
   Table,
   TableBody,
@@ -37,6 +40,8 @@ import {
   Calendar,
   Users,
   BookOpen,
+  Power,
+  PowerOff,
 } from "lucide-react";
 
 interface Batch {
@@ -51,6 +56,7 @@ interface Batch {
   language: string;
   totalPrice: number;
   discountPercentage: number;
+  status?: "ACTIVE" | "INACTIVE";
   faq: Array<{
     title: string;
     description: string;
@@ -83,8 +89,10 @@ export function BatchDataTable({
   showEditButton = true,
 }: BatchDataTableProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
 
   // Utility function to strip HTML tags and decode entities
   const stripHtml = (html: string) => {
@@ -99,17 +107,30 @@ export function BatchDataTable({
       batch.exam.toLowerCase().includes(searchQuery.toLowerCase()) ||
       batch.class.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const now = new Date();
-    const startDate = new Date(batch.startDate);
-    const endDate = new Date(batch.endDate);
-
     let matchesStatus = true;
-    if (statusFilter === "upcoming") {
-      matchesStatus = startDate > now;
-    } else if (statusFilter === "ongoing") {
-      matchesStatus = startDate <= now && endDate >= now;
-    } else if (statusFilter === "completed") {
-      matchesStatus = endDate < now;
+    if (statusFilter !== "all" && batch.status) {
+      // Status will be ACTIVE or INACTIVE from API
+      if (statusFilter === "active" || statusFilter === "ongoing") {
+        matchesStatus = batch.status === "ACTIVE";
+      } else if (statusFilter === "inactive" || statusFilter === "completed") {
+        matchesStatus = batch.status === "INACTIVE";
+      } else if (statusFilter === "upcoming") {
+        // Upcoming maps to INACTIVE (not yet started)
+        matchesStatus = batch.status === "INACTIVE";
+      }
+    } else if (statusFilter !== "all" && !batch.status) {
+      // Fallback to date-based calculation if status is not available
+      const now = new Date();
+      const startDate = new Date(batch.startDate);
+      const endDate = new Date(batch.endDate);
+
+      if (statusFilter === "upcoming") {
+        matchesStatus = startDate > now;
+      } else if (statusFilter === "ongoing" || statusFilter === "active") {
+        matchesStatus = startDate <= now && endDate >= now;
+      } else if (statusFilter === "completed" || statusFilter === "inactive") {
+        matchesStatus = endDate < now;
+      }
     }
 
     return matchesSearch && matchesStatus;
@@ -138,6 +159,14 @@ export function BatchDataTable({
   };
 
   const getStatusBadge = (batch: Batch) => {
+    // Use status from API directly - only ACTIVE or INACTIVE
+    if (batch.status?.toUpperCase() === "ACTIVE") {
+      return <Badge variant="default">ACTIVE</Badge>;
+    } else if (batch.status?.toUpperCase() === "INACTIVE") {
+      return <Badge variant="outline">INACTIVE</Badge>;
+    }
+
+    // Fallback to date-based calculation if status is not available
     const now = new Date();
     const startDate = new Date(batch.startDate);
     const endDate = new Date(batch.endDate);
@@ -153,6 +182,39 @@ export function BatchDataTable({
 
   const handleViewCourse = (batchId: string) => {
     router.push(`/${basePath}/courses/${batchId}`);
+  };
+
+  const handleToggleStatus = async (batch: Batch) => {
+    setUpdatingStatus(batch.id);
+    try {
+      const newStatus =
+        batch.status?.toUpperCase() === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+
+      // Update batch with new status
+      await apiClient.put(`/admin/batches/${batch.id}`, {
+        name: batch.name,
+        description: batch.description,
+        class: batch.class,
+        exam: batch.exam,
+        imageUrl: batch.imageUrl,
+        startDate: batch.startDate,
+        endDate: batch.endDate,
+        language: batch.language,
+        totalPrice: batch.totalPrice,
+        discountPercentage: batch.discountPercentage,
+        faq: batch.faq,
+        teacherId: batch.teacherId,
+        status: newStatus,
+      });
+
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: queryKeys.batches });
+    } catch (error) {
+      console.error("Failed to update batch status:", error);
+      alert("Failed to update batch status. Please try again.");
+    } finally {
+      setUpdatingStatus(null);
+    }
   };
 
   console.log(batches, "batches");
@@ -300,13 +362,32 @@ export function BatchDataTable({
                           </>
                         )}
                         {canManageCourse && (
-                          <DropdownMenuItem
-                            onClick={() => onDelete(batch)}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => handleToggleStatus(batch)}
+                              disabled={updatingStatus === batch.id}
+                            >
+                              {batch.status?.toUpperCase() === "ACTIVE" ? (
+                                <>
+                                  <PowerOff className="mr-2 h-4 w-4" />
+                                  Set Inactive
+                                </>
+                              ) : (
+                                <>
+                                  <Power className="mr-2 h-4 w-4" />
+                                  Set Active
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => onDelete(batch)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </>
                         )}
                       </DropdownMenuContent>
                     </DropdownMenu>
