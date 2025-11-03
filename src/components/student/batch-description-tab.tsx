@@ -20,7 +20,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useBatchRazorpayPayment } from "@/hooks/use-batch-payment";
-import { useVerifyBatchPayment } from "@/hooks/api";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -52,7 +51,6 @@ export function BatchDescriptionTab({
 }: BatchDescriptionTabProps) {
   const router = useRouter();
   const { initializePayment, isLoading } = useBatchRazorpayPayment();
-  const { mutateAsync: verifyPayment } = useVerifyBatchPayment();
   const startDate = new Date(batch.startDate);
   const endDate = new Date(batch.endDate);
 
@@ -62,67 +60,37 @@ export function BatchDescriptionTab({
       return;
     }
 
+    toast.loading("Initializing payment...");
+
     initializePayment(
       batch.id,
       batch.name,
       finalPrice,
-      async (razorpayResponse, orderId) => {
-        try {
-          console.log("Razorpay Response:", razorpayResponse);
-          console.log("Order ID:", orderId);
-
-          toast.loading("Verifying payment...");
-
-          const verificationResult = await verifyPayment({
-            orderId: orderId,
-            razorpayPaymentId: razorpayResponse.razorpay_payment_id,
-            razorpayOrderId: razorpayResponse.razorpay_order_id,
-            razorpaySignature: razorpayResponse.razorpay_signature,
-          });
-
-          toast.dismiss();
-
-          console.log("Verification Result:", verificationResult);
-
-          if (verificationResult.success) {
-            toast.success("Payment successful! 🎉", {
-              description: "Redirecting to your learning dashboard...",
-            });
-            setTimeout(() => {
-              router.push(`/student/my-learning`);
-            }, 1000);
-          } else {
-            throw new Error(
-              verificationResult.message || "Payment verification failed"
-            );
-          }
-        } catch (error: unknown) {
-          toast.dismiss();
-          console.error("Payment verification failed:", error);
-
-          // Show more detailed error message
-          const errorMessage =
-            (error && typeof error === "object" && "response" in error
-              ? (error.response as { data?: { message?: string } })?.data
-                  ?.message
-              : null) ||
-            (error instanceof Error ? error.message : null) ||
-            "Payment verification failed";
-
-          toast.error("Payment verification failed", {
-            description: `${errorMessage}. Payment ID: ${razorpayResponse.razorpay_payment_id}`,
-            duration: 10000, // Show for 10 seconds
-          });
-        }
+      async (verificationResult) => {
+        console.log("Verification Result:", verificationResult);
+        toast.dismiss();
+        toast.success("Payment successful! 🎉", {
+          description: "Redirecting to your learning dashboard...",
+        });
+        setTimeout(() => {
+          router.push(`/student/my-learning`);
+        }, 1000);
       },
       (error) => {
+        toast.dismiss();
         console.error("Payment failed:", error);
+
+        // Show more detailed error message
         const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Please try again or contact support.";
+          (error && typeof error === "object" && "response" in error
+            ? (error.response as { data?: { message?: string } })?.data?.message
+            : null) ||
+          (error instanceof Error ? error.message : null) ||
+          "Payment failed. Please try again or contact support.";
+
         toast.error("Payment failed", {
           description: errorMessage,
+          duration: 5000, // Show for 5 seconds
         });
       }
     );
