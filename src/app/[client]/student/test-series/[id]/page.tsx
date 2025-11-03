@@ -23,7 +23,6 @@ import {
   useClientTestSeriesDetail,
   useClientTestsInSeries,
   useClientEnrollFreeTestSeries,
-  useClientVerifyPayment,
   useClientTestSeriesStats,
 } from "@/hooks/test-series-client";
 import { useTestSeriesRazorpayPayment } from "@/hooks/use-test-series-payment";
@@ -45,30 +44,6 @@ const TestSeriesTestsTab = lazy(() =>
     default: mod.TestSeriesTestsTab,
   }))
 );
-
-// Razorpay types
-interface RazorpayResponse {
-  razorpay_payment_id: string;
-  razorpay_order_id: string;
-  razorpay_signature: string;
-}
-
-declare global {
-  interface Window {
-    Razorpay: new (options: {
-      key?: string;
-      amount: number;
-      currency: string;
-      name: string;
-      description: string;
-      order_id: string;
-      handler: (response: RazorpayResponse) => void | Promise<void>;
-      prefill?: Record<string, string>;
-      theme?: { color: string };
-      modal?: { ondismiss: () => void };
-    }) => { open: () => void };
-  }
-}
 
 export default function StudentTestSeriesDetailPage() {
   const params = useParams();
@@ -97,7 +72,6 @@ export default function StudentTestSeriesDetailPage() {
 
   // Mutations and hooks
   const enrollFreeMutation = useClientEnrollFreeTestSeries();
-  const verifyPaymentMutation = useClientVerifyPayment();
   const { initializePayment, isLoading: isPaymentLoading } =
     useTestSeriesRazorpayPayment();
 
@@ -145,75 +119,41 @@ export default function StudentTestSeriesDetailPage() {
 
     setIsProcessing(true);
     setErrorMessage(null);
+    toast.loading("Initializing payment...");
 
     initializePayment(
       testSeries.id,
       testSeries.title,
       finalPrice,
-      async (razorpayResponse, orderId) => {
-        try {
-          console.log("Razorpay Response:", razorpayResponse);
-          console.log("Order ID:", orderId);
-
-          toast.loading("Verifying payment...");
-
-          const verificationResult = await verifyPaymentMutation.mutateAsync({
-            orderId: orderId,
-            razorpayPaymentId: razorpayResponse.razorpay_payment_id,
-            razorpayOrderId: razorpayResponse.razorpay_order_id,
-            razorpaySignature: razorpayResponse.razorpay_signature,
-          });
-
-          toast.dismiss();
-
-          console.log("Verification Result:", verificationResult);
-
-          if (verificationResult.success) {
-            toast.success("Payment successful! 🎉", {
-              description: "You have been enrolled in this test series.",
-            });
-            setSuccessMessage(
-              "Payment successful! You have been enrolled in this test series."
-            );
-            setIsEnrollDialogOpen(false);
-            refetchTestSeries();
-            setTimeout(() => setSuccessMessage(null), 5000);
-          } else {
-            throw new Error(
-              verificationResult.message || "Payment verification failed"
-            );
-          }
-        } catch (error: unknown) {
-          toast.dismiss();
-          console.error("Payment verification failed:", error);
-
-          // Show more detailed error message
-          const errorMessage =
-            (error && typeof error === "object" && "response" in error
-              ? (error.response as { data?: { message?: string } })?.data
-                  ?.message
-              : null) ||
-            (error instanceof Error ? error.message : null) ||
-            "Payment verification failed";
-
-          toast.error("Payment verification failed", {
-            description: `${errorMessage}. Payment ID: ${razorpayResponse.razorpay_payment_id}`,
-            duration: 10000, // Show for 10 seconds
-          });
-          setErrorMessage(errorMessage);
-          setTimeout(() => setErrorMessage(null), 5000);
-        } finally {
-          setIsProcessing(false);
-        }
+      async (verificationResult) => {
+        console.log("Verification Result:", verificationResult);
+        toast.dismiss();
+        toast.success("Payment successful! 🎉", {
+          description: "You have been enrolled in this test series.",
+        });
+        setSuccessMessage(
+          "Payment successful! You have been enrolled in this test series."
+        );
+        setIsEnrollDialogOpen(false);
+        refetchTestSeries();
+        setTimeout(() => setSuccessMessage(null), 5000);
+        setIsProcessing(false);
       },
       (error) => {
+        toast.dismiss();
         console.error("Payment failed:", error);
+
+        // Show more detailed error message
         const errorMessage =
-          error instanceof Error
-            ? error.message
-            : "Failed to initiate payment. Please try again.";
+          (error && typeof error === "object" && "response" in error
+            ? (error.response as { data?: { message?: string } })?.data?.message
+            : null) ||
+          (error instanceof Error ? error.message : null) ||
+          "Payment failed. Please try again or contact support.";
+
         toast.error("Payment failed", {
           description: errorMessage,
+          duration: 5000, // Show for 5 seconds
         });
         setErrorMessage(errorMessage);
         setTimeout(() => setErrorMessage(null), 5000);

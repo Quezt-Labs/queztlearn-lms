@@ -2,14 +2,16 @@ import { useCallback } from "react";
 import { useCreateBatchCheckout } from "./api";
 import { useClientCheckoutTestSeries } from "./test-series-client";
 
-// Razorpay types
 export interface RazorpayResponse {
   razorpay_payment_id: string;
   razorpay_order_id: string;
   razorpay_signature: string;
 }
 
-interface RazorpayOptions {
+export type PaymentType = "batch" | "test-series";
+
+// Type alias for RazorpayOptions from global
+type RazorpayOptions = {
   key?: string;
   amount: number;
   currency: string;
@@ -18,15 +20,9 @@ interface RazorpayOptions {
   order_id: string;
   handler: (response: RazorpayResponse) => void | Promise<void>;
   prefill?: Record<string, string>;
-  theme?: {
-    color: string;
-  };
-  modal?: {
-    ondismiss: () => void;
-  };
-}
-
-export type PaymentType = "batch" | "test-series";
+  theme?: { color: string };
+  modal?: { ondismiss: () => void };
+};
 
 interface PaymentConfig {
   type: PaymentType;
@@ -89,8 +85,8 @@ export const useRazorpayPaymentCommon = () => {
           throw new Error("Razorpay key not configured");
         }
 
-        // Load Razorpay script if not already loaded
-        if (!window.Razorpay) {
+        // Load Razorpay script if not already loaded (using global Window.Razorpay from global.d.ts)
+        if (!("Razorpay" in window)) {
           const script = document.createElement("script");
           script.src = "https://checkout.razorpay.com/v1/checkout.js";
           script.async = true;
@@ -105,7 +101,7 @@ export const useRazorpayPaymentCommon = () => {
         // Calculate amount: use orderAmount if available, otherwise convert config amount to paise
         const amountInPaise = orderAmount || config.amount * 100;
 
-        // Configure Razorpay options
+        // Configure Razorpay options (using global RazorpayOptions from global.d.ts)
         const options: RazorpayOptions = {
           key: razorpayKey,
           amount: amountInPaise,
@@ -134,8 +130,15 @@ export const useRazorpayPaymentCommon = () => {
           },
         };
 
-        // Open Razorpay checkout
-        const razorpay = new window.Razorpay(options);
+        // Open Razorpay checkout (using global Window.Razorpay from global.d.ts)
+        // Type assertion needed because Razorpay is loaded dynamically
+        type RazorpayConstructorType = new (options: RazorpayOptions) => {
+          open: () => void;
+        };
+        const RazorpayConstructor = (
+          window as unknown as Window & { Razorpay: RazorpayConstructorType }
+        ).Razorpay;
+        const razorpay = new RazorpayConstructor(options);
         razorpay.open();
       } catch (error: unknown) {
         console.error("Payment initialization error:", error);
