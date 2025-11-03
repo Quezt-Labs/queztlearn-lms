@@ -96,14 +96,17 @@ export function BatchDescriptionTab({
               verificationResult.message || "Payment verification failed"
             );
           }
-        } catch (error: any) {
+        } catch (error: unknown) {
           toast.dismiss();
           console.error("Payment verification failed:", error);
 
           // Show more detailed error message
           const errorMessage =
-            error?.response?.data?.message ||
-            error?.message ||
+            (error && typeof error === "object" && "response" in error
+              ? (error.response as { data?: { message?: string } })?.data
+                  ?.message
+              : null) ||
+            (error instanceof Error ? error.message : null) ||
             "Payment verification failed";
 
           toast.error("Payment verification failed", {
@@ -114,8 +117,10 @@ export function BatchDescriptionTab({
       },
       (error) => {
         console.error("Payment failed:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Please try again or contact support.";
         toast.error("Payment failed", {
-          description: error?.message || "Please try again or contact support.",
+          description: errorMessage,
         });
       }
     );

@@ -38,7 +38,7 @@ export const useRazorpayPayment = () => {
         razorpayResponse: RazorpayResponse,
         orderId: string
       ) => Promise<void>,
-      onFailure?: (error: any) => void
+      onFailure?: (error: Error | unknown) => void
     ) => {
       try {
         // Create order from backend
@@ -97,9 +97,11 @@ export const useRazorpayPayment = () => {
         // Open Razorpay checkout
         const razorpay = new window.Razorpay(options);
         razorpay.open();
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Payment initialization error:", error);
-        onFailure?.(error);
+        const errorInstance =
+          error instanceof Error ? error : new Error(String(error));
+        onFailure?.(errorInstance);
       }
     },
     [createCheckout]
