@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useRazorpayPayment } from "@/hooks/use-razorpay-payment";
+import { useBatchRazorpayPayment } from "@/hooks/use-batch-payment";
 import { useVerifyBatchPayment } from "@/hooks/api";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -51,7 +51,7 @@ export function BatchDescriptionTab({
   isHotDeal,
 }: BatchDescriptionTabProps) {
   const router = useRouter();
-  const { initializePayment, isLoading } = useRazorpayPayment();
+  const { initializePayment, isLoading } = useBatchRazorpayPayment();
   const { mutateAsync: verifyPayment } = useVerifyBatchPayment();
   const startDate = new Date(batch.startDate);
   const endDate = new Date(batch.endDate);
@@ -118,7 +118,9 @@ export function BatchDescriptionTab({
       (error) => {
         console.error("Payment failed:", error);
         const errorMessage =
-          error instanceof Error ? error.message : "Please try again or contact support.";
+          error instanceof Error
+            ? error.message
+            : "Please try again or contact support.";
         toast.error("Payment failed", {
           description: errorMessage,
         });

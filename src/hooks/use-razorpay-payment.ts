@@ -1,9 +1,9 @@
 import { useCallback } from "react";
 import { useCreateBatchCheckout } from "./api";
+import { useClientCheckoutTestSeries } from "./test-series-client";
 
-// Reusing types from test-series implementation
-// Note: Window.Razorpay is already declared in test-series/[id]/page.tsx
-interface RazorpayResponse {
+// Razorpay types
+export interface RazorpayResponse {
   razorpay_payment_id: string;
   razorpay_order_id: string;
   razorpay_signature: string;
@@ -26,29 +26,68 @@ interface RazorpayOptions {
   };
 }
 
-export const useRazorpayPayment = () => {
-  const { mutateAsync: createCheckout, isPending } = useCreateBatchCheckout();
+export type PaymentType = "batch" | "test-series";
+
+interface PaymentConfig {
+  type: PaymentType;
+  entityId: string;
+  entityName: string;
+  amount: number;
+  onVerify: (
+    razorpayResponse: RazorpayResponse,
+    orderId: string
+  ) => Promise<void>;
+  onFailure?: (error: Error | unknown) => void;
+}
+
+export const useRazorpayPaymentCommon = () => {
+  const batchCheckoutMutation = useCreateBatchCheckout();
+  const testSeriesCheckoutMutation = useClientCheckoutTestSeries();
 
   const initializePayment = useCallback(
-    async (
-      batchId: string,
-      batchName: string,
-      amount: number,
-      onVerify: (
-        razorpayResponse: RazorpayResponse,
-        orderId: string
-      ) => Promise<void>,
-      onFailure?: (error: Error | unknown) => void
-    ) => {
+    async (config: PaymentConfig) => {
       try {
-        // Create order from backend
-        const response = await createCheckout(batchId);
+        let response: {
+          success: boolean;
+          data?: {
+            orderId: string;
+            razorpayOrderId: string;
+            currency: string;
+            key?: string;
+            amount?: number;
+          };
+        };
+
+        // Call appropriate checkout API based on type
+        if (config.type.toLowerCase() === "batch") {
+          const batchResponse = await batchCheckoutMutation.mutateAsync(
+            config.entityId
+          );
+          response = batchResponse;
+        } else {
+          const testSeriesResponse =
+            await testSeriesCheckoutMutation.mutateAsync(config.entityId);
+          response = testSeriesResponse;
+        }
 
         if (!response.success || !response.data) {
           throw new Error("Failed to create order");
         }
 
-        const { orderId, key, currency, razorpayOrderId } = response.data;
+        const {
+          orderId,
+          razorpayOrderId,
+          currency,
+          key,
+          amount: orderAmount,
+        } = response.data;
+
+        // Get Razorpay key from response if available, otherwise use env var
+        const razorpayKey = key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+
+        if (!razorpayKey) {
+          throw new Error("Razorpay key not configured");
+        }
 
         // Load Razorpay script if not already loaded
         if (!window.Razorpay) {
@@ -57,24 +96,27 @@ export const useRazorpayPayment = () => {
           script.async = true;
           document.body.appendChild(script);
 
-          await new Promise((resolve, reject) => {
-            script.onload = resolve;
+          await new Promise<void>((resolve, reject) => {
+            script.onload = () => resolve();
             script.onerror = reject;
           });
         }
 
+        // Calculate amount: use orderAmount if available, otherwise convert config amount to paise
+        const amountInPaise = orderAmount || config.amount * 100;
+
         // Configure Razorpay options
         const options: RazorpayOptions = {
-          key: key,
-          amount: amount * 100, // Convert to paise
+          key: razorpayKey,
+          amount: amountInPaise,
           currency: currency || "INR",
           name: "QueztLearn",
-          description: batchName,
+          description: config.entityName,
           order_id: razorpayOrderId,
           handler: async function (razorpayResponse: RazorpayResponse) {
             console.log("Payment successful:", razorpayResponse);
             // Call verification callback with razorpay response and orderId
-            await onVerify(razorpayResponse, orderId);
+            await config.onVerify(razorpayResponse, orderId);
           },
           prefill: {
             name: "",
@@ -87,12 +129,10 @@ export const useRazorpayPayment = () => {
           modal: {
             ondismiss: function () {
               console.log("Payment modal closed");
-              onFailure?.(new Error("Payment cancelled by user"));
+              config.onFailure?.(new Error("Payment cancelled by user"));
             },
           },
         };
-
-        console.log(options);
 
         // Open Razorpay checkout
         const razorpay = new window.Razorpay(options);
@@ -101,14 +141,17 @@ export const useRazorpayPayment = () => {
         console.error("Payment initialization error:", error);
         const errorInstance =
           error instanceof Error ? error : new Error(String(error));
-        onFailure?.(errorInstance);
+        config.onFailure?.(errorInstance);
       }
     },
-    [createCheckout]
+    [batchCheckoutMutation, testSeriesCheckoutMutation]
   );
+
+  const isLoading =
+    batchCheckoutMutation.isPending || testSeriesCheckoutMutation.isPending;
 
   return {
     initializePayment,
-    isLoading: isPending,
+    isLoading,
   };
 };

@@ -1,8 +1,8 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { Suspense, lazy, useState, useEffect } from "react";
-import { Loader2, ArrowLeft, FileText } from "lucide-react";
+import { Suspense, lazy, useState } from "react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -22,15 +22,16 @@ import { MobileTestSeriesHero } from "@/components/student/mobile-test-series-he
 import {
   useClientTestSeriesDetail,
   useClientTestsInSeries,
-  useClientCheckoutTestSeries,
   useClientEnrollFreeTestSeries,
   useClientVerifyPayment,
   useClientTestSeriesStats,
 } from "@/hooks/test-series-client";
+import { useTestSeriesRazorpayPayment } from "@/hooks/use-test-series-payment";
 import {
   ErrorMessage,
   SuccessMessage,
 } from "@/components/common/error-message";
+import { toast } from "sonner";
 
 // Lazy load tab content components
 const TestSeriesDescriptionTab = lazy(() =>
@@ -52,30 +53,20 @@ interface RazorpayResponse {
   razorpay_signature: string;
 }
 
-interface RazorpayOptions {
-  key?: string;
-  amount: number;
-  currency: string;
-  name: string;
-  description: string;
-  order_id: string;
-  handler: (response: RazorpayResponse) => void | Promise<void>;
-  prefill?: Record<string, string>;
-  theme?: {
-    color: string;
-  };
-  modal?: {
-    ondismiss: () => void;
-  };
-}
-
-interface RazorpayInstance {
-  open: () => void;
-}
-
 declare global {
   interface Window {
-    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
+    Razorpay: new (options: {
+      key?: string;
+      amount: number;
+      currency: string;
+      name: string;
+      description: string;
+      order_id: string;
+      handler: (response: RazorpayResponse) => void | Promise<void>;
+      prefill?: Record<string, string>;
+      theme?: { color: string };
+      modal?: { ondismiss: () => void };
+    }) => { open: () => void };
   }
 }
 
@@ -104,10 +95,11 @@ export default function StudentTestSeriesDetailPage() {
   // Stats for social proof
   const { data: statsData } = useClientTestSeriesStats(identifier);
 
-  // Mutations
-  const checkoutMutation = useClientCheckoutTestSeries();
+  // Mutations and hooks
   const enrollFreeMutation = useClientEnrollFreeTestSeries();
   const verifyPaymentMutation = useClientVerifyPayment();
+  const { initializePayment, isLoading: isPaymentLoading } =
+    useTestSeriesRazorpayPayment();
 
   const testSeries = testSeriesData?.data;
   const tests = testsData?.data || [];
@@ -149,76 +141,85 @@ export default function StudentTestSeriesDetailPage() {
   };
 
   const handleCheckout = async () => {
-    if (!testSeries?.id) return;
+    if (!testSeries?.id || !testSeries?.title) return;
 
-    try {
-      setIsProcessing(true);
-      const response = await checkoutMutation.mutateAsync(testSeries.id);
-      const orderData = response.data;
+    setIsProcessing(true);
+    setErrorMessage(null);
 
-      // Initialize Razorpay checkout
-      if (typeof window !== "undefined" && window.Razorpay) {
-        const options = {
-          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-          amount: orderData.amount,
-          currency: orderData.currency || "INR",
-          name: testSeries.title,
-          description: `Payment for ${testSeries.title}`,
-          order_id: orderData.razorpayOrderId,
-          handler: async function (response: RazorpayResponse) {
-            try {
-              await verifyPaymentMutation.mutateAsync({
-                orderId: orderData.orderId,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpayOrderId: response.razorpay_order_id,
-                razorpaySignature: response.razorpay_signature,
-              });
+    initializePayment(
+      testSeries.id,
+      testSeries.title,
+      finalPrice,
+      async (razorpayResponse, orderId) => {
+        try {
+          console.log("Razorpay Response:", razorpayResponse);
+          console.log("Order ID:", orderId);
 
-              setSuccessMessage(
-                "Payment successful! You have been enrolled in this test series."
-              );
-              setIsEnrollDialogOpen(false);
-              refetchTestSeries();
-              setTimeout(() => setSuccessMessage(null), 5000);
-            } catch (error: unknown) {
-              const errorObj = error as {
-                response?: { data?: { message?: string } };
-              };
-              const errorMessage =
-                errorObj?.response?.data?.message ||
-                "Failed to verify payment. Please contact support.";
-              setErrorMessage(errorMessage);
-              setTimeout(() => setErrorMessage(null), 5000);
-            } finally {
-              setIsProcessing(false);
-            }
-          },
-          prefill: {
-            // You can get user details from auth context
-          },
-          theme: {
-            color: "#4F46E5",
-          },
-          modal: {
-            ondismiss: function () {
-              setIsProcessing(false);
-            },
-          },
-        };
+          toast.loading("Verifying payment...");
 
-        const razorpay = new window.Razorpay(options);
-        razorpay.open();
-      } else {
-        throw new Error("Razorpay SDK not loaded");
+          const verificationResult = await verifyPaymentMutation.mutateAsync({
+            orderId: orderId,
+            razorpayPaymentId: razorpayResponse.razorpay_payment_id,
+            razorpayOrderId: razorpayResponse.razorpay_order_id,
+            razorpaySignature: razorpayResponse.razorpay_signature,
+          });
+
+          toast.dismiss();
+
+          console.log("Verification Result:", verificationResult);
+
+          if (verificationResult.success) {
+            toast.success("Payment successful! 🎉", {
+              description: "You have been enrolled in this test series.",
+            });
+            setSuccessMessage(
+              "Payment successful! You have been enrolled in this test series."
+            );
+            setIsEnrollDialogOpen(false);
+            refetchTestSeries();
+            setTimeout(() => setSuccessMessage(null), 5000);
+          } else {
+            throw new Error(
+              verificationResult.message || "Payment verification failed"
+            );
+          }
+        } catch (error: unknown) {
+          toast.dismiss();
+          console.error("Payment verification failed:", error);
+
+          // Show more detailed error message
+          const errorMessage =
+            (error && typeof error === "object" && "response" in error
+              ? (error.response as { data?: { message?: string } })?.data
+                  ?.message
+              : null) ||
+            (error instanceof Error ? error.message : null) ||
+            "Payment verification failed";
+
+          toast.error("Payment verification failed", {
+            description: `${errorMessage}. Payment ID: ${razorpayResponse.razorpay_payment_id}`,
+            duration: 10000, // Show for 10 seconds
+          });
+          setErrorMessage(errorMessage);
+          setTimeout(() => setErrorMessage(null), 5000);
+        } finally {
+          setIsProcessing(false);
+        }
+      },
+      (error) => {
+        console.error("Payment failed:", error);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Failed to initiate payment. Please try again.";
+        toast.error("Payment failed", {
+          description: errorMessage,
+        });
+        setErrorMessage(errorMessage);
+        setTimeout(() => setErrorMessage(null), 5000);
+        setIsProcessing(false);
       }
-    } catch (error: unknown) {
-      const errorMessage =
-        (error as { response?: { data?: { message?: string } } })?.response
-          ?.data?.message || "Failed to initiate checkout. Please try again.";
-      setErrorMessage(errorMessage);
-      setTimeout(() => setErrorMessage(null), 5000);
-      setIsProcessing(false);
-    }
+    );
   };
 
   const handleEnroll = () => {
@@ -228,22 +229,6 @@ export default function StudentTestSeriesDetailPage() {
       handleCheckout();
     }
   };
-
-  // Load Razorpay script
-  useEffect(() => {
-    if (typeof window !== "undefined" && !window.Razorpay) {
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.async = true;
-      document.body.appendChild(script);
-
-      return () => {
-        if (document.body.contains(script)) {
-          document.body.removeChild(script);
-        }
-      };
-    }
-  }, []);
 
   if (isLoading) {
     return <TestSeriesDetailSkeleton />;
@@ -379,7 +364,7 @@ export default function StudentTestSeriesDetailPage() {
                   size="sm"
                   className="shrink-0"
                   onClick={() => setIsEnrollDialogOpen(true)}
-                  disabled={isProcessing || testCount === 0}
+                  disabled={isProcessing || isPaymentLoading || testCount === 0}
                 >
                   {isProcessing
                     ? "Processing..."
@@ -420,7 +405,7 @@ export default function StudentTestSeriesDetailPage() {
             </Button>
             <Button
               onClick={handleEnroll}
-              disabled={isProcessing || testCount === 0}
+              disabled={isProcessing || isPaymentLoading || testCount === 0}
             >
               {isProcessing
                 ? "Processing..."
