@@ -1,10 +1,11 @@
 "use client";
 
 import { Suspense, useState, lazy } from "react";
-import { BookOpen, FileText, Loader2 } from "lucide-react";
+import { BookOpen, FileText } from "lucide-react";
 import { StudentHeader } from "@/components/student/student-header";
 import { Button } from "@/components/ui/button";
 import { useGetExploreBatches, useGetExploreTestSeries } from "@/hooks";
+import { ExploreCardsGridShimmer } from "@/components/common/explore-card-shimmer";
 
 // Dynamic imports for code splitting
 const ExploreBatchCard = lazy(() =>
@@ -109,9 +110,7 @@ export default function ExplorePage() {
           {activeTab === "batches" ? (
             <>
               {isBatchesLoading && !isBatchesFetched ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
+                <ExploreCardsGridShimmer count={3} />
               ) : batches.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   No batches available at the moment
@@ -120,7 +119,7 @@ export default function ExplorePage() {
                 <Suspense
                   fallback={
                     <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      <ExploreCardsGridShimmer count={3} />
                     </div>
                   }
                 >
@@ -133,21 +132,13 @@ export default function ExplorePage() {
           ) : (
             <>
               {isTestSeriesLoading && !isTestSeriesFetched ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
+                <ExploreCardsGridShimmer count={3} />
               ) : testSeries.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   No test series available at the moment
                 </div>
               ) : (
-                <Suspense
-                  fallback={
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    </div>
-                  }
-                >
+                <Suspense fallback={<ExploreCardsGridShimmer count={3} />}>
                   {testSeries.map((series, index) => (
                     <ExploreTestSeriesCard
                       key={series.id}
@@ -210,9 +201,7 @@ export default function ExplorePage() {
           {activeTab === "batches" ? (
             <>
               {isBatchesLoading && !isBatchesFetched ? (
-                <div className="flex items-center justify-center py-20">
-                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                </div>
+                <ExploreCardsGridShimmer count={6} />
               ) : batches.length === 0 ? (
                 <div className="text-center py-20">
                   <BookOpen className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
@@ -224,13 +213,7 @@ export default function ExplorePage() {
                   </p>
                 </div>
               ) : (
-                <Suspense
-                  fallback={
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                  }
-                >
+                <Suspense fallback={<ExploreCardsGridShimmer count={6} />}>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {batches.map((batch, index) => (
                       <ExploreBatchCard
@@ -246,9 +229,7 @@ export default function ExplorePage() {
           ) : (
             <>
               {isTestSeriesLoading && !isTestSeriesFetched ? (
-                <div className="flex items-center justify-center py-20">
-                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                </div>
+                <ExploreCardsGridShimmer count={6} />
               ) : testSeries.length === 0 ? (
                 <div className="text-center py-20">
                   <FileText className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
@@ -260,13 +241,7 @@ export default function ExplorePage() {
                   </p>
                 </div>
               ) : (
-                <Suspense
-                  fallback={
-                    <div className="flex items-center justify-center py-12">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    </div>
-                  }
-                >
+                <Suspense fallback={<ExploreCardsGridShimmer count={6} />}>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {testSeries.map((series, index) => (
                       <ExploreTestSeriesCard
