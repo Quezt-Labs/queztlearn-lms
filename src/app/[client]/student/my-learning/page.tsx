@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { MyLearningMobile } from "@/components/student/mobile/my-learning-mobile";
 import { StudentHeader } from "@/components/student/student-header";
 import { PageHeader } from "@/components/common/page-header";
@@ -8,6 +9,7 @@ import { VideoCard } from "@/components/student/video-card";
 import { TestAttemptCard } from "@/components/student/test-attempt-card";
 import { BatchCard } from "@/components/student/batch-card";
 import { TestSeriesCard } from "@/components/student/test-series-card";
+import { useClientMyEnrollments } from "@/hooks/test-series-client";
 import { motion } from "framer-motion";
 import { Play, FileText, BookOpen, TrendingUp } from "lucide-react";
 
@@ -113,38 +115,28 @@ const purchasedBatches = [
   },
 ];
 
-const purchasedTestSeries = [
-  {
-    id: "1",
-    title: "JEE Main 2025 Complete Mock Series",
-    exam: "JEE",
-    imageUrl:
-      "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=400",
-    totalPrice: 2999,
-    discountPercentage: 20,
-    finalPrice: 2399,
-    totalTests: 30,
-    attemptedTests: 12,
-    averageScore: 68.5,
-    validUntil: new Date("2026-03-31"),
-  },
-  {
-    id: "2",
-    title: "NEET Practice Test Series",
-    exam: "NEET",
-    imageUrl:
-      "https://images.unsplash.com/photo-1532619187608-e5375cab36aa?w=400",
-    totalPrice: 1999,
-    discountPercentage: 25,
-    finalPrice: 1499,
-    totalTests: 20,
-    attemptedTests: 8,
-    averageScore: 72.3,
-    validUntil: new Date("2026-04-30"),
-  },
-];
-
 export default function MyLearningPage() {
+  // Fetch enrolled test series from API
+  const { data: enrollmentsResponse, isLoading: isLoadingTestSeries } =
+    useClientMyEnrollments({ page: 1, limit: 6 });
+
+  const purchasedTestSeries = (enrollmentsResponse?.data || []).map(
+    (series) => ({
+      id: series.id,
+      title: series.title,
+      exam: series.exam,
+      imageUrl: series.imageUrl,
+      totalPrice: series.totalPrice,
+      discountPercentage: series.discountPercentage,
+      finalPrice: series.finalPrice,
+      totalTests: 0, // TODO: Get from API if available
+      attemptedTests: 0, // TODO: Get from API if available
+      averageScore: series.averageScore || 0,
+      validUntil: new Date(
+        Date.now() + (series.durationDays || 365) * 24 * 60 * 60 * 1000
+      ),
+    })
+  );
   return (
     <>
       {/* Mobile View */}
@@ -245,11 +237,35 @@ export default function MyLearningPage() {
               }
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {purchasedTestSeries.map((series, index) => (
-                <TestSeriesCard key={series.id} {...series} index={index} />
-              ))}
-            </div>
+            {isLoadingTestSeries ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-64 bg-muted animate-pulse rounded-lg"
+                  />
+                ))}
+              </div>
+            ) : purchasedTestSeries.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No test series enrolled yet.</p>
+                <p className="text-sm mt-2">
+                  <Link
+                    href="/student/explore"
+                    className="text-primary hover:underline"
+                  >
+                    Explore test series
+                  </Link>{" "}
+                  to get started.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {purchasedTestSeries.map((series, index) => (
+                  <TestSeriesCard key={series.id} {...series} index={index} />
+                ))}
+              </div>
+            )}
           </motion.section>
         </div>
       </div>

@@ -11,11 +11,15 @@ export type AttemptSummary = {
   id: string;
   testId: string;
   userId: string;
+  attemptNumber?: number;
   startedAt: string;
   submittedAt?: string | null;
   totalScore?: number;
   percentage?: number;
   isCompleted: boolean;
+  correctAnswers?: number;
+  incorrectAnswers?: number;
+  unattemptedQuestions?: number;
 };
 
 export type AttemptDetails = AttemptSummary & {

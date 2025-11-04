@@ -91,6 +91,9 @@ export default function StudentTestSeriesDetailPage() {
   const savings = (testSeries?.totalPrice || 0) - (testSeries?.finalPrice || 0);
   const isHotDeal = (testSeries?.discountPercentage || 0) >= 30;
 
+  // Check if test series is free (either isFree flag or finalPrice is 0)
+  const isFree = testSeries?.isFree || finalPrice === 0;
+
   const handleEnrollFree = async () => {
     if (!testSeries?.id) return;
 
@@ -115,6 +118,12 @@ export default function StudentTestSeriesDetailPage() {
 
   const handleCheckout = async () => {
     if (!testSeries?.id || !testSeries?.title) return;
+
+    // Prevent checkout for free test series
+    if (isFree) {
+      handleEnrollFree();
+      return;
+    }
 
     setIsProcessing(true);
     setErrorMessage(null);
@@ -162,10 +171,21 @@ export default function StudentTestSeriesDetailPage() {
   };
 
   const handleEnroll = () => {
-    if (testSeries?.isFree) {
+    // Always use free enrollment endpoint for free test series
+    if (isFree) {
       handleEnrollFree();
     } else {
       handleCheckout();
+    }
+  };
+
+  const handleEnrollClick = () => {
+    // For free test series, enroll directly without showing dialog
+    if (isFree) {
+      handleEnrollFree();
+    } else {
+      // For paid test series, show the payment dialog
+      setIsEnrollDialogOpen(true);
     }
   };
 
@@ -255,7 +275,7 @@ export default function StudentTestSeriesDetailPage() {
                 savings={savings}
                 isHotDeal={isHotDeal}
                 isEnrolled={isEnrolled}
-                onEnroll={() => setIsEnrollDialogOpen(true)}
+                onEnroll={handleEnrollClick}
                 isProcessing={isProcessing}
                 enrollmentCount={statsData?.data?.enrollmentCount}
                 averageScore={statsData?.data?.averageScore}
@@ -280,7 +300,7 @@ export default function StudentTestSeriesDetailPage() {
               <div>
                 <div className="text-xs text-muted-foreground">Total Price</div>
                 <div className="font-bold text-lg sm:text-xl text-primary">
-                  {testSeries.isFree ? "Free" : formatPrice(finalPrice)}
+                  {isFree ? "Free" : formatPrice(finalPrice)}
                 </div>
                 {testCount === 0 && (
                   <div className="text-xs text-amber-600 dark:text-amber-400">
@@ -300,16 +320,16 @@ export default function StudentTestSeriesDetailPage() {
                 <Button
                   size="sm"
                   className="shrink-0"
-                  onClick={() => setIsEnrollDialogOpen(true)}
+                  onClick={handleEnrollClick}
                   disabled={isProcessing || isPaymentLoading || testCount === 0}
                 >
                   {isProcessing
                     ? "Processing..."
                     : testCount === 0
                     ? "Coming Soon"
-                    : testSeries.isFree
+                    : isFree
                     ? "Enroll Free"
-                    : "Enroll Now "}
+                    : "Enroll Now"}
                 </Button>
               </div>
             </div>
@@ -325,7 +345,7 @@ export default function StudentTestSeriesDetailPage() {
             <DialogDescription>
               {testCount === 0
                 ? "This test series is being prepared. You'll be notified when tests are available."
-                : testSeries.isFree
+                : isFree
                 ? "Are you sure you want to enroll in this free test series?"
                 : `You will be redirected to payment. Amount: ${formatPrice(
                     finalPrice
@@ -348,8 +368,8 @@ export default function StudentTestSeriesDetailPage() {
                 ? "Processing..."
                 : testCount === 0
                 ? "Get Notified"
-                : testSeries.isFree
-                ? "Enroll"
+                : isFree
+                ? "Enroll Free"
                 : "Proceed to Payment"}
             </Button>
           </DialogFooter>
