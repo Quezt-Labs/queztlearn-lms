@@ -32,6 +32,8 @@ import {
   Plus,
   CreditCard,
   Home,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { THEME_OPTIONS } from "@/lib/constants";
 import { FileUpload } from "@/components/common/file-upload";
@@ -48,6 +50,9 @@ export default function AdminSettingsPage() {
   const [features, setFeatures] = useState<
     Array<{ title: string; description: string; icon?: string }>
   >([]);
+
+  const [showRazorpayKeyId, setShowRazorpayKeyId] = useState(false);
+  const [showRazorpayKeySecret, setShowRazorpayKeySecret] = useState(false);
 
   const [formData, setFormData] = useState<CreateOrganizationConfigData>({
     organizationId: currentUser?.organizationId || "",
@@ -787,19 +792,45 @@ export default function AdminSettingsPage() {
                     <Label htmlFor="razorpayKeyId">
                       Razorpay Key ID <span className="text-red-500">*</span>
                     </Label>
-                    <Input
-                      id="razorpayKeyId"
-                      type="text"
-                      value={formData.razorpayKeyId || ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          razorpayKeyId: e.target.value,
-                        })
-                      }
-                      placeholder="rzp_test_xxxxxxxxxxxxx or rzp_live_xxxxxxxxxxxxx"
-                      className="font-mono text-sm"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="razorpayKeyId"
+                        type={showRazorpayKeyId ? "text" : "password"}
+                        value={formData.razorpayKeyId || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            razorpayKeyId: e.target.value,
+                          })
+                        }
+                        onCopy={(e) => e.preventDefault()}
+                        onCut={(e) => e.preventDefault()}
+                        onPaste={(e) => e.preventDefault()}
+                        autoComplete="off"
+                        data-lpignore="true"
+                        data-form-type="other"
+                        spellCheck={false}
+                        placeholder="rzp_test_xxxxxxxxxxxxx or rzp_live_xxxxxxxxxxxxx"
+                        className="font-mono text-sm pr-24"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowRazorpayKeyId((s) => !s)}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8"
+                      >
+                        {showRazorpayKeyId ? (
+                          <span className="flex items-center gap-1">
+                            <EyeOff className="h-4 w-4" /> Hide
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1">
+                            <Eye className="h-4 w-4" /> Show
+                          </span>
+                        )}
+                      </Button>
+                    </div>
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground">
                         Found in: Razorpay Dashboard → Settings → API Keys
@@ -813,22 +844,46 @@ export default function AdminSettingsPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="razorpayKeySecret">
-                      Razorpay Key Secret{" "}
+                      Razorpay Key Secre jht{" "}
                       <span className="text-red-500">*</span>
                     </Label>
-                    <Input
-                      id="razorpayKeySecret"
-                      type="password"
-                      value={formData.razorpayKeySecret || ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          razorpayKeySecret: e.target.value,
-                        })
-                      }
-                      placeholder="Enter your Razorpay key secret"
-                      className="font-mono text-sm"
-                    />
+                    <div className="relative">
+                      <Input
+                        id="razorpayKeySecret"
+                        type={showRazorpayKeySecret ? "text" : "password"}
+                        value={formData.razorpayKeySecret || ""}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            razorpayKeySecret: e.target.value,
+                          })
+                        }
+                        onCopy={(e) => e.preventDefault()}
+                        onCut={(e) => e.preventDefault()}
+                        onPaste={(e) => e.preventDefault()}
+                        autoComplete="off"
+                        spellCheck={false}
+                        placeholder="Enter your Razorpay key secret"
+                        className="font-mono text-sm pr-24"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowRazorpayKeySecret((s) => !s)}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 h-8"
+                      >
+                        {showRazorpayKeySecret ? (
+                          <span className="flex items-center gap-1">
+                            <EyeOff className="h-4 w-4" /> Hide
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1">
+                            <Eye className="h-4 w-4" /> Show
+                          </span>
+                        )}
+                      </Button>
+                    </div>
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground">
                         Found in: Razorpay Dashboard → Settings → API Keys

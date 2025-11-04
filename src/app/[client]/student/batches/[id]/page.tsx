@@ -2,13 +2,12 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { Suspense, lazy, useState } from "react";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGetExploreBatch } from "@/hooks";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { BatchDetailHeader } from "@/components/student/batch-detail-header";
 import { MobileBatchHero } from "@/components/student/mobile-batch-hero";
+import { DescriptionPageShimmer } from "@/components/common/description-page-shimmer";
 
 // Lazy load tab content components
 const BatchDescriptionTab = lazy(() =>
@@ -34,7 +33,7 @@ export default function BatchDetailPage() {
   const { data, isLoading, error } = useGetExploreBatch(id);
 
   if (isLoading) {
-    return <BatchDetailSkeleton />;
+    return <DescriptionPageShimmer />;
   }
 
   if (error || !data?.success || !data?.data) {
@@ -44,7 +43,8 @@ export default function BatchDetailPage() {
           <div className="text-6xl">😕</div>
           <h2 className="text-2xl font-bold">Batch Not Found</h2>
           <p className="text-muted-foreground">
-            The batch you&apos;re looking for doesn&apos;t exist or has been removed.
+            The batch you&apos;re looking for doesn&apos;t exist or has been
+            removed.
           </p>
           <Button onClick={() => router.back()} className="mt-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -98,13 +98,7 @@ export default function BatchDetailPage() {
       {/* Main Content */}
       <div className="p-2.5 lg:px-10 lg:py-8">
         <div className="container max-w-7xl mx-auto">
-          <Suspense
-            fallback={
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            }
-          >
+          <Suspense fallback={<DescriptionPageShimmer />}>
             {activeTab === "description" ? (
               <BatchDescriptionTab
                 batch={batch}
@@ -137,63 +131,6 @@ export default function BatchDetailPage() {
                 Buy Now
               </Button>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Skeleton Loading Component
-function BatchDetailSkeleton() {
-  return (
-    <div className="min-h-screen">
-      {/* Hero Skeleton */}
-      <div className="bg-linear-to-br from-blue-600 via-purple-600 to-pink-600">
-        <div className="container max-w-7xl mx-auto px-4 py-8 sm:py-12">
-          <Skeleton className="h-10 w-32 mb-4 bg-white/20" />
-          <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
-            <div className="lg:col-span-2 space-y-4">
-              <Skeleton className="aspect-video rounded-2xl bg-white/20" />
-              <div className="space-y-3">
-                <Skeleton className="h-8 w-48 bg-white/20" />
-                <Skeleton className="h-10 w-full bg-white/20" />
-                <Skeleton className="h-6 w-64 bg-white/20" />
-              </div>
-            </div>
-            <div className="hidden lg:block">
-              <Skeleton className="h-96 rounded-xl bg-white/20" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Content Skeleton */}
-      <div className="container max-w-7xl mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-48" />
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-              </CardContent>
-            </Card>
-          </div>
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>

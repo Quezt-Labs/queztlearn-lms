@@ -123,7 +123,7 @@ export const useClientMyEnrollments = (params?: {
       const { data } = await apiClient.get<
         ClientApiResponse<ClientTestSeriesListItem[]>
       >(
-        `/api/test-series/my-enrollments${
+        `/api/test-series/my-test-series${
           queryParams.toString() ? `?${queryParams.toString()}` : ""
         }`
       );

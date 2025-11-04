@@ -2,10 +2,8 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { Suspense, lazy, useState } from "react";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +29,7 @@ import {
   SuccessMessage,
 } from "@/components/common/error-message";
 import { toast } from "sonner";
+import { DescriptionPageShimmer } from "@/components/common/description-page-shimmer";
 
 // Lazy load tab content components
 const TestSeriesDescriptionTab = lazy(() =>
@@ -171,7 +170,7 @@ export default function StudentTestSeriesDetailPage() {
   };
 
   if (isLoading) {
-    return <TestSeriesDetailSkeleton />;
+    return <DescriptionPageShimmer />;
   }
 
   if (!testSeries) {
@@ -242,13 +241,7 @@ export default function StudentTestSeriesDetailPage() {
       {/* Main Content */}
       <div className="p-2.5 lg:px-10 lg:py-8">
         <div className="container max-w-7xl mx-auto relative">
-          <Suspense
-            fallback={
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            }
-          >
+          <Suspense fallback={<DescriptionPageShimmer />}>
             {activeTab === "description" ? (
               <TestSeriesDescriptionTab
                 testSeries={testSeries}
@@ -312,7 +305,7 @@ export default function StudentTestSeriesDetailPage() {
                     ? "Coming Soon"
                     : testSeries.isFree
                     ? "Enroll Free"
-                    : "Enroll Now"}
+                    : "Enroll Now "}
                 </Button>
               </div>
             </div>
@@ -358,63 +351,6 @@ export default function StudentTestSeriesDetailPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-// Skeleton Loading Component
-function TestSeriesDetailSkeleton() {
-  return (
-    <div className="min-h-screen">
-      {/* Hero Skeleton */}
-      <div className="bg-linear-to-br from-blue-600 via-purple-600 to-pink-600">
-        <div className="container max-w-7xl mx-auto px-4 py-8 sm:py-12">
-          <Skeleton className="h-10 w-32 mb-4 bg-white/20" />
-          <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
-            <div className="lg:col-span-2 space-y-4">
-              <Skeleton className="aspect-video rounded-2xl bg-white/20" />
-              <div className="space-y-3">
-                <Skeleton className="h-8 w-48 bg-white/20" />
-                <Skeleton className="h-10 w-full bg-white/20" />
-                <Skeleton className="h-6 w-64 bg-white/20" />
-              </div>
-            </div>
-            <div className="hidden lg:block">
-              <Skeleton className="h-96 rounded-xl bg-white/20" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Content Skeleton */}
-      <div className="container max-w-7xl mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-48" />
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4" />
-              </CardContent>
-            </Card>
-          </div>
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-full" />
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

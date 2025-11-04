@@ -71,3 +71,4 @@ export * from "./common";
 export * from "./test-series";
 export * from "./test-series-client";
 export * from "./test-attempts-client";
+export * from "./tests-client";
