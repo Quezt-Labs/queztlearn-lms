@@ -33,7 +33,11 @@ export default function BatchDetailPage() {
   const { data, isLoading, error } = useGetExploreBatch(id);
 
   if (isLoading) {
-    return <DescriptionPageShimmer />;
+    return (
+      <div className="p-2.5 lg:px-10 lg:py-8">
+        <DescriptionPageShimmer />
+      </div>
+    );
   }
 
   if (error || !data?.success || !data?.data) {

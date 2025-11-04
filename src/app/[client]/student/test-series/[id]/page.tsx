@@ -170,7 +170,11 @@ export default function StudentTestSeriesDetailPage() {
   };
 
   if (isLoading) {
-    return <DescriptionPageShimmer />;
+    return (
+      <div className="p-2.5 lg:px-10 lg:py-8">
+        <DescriptionPageShimmer />
+      </div>
+    );
   }
 
   if (!testSeries) {
