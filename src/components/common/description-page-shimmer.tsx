@@ -8,14 +8,18 @@ export function DescriptionPageShimmer() {
   return (
     <div className="container max-w-7xl mx-auto">
       <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
+        {/* Make header skeleton */}
+        <div className="mb-4 p-2 bg-card border-b pb-4 lg:col-span-3 shadow-sm rounded-lg">
+          <Skeleton className="h-40 w-full" />
+        </div>
         {/* Left: Description & Features */}
         <div className="lg:col-span-2 space-y-6">
           {/* About This Batch Card */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Skeleton className="h-5 w-5" />
-                <Skeleton className="h-6 w-40" />
+                <Skeleton className="h-10 w-40" />
+                <Skeleton className="h-10 w-40" />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -27,8 +31,8 @@ export function DescriptionPageShimmer() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Skeleton className="h-5 w-5" />
-                <Skeleton className="h-6 w-36" />
+                <Skeleton className="h-10 w-10" />
+                <Skeleton className="h-10 w-40" />
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -38,10 +42,10 @@ export function DescriptionPageShimmer() {
                     key={idx}
                     className="flex items-start gap-3 p-4 rounded-lg bg-muted/50"
                   >
-                    <Skeleton className="h-5 w-5 mt-0.5 shrink-0" />
+                    <Skeleton className="h-10 w-10 mt-0.5 shrink-0" />
                     <div className="space-y-2 flex-1">
-                      <Skeleton className="h-4 w-2/3" />
-                      <Skeleton className="h-3 w-5/6" />
+                      <Skeleton className="h-6 w-2/3" />
+                      <Skeleton className="h-6 w-5/6" />
                     </div>
                   </div>
                 ))}
@@ -49,7 +53,6 @@ export function DescriptionPageShimmer() {
             </CardContent>
           </Card>
         </div>
-
         {/* Right: Price Card */}
         <div className="lg:col-span-1">
           <Card className="shadow-xl border-2">
