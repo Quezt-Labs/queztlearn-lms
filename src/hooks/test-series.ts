@@ -230,6 +230,22 @@ export const useTest = (id: string) => {
   });
 };
 
+// Test Details (full test details including sections/questions when provided by API)
+export interface TestDetails extends Test {
+  sections?: Section[];
+}
+
+export const useTestDetails = (id: string) => {
+  return useQuery({
+    queryKey: ["test-details", id],
+    queryFn: async () => {
+      const response = await apiClient.get(`/admin/tests/${id}/details`);
+      return response.data as { success: boolean; data: TestDetails };
+    },
+    enabled: !!id,
+  });
+};
+
 export const useTestsByTestSeries = (testSeriesId: string) => {
   return useQuery({
     queryKey: ["tests", "test-series", testSeriesId],

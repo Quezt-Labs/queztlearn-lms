@@ -46,7 +46,7 @@ const EXAM_FILTERS: (ExamType | "ALL")[] = [
   "OTHER",
 ];
 
-export default function TestSeriesPage() {
+export default function TeacherTestSeriesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [examFilter, setExamFilter] = useState<ExamType | "ALL">("ALL");
   const [isActiveFilter, setIsActiveFilter] = useState<boolean | undefined>(
@@ -82,7 +82,7 @@ export default function TestSeriesPage() {
         title="Test Series"
         description="Manage and create test series for your students"
         breadcrumbs={[
-          { label: "Admin", href: "/admin/dashboard" },
+          { label: "Teacher", href: "/teacher/dashboard" },
           { label: "Test Series" },
         ]}
         actions={
@@ -184,7 +184,7 @@ export default function TestSeriesPage() {
             data={testSeries}
             isLoading={isLoading}
             onRefetch={() => refetch()}
-            basePath="admin"
+            basePath="teacher"
           />
 
           {/* Pagination */}

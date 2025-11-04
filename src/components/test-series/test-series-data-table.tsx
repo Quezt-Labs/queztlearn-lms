@@ -43,12 +43,14 @@ interface TestSeriesDataTableProps {
   data: TestSeries[];
   isLoading?: boolean;
   onRefetch?: () => void;
+  basePath?: "admin" | "teacher";
 }
 
 export function TestSeriesDataTable({
   data,
   isLoading,
   onRefetch,
+  basePath = "admin",
 }: TestSeriesDataTableProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editSeries, setEditSeries] = useState<TestSeries | null>(null);
@@ -112,7 +114,7 @@ export function TestSeriesDataTable({
                       )}
                       <div>
                         <Link
-                          href={`/admin/test-series/${series.id}`}
+                          href={`/${basePath}/test-series/${series.id}`}
                           className="font-medium hover:underline"
                         >
                           {series.title}
@@ -200,7 +202,7 @@ export function TestSeriesDataTable({
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/test-series/${series.id}`}>
+                          <Link href={`/${basePath}/test-series/${series.id}`}>
                             <Eye className="mr-2 h-4 w-4" />
                             View Details
                           </Link>

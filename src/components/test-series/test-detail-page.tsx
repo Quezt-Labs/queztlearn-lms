@@ -64,6 +64,7 @@ import {
 import { LoadingSkeleton } from "@/components/common/loading-skeleton";
 import { CreateSectionModal } from "./create-section-modal";
 import { CreateQuestionModal } from "./create-question-modal";
+import { useTestDetails } from "@/hooks/test-series";
 
 interface TestDetailPageProps {
   basePath?: "admin" | "teacher";
@@ -88,6 +89,7 @@ export function TestDetailPage({ basePath = "admin" }: TestDetailPageProps) {
 
   // Data fetching
   const { data: testData, isLoading, refetch: refetchTest } = useTest(testId);
+  const { data: detailsData } = useTestDetails(testId);
   const { data: sectionsData, refetch: refetchSections } =
     useTestSections(testId);
 
@@ -95,8 +97,12 @@ export function TestDetailPage({ basePath = "admin" }: TestDetailPageProps) {
   const deleteMutation = useDeleteTest();
   const updateMutation = useUpdateTest();
 
-  const test = testData?.data as Test | undefined;
-  const sections = (sectionsData?.data as Section[]) || [];
+  const details = detailsData?.data as
+    | (Test & { sections?: Section[] })
+    | undefined;
+  const test = (details as Test) || (testData?.data as Test | undefined);
+  const sections =
+    (details?.sections as Section[]) || (sectionsData?.data as Section[]) || [];
 
   const handleGoBack = () => {
     router.push(`/${basePath}/test-series/${testSeriesId}`);
@@ -331,6 +337,7 @@ export function TestDetailPage({ basePath = "admin" }: TestDetailPageProps) {
                           section={section}
                           testId={testId}
                           testSeriesId={testSeriesId}
+                          basePath={basePath}
                           onCreateQuestion={() => handleCreateQuestion(section)}
                           onRefetch={() => {
                             refetchSections();
@@ -457,11 +464,13 @@ function SectionTableRow({
   section,
   testId,
   testSeriesId,
+  basePath = "admin",
   onRefetch,
 }: {
   section: Section;
   testId: string;
   testSeriesId: string;
+  basePath?: "admin" | "teacher";
   onCreateQuestion: () => void;
   onRefetch: () => void;
 }) {
@@ -506,7 +515,7 @@ function SectionTableRow({
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
                 <Link
-                  href={`/admin/test-series/${testSeriesId}/tests/${testId}/sections/${section.id}/questions`}
+                  href={`/${basePath}/test-series/${testSeriesId}/tests/${testId}/sections/${section.id}/questions`}
                 >
                   <span className="inline-flex items-center">
                     <Eye className="mr-2 h-4 w-4" /> View Questions
