@@ -21,12 +21,30 @@ export const extractErrorMessage = (error: unknown): string => {
   }
 
   if (error && typeof error === "object") {
-    // Axios error format
+    // Axios error format - when API returns HTTP error (400, 401, etc.)
     if ("response" in error) {
       const axiosError = error as {
-        response?: { data?: { message?: string } };
+        response?: {
+          data?: {
+            message?: string;
+            success?: boolean;
+          };
+          status?: number;
+        };
+        message?: string;
       };
-      return axiosError.response?.data?.message || "An error occurred";
+
+      // Extract message from response.data.message
+      if (axiosError.response?.data?.message) {
+        return axiosError.response.data.message;
+      }
+
+      // Fallback to error message
+      if (axiosError.message) {
+        return axiosError.message;
+      }
+
+      return "An error occurred";
     }
 
     // Generic error object
@@ -99,19 +117,33 @@ export const isValidationError = (error: unknown): boolean => {
  * Get user-friendly error message
  */
 export const getFriendlyErrorMessage = (error: unknown): string => {
+  // First, try to extract the actual API error message
+  const apiMessage = extractErrorMessage(error);
+
+  // Only use generic messages if no specific API message is available
+  if (
+    apiMessage &&
+    apiMessage !== "An error occurred" &&
+    apiMessage !== "An unexpected error occurred"
+  ) {
+    return apiMessage;
+  }
+
+  // Fallback to generic messages only if no API message exists
   if (isNetworkError(error)) {
     return "Network error. Please check your connection and try again.";
   }
 
   if (isAuthError(error)) {
-    return "Authentication failed. Please sign in again.";
+    // For auth errors, prefer API message if available, otherwise use generic
+    return apiMessage || "Authentication failed. Please sign in again.";
   }
 
   if (isValidationError(error)) {
-    return "Please check your input and try again.";
+    return apiMessage || "Please check your input and try again.";
   }
 
-  return extractErrorMessage(error);
+  return apiMessage;
 };
 
 /**

@@ -4,10 +4,7 @@ import { useSearchParams, useParams } from "next/navigation";
 import { PageHeader } from "@/components/common/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  useAttemptResults,
-  useAttemptSolutions,
-} from "@/hooks/test-attempts-client";
+import { useAttemptResults } from "@/hooks/test-attempts-client";
 import {
   Loader2,
   Trophy,

@@ -61,9 +61,21 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid, redirect to login
-      deleteCookie(QUEZT_AUTH_KEY);
-      window.location.href = "/login";
+      // Only redirect if not already on login/register pages
+      // This prevents redirect loops and allows login errors to be displayed
+      const currentPath =
+        typeof window !== "undefined" ? window.location.pathname : "";
+      const isAuthPage =
+        currentPath.includes("/login") ||
+        currentPath.includes("/register") ||
+        currentPath.includes("/set-password") ||
+        currentPath.includes("/verify-email");
+
+      if (!isAuthPage) {
+        // Token expired or invalid, redirect to login
+        deleteCookie(QUEZT_AUTH_KEY);
+        window.location.href = "/login";
+      }
     }
 
     return Promise.reject(error);

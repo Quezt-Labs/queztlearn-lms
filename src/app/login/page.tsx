@@ -17,7 +17,6 @@ import { useLogin, useLogout } from "@/hooks/api";
 import { BrandingSidebar } from "@/components/onboarding/branding-sidebar";
 import { tokenManager } from "@/lib/api/client";
 import { useEnhancedFormValidation, useLoadingState } from "@/hooks/common";
-import { getFriendlyErrorMessage } from "@/lib/utils/error-handling";
 import { ErrorMessage } from "@/components/common/error-message";
 
 export default function LoginPage() {
@@ -39,7 +38,7 @@ export default function LoginPage() {
   });
 
   // Loading state management
-  const { isLoading, error, setError, executeWithLoading } = useLoadingState({
+  const { isLoading, error, setError } = useLoadingState({
     autoReset: true,
   });
 
@@ -84,6 +83,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent form submission
     setError(null);
 
     if (!validateAllFields()) {
@@ -92,14 +92,51 @@ export default function LoginPage() {
     }
 
     try {
-      await executeWithLoading(async () => {
-        await loginMutation.mutateAsync({
-          email: getFieldValue("email"),
-          password: getFieldValue("password"),
-        });
+      const result = await loginMutation.mutateAsync({
+        email: getFieldValue("email"),
+        password: getFieldValue("password"),
       });
+
+      // Check if login was actually successful
+      if (!result.success) {
+        setError(result.message || "");
+        return;
+      }
     } catch (error: unknown) {
-      setError(getFriendlyErrorMessage(error));
+      // Extract error message directly from API response
+      let errorMessage = "";
+
+      if (error && typeof error === "object") {
+        // Check for Axios error structure (when API returns HTTP error status)
+        if ("response" in error) {
+          const axiosError = error as {
+            response?: { data?: { message?: string; success?: boolean } };
+            message?: string;
+          };
+          // Extract message from response.data.message (API's actual message)
+          errorMessage = axiosError.response?.data?.message || "";
+
+          // Fallback to error.message if response.data.message is not available
+          if (!errorMessage && axiosError.message) {
+            errorMessage = axiosError.message;
+          }
+        }
+        // Check for Error object with message (when API returns 200 with success:false)
+        else if ("message" in error) {
+          errorMessage = (error as { message: string }).message;
+        }
+      } else if (typeof error === "string") {
+        errorMessage = error;
+      }
+
+      // Only set error if we have a message
+      if (errorMessage) {
+        setError(errorMessage);
+      } else {
+        setError("Invalid email or password. Please try again.");
+      }
+
+      console.error("Login error:", error);
     }
   };
 
@@ -147,14 +184,39 @@ export default function LoginPage() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <ErrorMessage
-                  error={
-                    error ||
-                    (loginMutation.error
-                      ? getFriendlyErrorMessage(loginMutation.error)
-                      : null)
-                  }
-                />
+                {(error || loginMutation.error) && (
+                  <ErrorMessage
+                    error={
+                      error ||
+                      (loginMutation.error
+                        ? (() => {
+                            // Extract API message directly, don't use getFriendlyErrorMessage
+                            // which might show generic messages
+                            const err = loginMutation.error;
+                            if (err && typeof err === "object") {
+                              // Check for Axios error with response.data.message
+                              if ("response" in err) {
+                                const axiosError = err as {
+                                  response?: { data?: { message?: string } };
+                                  message?: string;
+                                };
+                                return (
+                                  axiosError.response?.data?.message ||
+                                  axiosError.message ||
+                                  null
+                                );
+                              }
+                              // Check for Error object with message
+                              if ("message" in err) {
+                                return (err as { message: string }).message;
+                              }
+                            }
+                            return null;
+                          })()
+                        : null)
+                    }
+                  />
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>

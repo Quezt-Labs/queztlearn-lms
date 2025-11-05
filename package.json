@@ -10,6 +10,8 @@
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf .next out",
+    "clean:all": "rm -rf .next node_modules/.cache .turbo out",
+    "dev:clean": "npm run clean:all && npm run dev",
     "preview": "npm run build && npm run start"
   },
   "dependencies": {

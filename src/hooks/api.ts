@@ -30,8 +30,44 @@ export const useLogin = () => {
   const router = useRouter();
 
   return useMutation({
-    mutationFn: (data: { email: string; password: string }) =>
-      api.login(data).then((res) => res.data),
+    mutationFn: async (data: { email: string; password: string }) => {
+      try {
+        const response = await api.login(data);
+        const result = response.data;
+
+        // If login failed, throw error with API message
+        if (!result.success) {
+          const error = new Error(result.message) as Error & {
+            response?: { data?: { message?: string } };
+          };
+          error.response = { data: { message: result.message } };
+          throw error;
+        }
+
+        return result;
+      } catch (error: unknown) {
+        // If it's an axios error, preserve the structure
+        if (
+          error &&
+          typeof error === "object" &&
+          "response" in error &&
+          (error as { response?: { data?: { message?: string } } }).response
+            ?.data?.message
+        ) {
+          throw error; // Already has the correct structure
+        }
+        // If it's our thrown error, re-throw it
+        if (error && typeof error === "object" && "message" in error) {
+          throw error;
+        }
+        // Otherwise, wrap it
+        const errorMessage =
+          error && typeof error === "object" && "message" in error
+            ? String((error as { message: unknown }).message)
+            : "Login failed. Please try again.";
+        throw new Error(errorMessage);
+      }
+    },
     onSuccess: (data: ApiResponse<LoginResponse>) => {
       if (data.success && data.data) {
         // Store complete auth data (token + user) in QUEZT_AUTH cookie
@@ -46,6 +82,7 @@ export const useLogin = () => {
     },
     onError: (error) => {
       console.error("Login failed:", error);
+      // Don't throw here, let the component handle it
     },
   });
 };
