@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar as CalendarIcon, Clock, Youtube } from "lucide-react";
+import { Calendar as CalendarIcon, Youtube } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
@@ -28,6 +28,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { TimePicker } from "@/components/ui/time-picker";
 import { cn } from "@/lib/utils";
 import { FileUpload } from "@/components/common/file-upload";
 import { useGetSubjectsByBatch } from "@/hooks";
@@ -251,7 +252,7 @@ export function EditScheduleModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Schedule</DialogTitle>
           <DialogDescription>
@@ -260,9 +261,9 @@ export function EditScheduleModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Title */}
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 space-y-2">
               <Label htmlFor="title">
                 Title <span className="text-red-500">*</span>
               </Label>
@@ -279,7 +280,7 @@ export function EditScheduleModal({
             </div>
 
             {/* Subject */}
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="subject">
                 Subject <span className="text-red-500">*</span>
               </Label>
@@ -306,7 +307,7 @@ export function EditScheduleModal({
             </div>
 
             {/* Scheduled Date */}
-            <div>
+            <div className="space-y-2">
               <Label>
                 Schedule Date <span className="text-red-500">*</span>
               </Label>
@@ -349,25 +350,16 @@ export function EditScheduleModal({
             </div>
 
             {/* Scheduled Time */}
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="time">
                 Schedule Time <span className="text-red-500">*</span>
               </Label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="time"
-                  type="time"
-                  value={formData.scheduledTime}
-                  onChange={(e) =>
-                    handleInputChange("scheduledTime", e.target.value)
-                  }
-                  className={cn(
-                    "pl-10",
-                    errors.scheduledTime && "border-red-500"
-                  )}
-                />
-              </div>
+              <TimePicker
+                value={formData.scheduledTime}
+                onChange={(time) => handleInputChange("scheduledTime", time)}
+                error={!!errors.scheduledTime}
+                placeholder="Select time"
+              />
               {errors.scheduledTime && (
                 <p className="text-sm text-red-500 mt-1">
                   {errors.scheduledTime}
@@ -376,7 +368,7 @@ export function EditScheduleModal({
             </div>
 
             {/* Duration */}
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="duration">
                 Duration (minutes) <span className="text-red-500">*</span>
               </Label>
@@ -397,7 +389,7 @@ export function EditScheduleModal({
             </div>
 
             {/* Notify Before */}
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="notify">Notify Before (minutes)</Label>
               <Input
                 id="notify"
@@ -415,7 +407,7 @@ export function EditScheduleModal({
             </div>
 
             {/* YouTube Link */}
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 space-y-2">
               <Label htmlFor="youtube">YouTube Link (Optional)</Label>
               <div className="relative">
                 <Youtube className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
@@ -440,7 +432,7 @@ export function EditScheduleModal({
             </div>
 
             {/* Description */}
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 space-y-2">
               <Label htmlFor="description">Description (Optional)</Label>
               <Textarea
                 id="description"
@@ -454,24 +446,106 @@ export function EditScheduleModal({
             </div>
 
             {/* Thumbnail Upload */}
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 space-y-2">
               <Label>Thumbnail Image (Optional)</Label>
-              <FileUpload
-                accept="image/*"
-                onUploadComplete={handleImageUpload}
-                maxSize={5 * 1024 * 1024}
-                className="mt-2"
-              />
-              {formData.thumbnailUrl && (
-                <div className="mt-4 relative w-full aspect-video rounded-lg overflow-hidden border">
-                  <Image
-                    src={formData.thumbnailUrl}
-                    alt="Schedule thumbnail"
-                    fill
-                    className="object-cover"
+
+              {/* Duration */}
+              <div>
+                <Label htmlFor="duration">
+                  Duration (minutes) <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="duration"
+                  type="number"
+                  min="1"
+                  value={formData.duration}
+                  onChange={(e) =>
+                    handleInputChange("duration", parseInt(e.target.value))
+                  }
+                  placeholder="60"
+                  className={errors.duration ? "border-red-500" : ""}
+                />
+                {errors.duration && (
+                  <p className="text-sm text-red-500 mt-1">{errors.duration}</p>
+                )}
+              </div>
+
+              {/* Notify Before */}
+              <div>
+                <Label htmlFor="notify">Notify Before (minutes)</Label>
+                <Input
+                  id="notify"
+                  type="number"
+                  min="0"
+                  value={formData.notifyBeforeMinutes}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "notifyBeforeMinutes",
+                      parseInt(e.target.value)
+                    )
+                  }
+                  placeholder="30"
+                />
+              </div>
+
+              {/* YouTube Link */}
+              <div className="md:col-span-2">
+                <Label htmlFor="youtube">YouTube Link (Optional)</Label>
+                <div className="relative">
+                  <Youtube className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
+                  <Input
+                    id="youtube"
+                    value={formData.youtubeLink}
+                    onChange={(e) =>
+                      handleInputChange("youtubeLink", e.target.value)
+                    }
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    className={cn(
+                      "pl-10",
+                      errors.youtubeLink && "border-red-500"
+                    )}
                   />
                 </div>
-              )}
+                {errors.youtubeLink && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {errors.youtubeLink}
+                  </p>
+                )}
+              </div>
+
+              {/* Description */}
+              <div className="md:col-span-2">
+                <Label htmlFor="description">Description (Optional)</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) =>
+                    handleInputChange("description", e.target.value)
+                  }
+                  placeholder="Add any additional details about this session..."
+                  rows={4}
+                />
+              </div>
+
+              {/* Thumbnail Upload */}
+              <div className="md:col-span-2 space-y-2">
+                <Label>Thumbnail Image (Optional)</Label>
+                <FileUpload
+                  onUploadComplete={(fileData) =>
+                    handleInputChange("thumbnailUrl", fileData.url)
+                  }
+                  accept="image/*"
+                  maxSize={5}
+                />
+                {formData.thumbnailUrl && (
+                  <p className="text-sm text-muted-foreground">
+                    Current thumbnail: {formData.thumbnailUrl}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Recommended: 16:9 aspect ratio, max 5MB
+                </p>
+              </div>
             </div>
           </div>
 

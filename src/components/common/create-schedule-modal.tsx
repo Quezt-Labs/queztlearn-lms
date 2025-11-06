@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar as CalendarIcon, Clock, Youtube } from "lucide-react";
+import { Calendar as CalendarIcon, Youtube } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import {
@@ -28,6 +28,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { TimePicker } from "@/components/ui/time-picker";
 import { cn } from "@/lib/utils";
 import { FileUpload } from "@/components/common/file-upload";
 import { useGetSubjectsByBatch } from "@/hooks";
@@ -209,7 +210,7 @@ export function CreateScheduleModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Schedule</DialogTitle>
           <DialogDescription>
@@ -218,9 +219,9 @@ export function CreateScheduleModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Title */}
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 space-y-2">
               <Label htmlFor="title">
                 Title <span className="text-red-500">*</span>
               </Label>
@@ -237,7 +238,7 @@ export function CreateScheduleModal({
             </div>
 
             {/* Subject */}
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="subject">
                 Subject <span className="text-red-500">*</span>
               </Label>
@@ -264,7 +265,7 @@ export function CreateScheduleModal({
             </div>
 
             {/* Scheduled Date */}
-            <div>
+            <div className="space-y-2">
               <Label>
                 Schedule Date <span className="text-red-500">*</span>
               </Label>
@@ -307,25 +308,16 @@ export function CreateScheduleModal({
             </div>
 
             {/* Scheduled Time */}
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="time">
                 Schedule Time <span className="text-red-500">*</span>
               </Label>
-              <div className="relative">
-                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="time"
-                  type="time"
-                  value={formData.scheduledTime}
-                  onChange={(e) =>
-                    handleInputChange("scheduledTime", e.target.value)
-                  }
-                  className={cn(
-                    "pl-10",
-                    errors.scheduledTime && "border-red-500"
-                  )}
-                />
-              </div>
+              <TimePicker
+                value={formData.scheduledTime}
+                onChange={(time) => handleInputChange("scheduledTime", time)}
+                error={!!errors.scheduledTime}
+                placeholder="Select time"
+              />
               {errors.scheduledTime && (
                 <p className="text-sm text-red-500 mt-1">
                   {errors.scheduledTime}
@@ -334,7 +326,7 @@ export function CreateScheduleModal({
             </div>
 
             {/* Duration */}
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="duration">
                 Duration (minutes) <span className="text-red-500">*</span>
               </Label>
@@ -355,7 +347,7 @@ export function CreateScheduleModal({
             </div>
 
             {/* Notify Before */}
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="notify">Notify Before (minutes)</Label>
               <Input
                 id="notify"
@@ -373,7 +365,7 @@ export function CreateScheduleModal({
             </div>
 
             {/* YouTube Link */}
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 space-y-2">
               <Label htmlFor="youtube">YouTube Link (Optional)</Label>
               <div className="relative">
                 <Youtube className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
@@ -398,7 +390,7 @@ export function CreateScheduleModal({
             </div>
 
             {/* Description */}
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 space-y-2">
               <Label htmlFor="description">Description (Optional)</Label>
               <Textarea
                 id="description"
@@ -412,7 +404,7 @@ export function CreateScheduleModal({
             </div>
 
             {/* Thumbnail Upload */}
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 space-y-2">
               <Label>Thumbnail Image (Optional)</Label>
               <FileUpload
                 accept="image/*"
