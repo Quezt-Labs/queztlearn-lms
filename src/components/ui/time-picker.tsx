@@ -132,20 +132,20 @@ export function TimePicker({
           {value ? formatDisplayTime() : placeholder}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
+      <PopoverContent className="w-60 p-0" align="start">
         <div className="flex">
           {/* Hours */}
-          <div className="flex-1 border-r">
-            <div className="p-2 text-center text-sm font-semibold border-b">
+          <div className="w-[70px] border-r">
+            <div className="p-2 text-center text-xs font-semibold border-b">
               Hour
             </div>
             <ScrollArea className="h-[200px]">
-              <div className="p-2">
+              <div className="p-1">
                 {hours.map((hour) => (
                   <Button
                     key={hour}
                     variant={selectedHour === hour ? "default" : "ghost"}
-                    className="w-full mb-1"
+                    className="w-full mb-1 h-8 text-xs"
                     size="sm"
                     onClick={() => handleHourClick(hour)}
                   >
@@ -157,17 +157,17 @@ export function TimePicker({
           </div>
 
           {/* Minutes */}
-          <div className="flex-1 border-r">
-            <div className="p-2 text-center text-sm font-semibold border-b">
-              Minute
+          <div className="w-[70px] border-r">
+            <div className="p-2 text-center text-xs font-semibold border-b">
+              Min
             </div>
             <ScrollArea className="h-[200px]">
-              <div className="p-2">
+              <div className="p-1">
                 {minutes.map((minute) => (
                   <Button
                     key={minute}
                     variant={selectedMinute === minute ? "default" : "ghost"}
-                    className="w-full mb-1"
+                    className="w-full mb-1 h-8 text-xs"
                     size="sm"
                     onClick={() => handleMinuteClick(minute)}
                   >
@@ -179,8 +179,8 @@ export function TimePicker({
           </div>
 
           {/* AM/PM */}
-          <div className="flex-1">
-            <div className="p-2 text-center text-sm font-semibold border-b">
+          <div className="w-[100px]">
+            <div className="p-2 text-center text-xs font-semibold border-b">
               Period
             </div>
             <div className="p-2 space-y-2">
