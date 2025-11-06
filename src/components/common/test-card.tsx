@@ -54,6 +54,10 @@ export interface TestCardProps {
    */
   index?: number;
   /**
+   * Whether to show internal animation (disable when parent handles animation)
+   */
+  showAnimation?: boolean;
+  /**
    * Whether to show action button
    */
   showAction?: boolean;
@@ -97,6 +101,7 @@ export function TestCard({
   testLink,
   className,
   index = 0,
+  showAnimation = true,
   showAction = true,
   actionText,
   onActionClick,
@@ -197,7 +202,8 @@ export function TestCard({
     </Card>
   );
 
-  if (index > 0) {
+  // Only apply internal animation if showAnimation is true and index > 0
+  if (showAnimation && index > 0) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}

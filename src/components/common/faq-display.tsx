@@ -91,7 +91,7 @@ export function FAQDisplay({
 }: FAQDisplayProps) {
   // Normalize FAQs - extract question and answer from flexible field names
   const normalizedFaqs = faqs
-    .map((faq, index) => {
+    ?.map((faq, index) => {
       const question = faq.title || faq.question || "";
       const answer = faq.description || faq.answer || "";
       const id = faq.id || `faq-${index}`;
@@ -107,13 +107,13 @@ export function FAQDisplay({
 
   const content = (
     <div className={cn("w-full", className)}>
-      {normalizedFaqs.length > 0 ? (
+      {normalizedFaqs?.length > 0 ? (
         <Accordion
           type="single"
           collapsible
           className={cn("w-full", accordionClassName)}
         >
-          {normalizedFaqs.map((faq) => (
+          {normalizedFaqs?.map((faq) => (
             <AccordionItem key={faq.id} value={faq.id}>
               <AccordionTrigger className={cn("text-left", questionClassName)}>
                 {faq.question}

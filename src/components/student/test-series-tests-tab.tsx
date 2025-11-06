@@ -57,27 +57,46 @@ export function TestSeriesTestsTab({
   return (
     <div className="space-y-4">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: {
+              staggerChildren: 0.1,
+            },
+          },
+        }}
         className="space-y-3"
       >
         {tests?.map((test, index) => (
-          <TestCard
+          <motion.div
             key={test.id}
-            id={test.id}
-            title={test.title}
-            durationMinutes={test.durationMinutes}
-            totalMarks={test.totalMarks}
-            isFree={test.isFree}
-            attemptStatus={test.attemptStatus}
-            isEnrolled={isEnrolled}
-            isPurchased={isEnrolled}
-            testLink={
-              isEnrolled ? `/student/tests/${test.id}/instructions` : undefined
-            }
-            index={index}
-          />
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0 },
+            }}
+            transition={{ duration: 0.5 }}
+          >
+            <TestCard
+              id={test.id}
+              title={test.title}
+              durationMinutes={test.durationMinutes}
+              totalMarks={test.totalMarks}
+              isFree={test.isFree}
+              attemptStatus={test.attemptStatus}
+              isEnrolled={isEnrolled}
+              isPurchased={isEnrolled}
+              testLink={
+                isEnrolled
+                  ? `/student/tests/${test.id}/instructions`
+                  : undefined
+              }
+              index={0}
+              showAnimation={false}
+            />
+          </motion.div>
         ))}
       </motion.div>
     </div>
