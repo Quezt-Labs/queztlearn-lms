@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Clock } from "lucide-react";
+import { Clock, ChevronUp, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface TimePickerProps {
   value?: string; // Format: "HH:MM" (24-hour)
@@ -35,6 +34,8 @@ export function TimePicker({
     null
   );
   const [period, setPeriod] = React.useState<"AM" | "PM">("AM");
+  const hourScrollRef = React.useRef<HTMLDivElement>(null);
+  const minuteScrollRef = React.useRef<HTMLDivElement>(null);
 
   // Parse initial value
   React.useEffect(() => {
@@ -100,6 +101,26 @@ export function TimePicker({
     }
   };
 
+  const scrollHour = (direction: "up" | "down") => {
+    if (hourScrollRef.current) {
+      const scrollAmount = 36; // Approximate button height + margin
+      hourScrollRef.current.scrollBy({
+        top: direction === "down" ? scrollAmount : -scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  const scrollMinute = (direction: "up" | "down") => {
+    if (minuteScrollRef.current) {
+      const scrollAmount = 36; // Approximate button height + margin
+      minuteScrollRef.current.scrollBy({
+        top: direction === "down" ? scrollAmount : -scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
   const formatDisplayTime = () => {
     if (!value) return "";
     const [hours, minutes] = value.split(":").map(Number);
@@ -136,10 +157,28 @@ export function TimePicker({
         <div className="flex">
           {/* Hours */}
           <div className="w-[70px] border-r">
-            <div className="p-2 text-center text-xs font-semibold border-b">
-              Hour
+            <div className="flex items-center justify-between px-2 py-1 border-b">
+              <span className="text-xs font-semibold">Hour</span>
+              <div className="flex flex-col">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-4 w-4 p-0"
+                  onClick={() => scrollHour("up")}
+                >
+                  <ChevronUp className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-4 w-4 p-0"
+                  onClick={() => scrollHour("down")}
+                >
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </div>
             </div>
-            <ScrollArea className="h-[200px]">
+            <div ref={hourScrollRef} className="h-[200px] overflow-y-auto">
               <div className="p-1">
                 {hours.map((hour) => (
                   <Button
@@ -153,15 +192,33 @@ export function TimePicker({
                   </Button>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           </div>
 
           {/* Minutes */}
           <div className="w-[70px] border-r">
-            <div className="p-2 text-center text-xs font-semibold border-b">
-              Min
+            <div className="flex items-center justify-between px-2 py-1 border-b">
+              <span className="text-xs font-semibold">Min</span>
+              <div className="flex flex-col">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-4 w-4 p-0"
+                  onClick={() => scrollMinute("up")}
+                >
+                  <ChevronUp className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-4 w-4 p-0"
+                  onClick={() => scrollMinute("down")}
+                >
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </div>
             </div>
-            <ScrollArea className="h-[200px]">
+            <div ref={minuteScrollRef} className="h-[200px] overflow-y-auto">
               <div className="p-1">
                 {minutes.map((minute) => (
                   <Button
@@ -175,7 +232,7 @@ export function TimePicker({
                   </Button>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           </div>
 
           {/* AM/PM */}
