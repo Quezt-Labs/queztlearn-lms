@@ -100,6 +100,7 @@ interface Subject {
 interface CourseDetailPageProps {
   basePath?: "admin" | "teacher";
   showSubjectsTab?: boolean;
+  showSchedulesTab?: boolean;
   showAnalyticsTab?: boolean;
   showSettingsTab?: boolean;
 }
@@ -107,6 +108,7 @@ interface CourseDetailPageProps {
 export function CourseDetailPage({
   basePath = "admin",
   showSubjectsTab = true,
+  showSchedulesTab = true,
   showAnalyticsTab = true,
   showSettingsTab = true,
 }: CourseDetailPageProps) {
@@ -366,15 +368,21 @@ export function CourseDetailPage({
           className="grid w-full"
           style={{
             gridTemplateColumns: `repeat(${
-              [showSubjectsTab, showAnalyticsTab, showSettingsTab].filter(
-                Boolean
-              ).length + 3
+              [
+                showSubjectsTab,
+                showSchedulesTab,
+                showAnalyticsTab,
+                showSettingsTab,
+              ].filter(Boolean).length + 3
             }, minmax(0, 1fr))`,
           }}
         >
           <TabsTrigger value="overview">Overview</TabsTrigger>
           {showSubjectsTab && (
             <TabsTrigger value="subjects">Subjects</TabsTrigger>
+          )}
+          {showSchedulesTab && (
+            <TabsTrigger value="schedules">Schedules</TabsTrigger>
           )}
           <TabsTrigger value="teachers">Teachers</TabsTrigger>
           <TabsTrigger value="students">Students</TabsTrigger>
@@ -472,6 +480,28 @@ export function CourseDetailPage({
                     No subjects added yet
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
+
+        {/* Schedules Tab */}
+        {showSchedulesTab && (
+          <TabsContent value="schedules" className="space-y-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>Schedules</CardTitle>
+                {canManageCourse && (
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Schedule
+                  </Button>
+                )}
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-muted-foreground">
+                  No schedules added yet
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -692,7 +722,7 @@ export function CourseDetailPage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       <style jsx global>{`
         /* Override inline styles in dark mode for course description */
         .dark .course-description div[style],
