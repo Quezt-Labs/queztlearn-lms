@@ -232,7 +232,7 @@ export default function StudentTestSeriesDetailPage() {
       </div>
 
       {/* Sticky Tabs - Desktop */}
-      <div className="hidden lg:block sticky top-0 z-[60]">
+      <div className="hidden lg:block sticky top-0 z-60">
         <TestSeriesStickyTabs
           activeTab={activeTab}
           onTabChange={setActiveTab}
@@ -241,7 +241,7 @@ export default function StudentTestSeriesDetailPage() {
       </div>
 
       {/* Mobile Hero - Sticky on Scroll */}
-      <div className="lg:hidden sticky top-0 z-[60]">
+      <div className="lg:hidden z-60">
         <MobileTestSeriesHero
           testSeries={testSeries}
           testCount={testCount}
@@ -264,8 +264,8 @@ export default function StudentTestSeriesDetailPage() {
         />
       )}
 
-      {/* Main Content */}
-      <div className="p-2.5 lg:px-10 lg:py-8">
+      {/* Main Content - Optimized spacing for mobile */}
+      <div className="px-3 py-4 lg:px-10 lg:py-8">
         <div className="container max-w-7xl mx-auto relative">
           <Suspense fallback={<DescriptionPageShimmer />}>
             {activeTab === "description" ? (
@@ -294,12 +294,12 @@ export default function StudentTestSeriesDetailPage() {
         </div>
       </div>
 
-      {/* Sticky Bottom CTA (Mobile) */}
+      {/* Sticky Bottom CTA (Mobile) - Optimized for thumb reach */}
       {!isEnrolled && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-lg border-t shadow-lg pb-safe">
-          <div className="container max-w-7xl mx-auto px-4 py-3">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-lg border-t shadow-2xl safe-area-bottom">
+          <div className="container max-w-7xl mx-auto px-3 py-3">
             <div className="flex items-center justify-between gap-3">
-              <div>
+              <div className="shrink-0">
                 <div className="text-xs text-muted-foreground">Total Price</div>
                 <div className="font-bold text-lg sm:text-xl text-primary">
                   {isFree ? "Free" : formatPrice(finalPrice)}
@@ -313,15 +313,15 @@ export default function StudentTestSeriesDetailPage() {
               <div className="flex gap-2">
                 <Button
                   variant="outline"
-                  size="sm"
-                  className="shrink-0"
+                  size="default"
+                  className="shrink-0 h-11 px-4"
                   onClick={() => setActiveTab("description")}
                 >
-                  View Details
+                  Details
                 </Button>
                 <Button
-                  size="sm"
-                  className="shrink-0"
+                  size="default"
+                  className="shrink-0 h-11 px-6 font-semibold shadow-md"
                   onClick={handleEnrollClick}
                   disabled={isProcessing || isPaymentLoading || testCount === 0}
                 >

@@ -35,25 +35,27 @@ export function MobileBatchHero({
   const endDate = new Date(batch.endDate);
 
   return (
-    <div className="relative bg-linear-to-br from-blue-600 via-purple-600 to-pink-600 text-white">
-      <div className="absolute inset-0 bg-black/20" />
-      <div className="relative container max-w-7xl mx-auto px-4 py-8">
-        {/* Back Button */}
-        <Button
-          variant="ghost"
-          onClick={onBack}
-          className="mb-4 text-white hover:bg-white/20 hover:text-white"
-        >
-          <span className="mr-2">←</span>
-          Back to Explore
-        </Button>
+    <div className="relative bg-background/95 backdrop-blur-md border-b shadow-sm">
+      <div className="relative">
+        {/* Back Button - More compact and thumb-friendly */}
+        <div className="px-3 pt-2.5">
+          <Button
+            variant="ghost"
+            onClick={onBack}
+            className="mb-2 h-9 px-2 -ml-2"
+            size="sm"
+          >
+            <span className="mr-1.5">←</span>
+            Back
+          </Button>
+        </div>
 
-        {/* Image */}
+        {/* Image - Full width on mobile, ultra compact */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl mb-4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="relative aspect-video sm:aspect-21/9 overflow-hidden shadow-sm mb-2.5 max-h-[160px] border-y"
         >
           {batch.imageUrl ? (
             <img
@@ -62,95 +64,76 @@ export function MobileBatchHero({
               className="object-cover w-full h-full"
             />
           ) : (
-            <div className="flex items-center justify-center h-full bg-linear-to-br from-blue-500/30 to-purple-500/30 backdrop-blur-sm">
-              <GraduationCap className="h-24 w-24 text-white/50" />
+            <div className="flex items-center justify-center h-full bg-linear-to-br from-primary/20 to-primary/10">
+              <GraduationCap className="h-16 w-16 text-muted-foreground/40" />
             </div>
           )}
 
-          {/* Status Badge Overlay */}
-          <div className="absolute top-4 left-4 flex flex-wrap gap-2">
+          {/* Status Badge Overlay - Smaller and cleaner */}
+          <div className="absolute top-2 left-2 flex flex-wrap gap-1.5">
             {isLive && (
-              <Badge className="bg-emerald-500 text-white border-0 shadow-lg">
-                <div className="h-2 w-2 rounded-full bg-white mr-2 animate-pulse" />
-                Live Now
+              <Badge className="bg-emerald-500 text-white border-0 shadow-md text-xs px-2 py-0.5">
+                <div className="h-1.5 w-1.5 rounded-full bg-white mr-1.5 animate-pulse" />
+                Live
               </Badge>
             )}
             {isUpcoming && (
-              <Badge className="bg-blue-500 text-white border-0 shadow-lg">
-                <Clock className="h-3 w-3 mr-1" />
+              <Badge className="bg-blue-500 text-white border-0 shadow-md text-xs px-2 py-0.5">
+                <Clock className="h-2.5 w-2.5 mr-1" />
                 Upcoming
               </Badge>
             )}
             {isEnded && (
-              <Badge className="bg-gray-500 text-white border-0 shadow-lg">
+              <Badge className="bg-gray-500 text-white border-0 shadow-md text-xs px-2 py-0.5">
                 Ended
               </Badge>
             )}
             {isHotDeal && (
-              <Badge className="bg-linear-to-r from-amber-500 to-orange-500 text-white border-0 shadow-lg">
-                <Sparkles className="h-3 w-3 mr-1" />
+              <Badge className="bg-linear-to-r from-amber-500 to-orange-500 text-white border-0 shadow-md text-xs px-2 py-0.5">
+                <Sparkles className="h-2.5 w-2.5 mr-1" />
                 Hot Deal
               </Badge>
             )}
           </div>
 
-          {/* Discount Badge */}
+          {/* Discount Badge - Smaller and positioned better */}
           {batch.discountPercentage > 0 && (
-            <div className="absolute top-4 right-4">
-              <div className="bg-red-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
+            <div className="absolute top-2 right-2">
+              <div className="bg-red-500 text-white px-2.5 py-1 rounded-md text-xs font-bold shadow-md">
                 {batch.discountPercentage}% OFF
               </div>
             </div>
           )}
         </motion.div>
 
-        {/* Title & Meta */}
+        {/* Title & Meta - Ultra compact below image */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-          className="space-y-3"
+          transition={{ duration: 0.3, delay: 0.05 }}
+          className="px-3 pb-2.5 space-y-1.5"
         >
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge
-              variant="secondary"
-              className="bg-white/20 text-white border-white/30"
-            >
-              <GraduationCap className="h-3 w-3 mr-1" />
-              Class {batch.class}
-            </Badge>
-            <Badge
-              variant="secondary"
-              className="bg-white/20 text-white border-white/30"
-            >
-              {batch.exam}
-            </Badge>
-          </div>
-
-          <h1 className="text-2xl sm:text-3xl font-bold leading-tight">
+          <h1 className="text-base sm:text-lg font-bold leading-tight line-clamp-2 text-foreground">
             {batch.name}
           </h1>
-
-          <div className="flex flex-wrap gap-4 text-sm text-white/90">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
+          
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5">
+              <Badge variant="secondary" className="text-xs shrink-0">
+                {batch.class}
+              </Badge>
+              <Badge variant="secondary" className="text-xs shrink-0">
+                {batch.exam}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Calendar className="h-3 w-3" />
               <span>
                 {startDate.toLocaleDateString("en-IN", {
                   day: "numeric",
                   month: "short",
-                  year: "numeric",
-                })}{" "}
-                -{" "}
-                {endDate.toLocaleDateString("en-IN", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
                 })}
               </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4" />
-              <span>{batch.language}</span>
             </div>
           </div>
         </motion.div>

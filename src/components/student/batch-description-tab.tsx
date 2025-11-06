@@ -13,12 +13,16 @@ import {
   Globe,
   Tag,
   Loader2,
+  Clock,
   type LucideIcon,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { AtAGlanceCard } from "@/components/common/at-a-glance-card";
+import { CollapsibleDescription } from "@/components/common/collapsible-description";
+import { MobilePricingCard } from "@/components/common/mobile-pricing-card";
 import { useBatchRazorpayPayment } from "@/hooks/use-batch-payment";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -96,37 +100,91 @@ export function BatchDescriptionTab({
     );
   };
 
+  // Calculate batch duration in days
+  const durationDays = Math.ceil(
+    (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
+  // Prepare At-a-Glance items for batch
+  const atAGlanceItems = [
+    {
+      icon: Calendar,
+      label: "Start Date",
+      value: startDate.toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "short",
+      }),
+      highlight: true,
+    },
+    {
+      icon: Clock,
+      label: "Duration",
+      value: `${durationDays} Days`,
+    },
+    {
+      icon: Globe,
+      label: "Language",
+      value: batch.language,
+    },
+    {
+      icon: GraduationCap,
+      label: "Class",
+      value: `Class ${batch.class}`,
+    },
+  ];
+
   return (
-    <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
-      {/* Left: Description & Features */}
-      <div className="lg:col-span-2 space-y-6">
-        {/* Description */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-primary" />
-                About This Batch
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {batch.description ? (
-                <div
-                  className="prose prose-sm sm:prose-base dark:prose-invert max-w-none"
-                  dangerouslySetInnerHTML={{ __html: batch.description }}
-                />
-              ) : (
-                <p className="text-muted-foreground">
-                  No description available for this batch.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
+    <div className="space-y-4 lg:space-y-0">
+      {/* MOBILE-FIRST LAYOUT */}
+      
+      {/* 1. At-a-Glance Card (Mobile Only) */}
+      <AtAGlanceCard items={atAGlanceItems} title="Batch Details" />
+
+      {/* 2. Mobile Pricing Card (Mobile Only) */}
+      <MobilePricingCard
+        originalPrice={batch.totalPrice}
+        finalPrice={finalPrice}
+        savings={savings}
+        discountPercentage={batch.discountPercentage}
+        isEnrolled={batch.isPurchased}
+        isProcessing={isLoading}
+        onEnrollClick={handleEnrollClick}
+        ctaText="Enroll Now"
+        enrolledText="You're enrolled in this batch"
+      />
+
+      {/* 3. Desktop Grid Layout */}
+      <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
+        {/* Left: Description & Features */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Description with Collapsible */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  About This Batch
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {batch.description ? (
+                  <CollapsibleDescription
+                    html={batch.description}
+                    maxHeight={180}
+                  />
+                ) : (
+                  <CollapsibleDescription
+                    plainText="No description available for this batch."
+                    maxHeight={100}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
 
         {/* Key Features */}
         <motion.div
@@ -186,10 +244,10 @@ export function BatchDescriptionTab({
             </CardContent>
           </Card>
         </motion.div>
-      </div>
+        </div>
 
-      {/* Right: Price Card & Info */}
-      <div className="lg:col-span-1 space-y-4">
+        {/* Right: Price Card & Info (Desktop Only) */}
+        <div className="lg:col-span-1 space-y-4 hidden lg:block">
         {/* Price Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -346,6 +404,7 @@ export function BatchDescriptionTab({
             </CardContent>
           </Card>
         </motion.div>
+        </div>
       </div>
     </div>
   );

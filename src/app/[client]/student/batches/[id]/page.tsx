@@ -88,7 +88,8 @@ export default function BatchDetailPage() {
         />
       </div>
 
-      <div className="lg:hidden">
+      {/* Mobile Hero - Sticky on Scroll */}
+      <div className="lg:hidden sticky top-0 z-60">
         <MobileBatchHero
           batch={batch}
           isLive={isLive}
@@ -99,8 +100,8 @@ export default function BatchDetailPage() {
         />
       </div>
 
-      {/* Main Content */}
-      <div className="p-2.5 lg:px-10 lg:py-8">
+      {/* Main Content - Optimized spacing for mobile */}
+      <div className="px-3 py-4 lg:px-10 lg:py-8">
         <div className="container max-w-7xl mx-auto">
           <Suspense fallback={<DescriptionPageShimmer />}>
             {activeTab === "description" ? (
@@ -117,27 +118,49 @@ export default function BatchDetailPage() {
         </div>
       </div>
 
-      {/* Sticky Bottom CTA (Mobile) */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-lg border-t shadow-lg">
-        <div className="container max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="text-xs text-muted-foreground">Total Price</div>
-              <div className="font-bold text-lg sm:text-xl text-primary">
-                ₹{finalPrice.toLocaleString("en-IN")}
+      {/* Sticky Bottom CTA (Mobile) - Optimized for thumb reach */}
+      {!batch.isPurchased && (
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-lg border-t shadow-2xl safe-area-bottom">
+          <div className="container max-w-7xl mx-auto px-3 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="shrink-0">
+                <div className="text-xs text-muted-foreground">Total Price</div>
+                <div className="font-bold text-lg sm:text-xl text-primary">
+                  ₹{finalPrice.toLocaleString("en-IN")}
+                </div>
+                {savings > 0 && (
+                  <div className="text-xs text-green-600 dark:text-green-400">
+                    Save ₹{savings.toLocaleString("en-IN")}
+                  </div>
+                )}
               </div>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="shrink-0">
-                View Details
-              </Button>
-              <Button size="sm" className="shrink-0">
-                Buy Now
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="default"
+                  className="shrink-0 h-11 px-4"
+                  onClick={() => setActiveTab("description")}
+                >
+                  Details
+                </Button>
+                <Button
+                  size="default"
+                  className="shrink-0 h-11 px-6 font-semibold shadow-md"
+                  onClick={() => {
+                    // Scroll to pricing section or trigger enrollment
+                    const pricingSection = document.querySelector('[data-pricing-card]');
+                    if (pricingSection) {
+                      pricingSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                  }}
+                >
+                  {isEnded ? "Batch Ended" : "Enroll Now"}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
