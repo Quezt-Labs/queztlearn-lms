@@ -10,6 +10,7 @@ import { TestAttemptCard } from "@/components/student/test-attempt-card";
 import { BatchCard } from "@/components/student/batch-card";
 import { TestSeriesCard } from "@/components/student/test-series-card";
 import { useClientMyEnrollments } from "@/hooks/test-series-client";
+import { useIsMobile } from "@/hooks";
 import { motion } from "framer-motion";
 import { Play, FileText, BookOpen, TrendingUp } from "lucide-react";
 
@@ -116,9 +117,14 @@ const purchasedBatches = [
 ];
 
 export default function MyLearningPage() {
-  // Fetch enrolled test series from API
+  const { isMobile, isClient } = useIsMobile();
+
+  // Fetch enrolled test series from API - only for desktop, and only after we know if it's mobile
   const { data: enrollmentsResponse, isLoading: isLoadingTestSeries } =
-    useClientMyEnrollments({ page: 1, limit: 6 });
+    useClientMyEnrollments(
+      { page: 1, limit: 6 },
+      { enabled: isClient && isMobile === false }
+    );
 
   const purchasedTestSeries = (enrollmentsResponse?.data || []).map(
     (series) => ({
@@ -137,138 +143,143 @@ export default function MyLearningPage() {
       ),
     })
   );
+  // Show nothing during initial render to prevent hydration mismatch
+  if (!isClient) {
+    return null;
+  }
+
   return (
     <>
       {/* Mobile View */}
-      <div className="md:hidden">
+      {isMobile ? (
         <MyLearningMobile />
-      </div>
+      ) : (
+        /* Desktop View */
+        <div className="w-full min-h-[calc(100vh-4rem)] bg-linear-to-br from-background via-background to-muted/20">
+          <StudentHeader />
 
-      {/* Desktop View */}
-      <div className="hidden md:block w-full min-h-[calc(100vh-4rem)] bg-gradient-to-br from-background via-background to-muted/20">
-        <StudentHeader />
+          <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 space-y-6 md:space-y-8 max-w-7xl w-full">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <PageHeader
+                title="My Learning"
+                description="Track your progress and continue your learning journey"
+                breadcrumbs={[
+                  { label: "Dashboard", href: "/student/dashboard" },
+                  { label: "My Learning" },
+                ]}
+              />
+            </motion.div>
 
-        <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 space-y-6 md:space-y-8 max-w-7xl w-full">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <PageHeader
-              title="My Learning"
-              description="Track your progress and continue your learning journey"
-              breadcrumbs={[
-                { label: "Dashboard", href: "/student/dashboard" },
-                { label: "My Learning" },
-              ]}
-            />
-          </motion.div>
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <SectionHeader
+                title="Continue Watching"
+                icon={Play}
+                viewAllHref="/student/videos"
+              />
 
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            <SectionHeader
-              title="Continue Watching"
-              icon={Play}
-              viewAllHref="/student/videos"
-            />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {recentVideos.map((video, index) => (
-                <VideoCard key={video.id} {...video} index={index} />
-              ))}
-            </div>
-          </motion.section>
-
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <SectionHeader
-              title="Recent Test Attempts"
-              icon={FileText}
-              viewAllHref={
-                recentTests.length >= 4 ? "/student/tests" : undefined
-              }
-            />
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {recentTests.map((test, index) => (
-                <TestAttemptCard key={test.id} {...test} index={index} />
-              ))}
-            </div>
-          </motion.section>
-
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-          >
-            <SectionHeader
-              title="My Batches"
-              icon={BookOpen}
-              viewAllHref={
-                purchasedBatches.length >= 4 ? "/student/batches" : undefined
-              }
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {purchasedBatches.map((batch, index) => (
-                <BatchCard key={batch.id} {...batch} index={index} />
-              ))}
-            </div>
-          </motion.section>
-
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            <SectionHeader
-              title="My Test Series"
-              icon={TrendingUp}
-              viewAllHref={
-                purchasedTestSeries.length >= 4
-                  ? "/student/test-series"
-                  : undefined
-              }
-            />
-
-            {isLoadingTestSeries ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="h-64 bg-muted animate-pulse rounded-lg"
-                  />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                {recentVideos.map((video, index) => (
+                  <VideoCard key={video.id} {...video} index={index} />
                 ))}
               </div>
-            ) : purchasedTestSeries.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No test series enrolled yet.</p>
-                <p className="text-sm mt-2">
-                  <Link
-                    href="/student/explore"
-                    className="text-primary hover:underline"
-                  >
-                    Explore test series
-                  </Link>{" "}
-                  to get started.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {purchasedTestSeries.map((series, index) => (
-                  <TestSeriesCard key={series.id} {...series} index={index} />
+            </motion.section>
+
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <SectionHeader
+                title="Recent Test Attempts"
+                icon={FileText}
+                viewAllHref={
+                  recentTests.length >= 4 ? "/student/tests" : undefined
+                }
+              />
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {recentTests.map((test, index) => (
+                  <TestAttemptCard key={test.id} {...test} index={index} />
                 ))}
               </div>
-            )}
-          </motion.section>
+            </motion.section>
+
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <SectionHeader
+                title="My Batches"
+                icon={BookOpen}
+                viewAllHref={
+                  purchasedBatches.length >= 4 ? "/student/batches" : undefined
+                }
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {purchasedBatches.map((batch, index) => (
+                  <BatchCard key={batch.id} {...batch} index={index} />
+                ))}
+              </div>
+            </motion.section>
+
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.4 }}
+            >
+              <SectionHeader
+                title="My Test Series"
+                icon={TrendingUp}
+                viewAllHref={
+                  purchasedTestSeries.length >= 4
+                    ? "/student/test-series"
+                    : undefined
+                }
+              />
+
+              {isLoadingTestSeries ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-64 bg-muted animate-pulse rounded-lg"
+                    />
+                  ))}
+                </div>
+              ) : purchasedTestSeries.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No test series enrolled yet.</p>
+                  <p className="text-sm mt-2">
+                    <Link
+                      href="/student/explore"
+                      className="text-primary hover:underline"
+                    >
+                      Explore test series
+                    </Link>{" "}
+                    to get started.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {purchasedTestSeries.map((series, index) => (
+                    <TestSeriesCard key={series.id} {...series} index={index} />
+                  ))}
+                </div>
+              )}
+            </motion.section>
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }

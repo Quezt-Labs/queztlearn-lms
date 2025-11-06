@@ -25,3 +25,5 @@ export { useDebounce, useDebouncedCallback } from "./use-debounce";
 
 export { useRolePermissions } from "./use-role-permissions";
 export type { RolePermissions } from "./use-role-permissions";
+
+export { useIsMobile } from "./use-is-mobile";

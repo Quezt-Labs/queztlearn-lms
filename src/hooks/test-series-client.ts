@@ -110,10 +110,13 @@ export const useClientTestSeriesList = (params?: {
   });
 };
 
-export const useClientMyEnrollments = (params?: {
-  page?: number;
-  limit?: number;
-}) => {
+export const useClientMyEnrollments = (
+  params?: {
+    page?: number;
+    limit?: number;
+  },
+  options?: { enabled?: boolean }
+) => {
   return useQuery({
     queryKey: clientTsKeys.myEnrollments(
       params?.page ?? 1,
@@ -133,6 +136,7 @@ export const useClientMyEnrollments = (params?: {
       );
       return data;
     },
+    enabled: options?.enabled ?? true,
   });
 };
 
