@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Bell, LogOut, User } from "lucide-react";
+import { Bell, LogOut, User, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { useTheme } from "@/components/providers/theme-provider";
 import { useOrgLogo, useOrgName } from "@/lib/store/organization-config";
 import { tokenManager } from "@/lib/api/client";
 
@@ -21,6 +23,9 @@ export function StudentHeader() {
   const orgLogo = useOrgLogo();
   const orgName = useOrgName();
   const user = tokenManager.getUser();
+  const { theme, setTheme } = useTheme();
+
+  const isDark = theme === "dark";
 
   return (
     <header className="md:mx-6 sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
@@ -47,6 +52,16 @@ export function StudentHeader() {
 
         {/* Spacer */}
         <div className="flex-1" />
+
+        {/* Theme Toggle */}
+        <div className="flex items-center space-x-2">
+          <Sun className="h-4 w-4 text-muted-foreground" />
+          <Switch
+            checked={isDark}
+            onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+          />
+          <Moon className="h-4 w-4 text-muted-foreground" />
+        </div>
 
         {/* Notifications */}
         <DropdownMenu>
