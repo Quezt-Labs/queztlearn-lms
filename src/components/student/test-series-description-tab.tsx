@@ -3,8 +3,6 @@
 import { motion } from "framer-motion";
 import {
   BookOpen,
-  Target,
-  TrendingUp,
   CheckCircle2,
   Award,
   Sparkles,
@@ -264,115 +262,6 @@ export function TestSeriesDescriptionTab({
           </Card>
         </motion.div>
 
-        {/* Key Features */}
-        {testSeries.description?.features &&
-        testSeries.description.features.length > 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-primary" />
-                  Key Features
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {testSeries.description.features.map((feature, index) => (
-                    <div
-                      key={index}
-                      className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                    >
-                      <div className="shrink-0 mt-0.5">
-                        <CheckCircle2 className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-foreground">{feature}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-primary" />
-                  Key Features
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid sm:grid-cols-2 gap-4">
-                  {[
-                    {
-                      icon: Target,
-                      title: "Comprehensive Tests",
-                      description:
-                        "Complete test coverage aligned with exam syllabus",
-                    },
-                    {
-                      icon: TrendingUp,
-                      title: "Performance Tracking",
-                      description:
-                        "Real-time analytics and progress monitoring",
-                    },
-                    {
-                      icon: CheckCircle2,
-                      title: "Practice & Assessment",
-                      description:
-                        "Regular practice tests with instant feedback",
-                    },
-                    {
-                      icon: Award,
-                      title: "Expert Evaluation",
-                      description:
-                        "Detailed analysis and personalized insights",
-                    },
-                    {
-                      icon: Shield,
-                      title: "Exam-like Experience",
-                      description:
-                        "Simulated test environment matching real exams",
-                    },
-                    {
-                      icon: BarChart3,
-                      title: "Detailed Analytics",
-                      description: "Track improvement across all test attempts",
-                    },
-                  ].map((feature, index) => (
-                    <div
-                      key={index}
-                      className="flex items-start gap-3 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                    >
-                      <div className="shrink-0 mt-0.5">
-                        <feature.icon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-sm sm:text-base mb-1">
-                          {feature.title}
-                        </h4>
-                        <p className="text-xs sm:text-sm text-muted-foreground">
-                          {feature.description}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-
         {/* FAQ Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -387,49 +276,24 @@ export function TestSeriesDescriptionTab({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="what-included">
-                  <AccordionTrigger className="text-sm">
-                    What&apos;s included in this test series?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-sm text-muted-foreground">
-                    You&apos;ll get access to {testCount} comprehensive tests,
-                    detailed performance analytics, answer explanations, and
-                    personalized feedback to track your progress.
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="validity">
-                  <AccordionTrigger className="text-sm">
-                    How long is the access valid?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-sm text-muted-foreground">
-                    Your access is valid for {testSeries.durationDays} days from
-                    the date of enrollment. You can attempt all tests multiple
-                    times during this period.
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="refund">
-                  <AccordionTrigger className="text-sm">
-                    Can I get a refund?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-sm text-muted-foreground">
-                    Yes, we offer a 7-day money-back guarantee if you&apos;re
-                    not satisfied with the test series. Contact our support team
-                    for assistance.
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="after-enroll">
-                  <AccordionTrigger className="text-sm">
-                    What happens after I enroll?
-                  </AccordionTrigger>
-                  <AccordionContent className="text-sm text-muted-foreground">
-                    After enrollment, you&apos;ll immediately get access to all
-                    tests. You can start attempting tests right away, track your
-                    performance, and access detailed analytics to improve your
-                    preparation.
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+              {testSeries?.faq && testSeries?.faq?.length > 0 ? (
+                <Accordion type="single" collapsible className="w-full">
+                  {testSeries?.faq?.map((faq, index) => (
+                    <AccordionItem key={faq.title + index} value={faq.title}>
+                      <AccordionTrigger className="text-sm font-medium">
+                        {faq.title}
+                      </AccordionTrigger>
+                      <AccordionContent className="text-sm text-muted-foreground">
+                        {faq.description}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  No frequently asked questions available.
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>

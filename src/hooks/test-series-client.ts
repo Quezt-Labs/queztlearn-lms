@@ -45,6 +45,10 @@ export type ClientTestSeriesListItem = {
   enrollmentCount?: number; // Social proof
   averageScore?: number; // Engagement metric
   totalAttempts?: number; // Engagement metric
+  faq?: {
+    title: string;
+    description: string;
+  }[];
 };
 
 export type ClientTestInSeries = {

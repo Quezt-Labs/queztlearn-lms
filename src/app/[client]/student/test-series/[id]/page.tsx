@@ -216,6 +216,8 @@ export default function StudentTestSeriesDetailPage() {
     );
   }
 
+  console.log(testSeries, "testSeries");
+
   return (
     <div className="relative">
       {/* Desktop Header - Scrollable */}
