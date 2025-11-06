@@ -43,6 +43,7 @@ import { EditSubjectModal } from "@/components/common/edit-subject-modal";
 import { ROLES } from "@/lib/constants";
 import { SubjectDataTable } from "@/components/courses/subject-data-table";
 import { EditBatchModal } from "@/components/common/edit-batch-modal";
+import { FAQDisplay } from "@/components/common/faq-display";
 
 // Interfaces
 interface Batch {
@@ -404,24 +405,13 @@ export function CourseDetailPage({
                     />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-2">FAQ</h3>
-                    {courseData.faq && courseData.faq.length > 0 ? (
-                      <div className="space-y-4">
-                        {courseData.faq.map((faq, index) => (
-                          <div key={index}>
-                            <h4 className="font-medium">{faq.title}</h4>
-                            <div
-                              className="prose prose-sm max-w-none text-muted-foreground"
-                              dangerouslySetInnerHTML={{
-                                __html: faq.description || "",
-                              }}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground">No FAQ available</p>
-                    )}
+                    <FAQDisplay
+                      faqs={courseData.faq}
+                      showCard={false}
+                      title="FAQ"
+                      emptyMessage="No FAQ available"
+                      className="mt-4"
+                    />
                   </div>
                 </CardContent>
               </Card>

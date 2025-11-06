@@ -24,12 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { FAQDisplay } from "@/components/common/faq-display";
 import {
   ClientTestSeriesListItem,
   ClientTestInSeries,
@@ -268,34 +263,7 @@ export function TestSeriesDescriptionTab({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.25 }}
         >
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <HelpCircle className="h-5 w-5 text-primary" />
-                Frequently Asked Questions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {testSeries?.faq && testSeries?.faq?.length > 0 ? (
-                <Accordion type="single" collapsible className="w-full">
-                  {testSeries?.faq?.map((faq, index) => (
-                    <AccordionItem key={faq.title + index} value={faq.title}>
-                      <AccordionTrigger className="text-sm font-medium">
-                        {faq.title}
-                      </AccordionTrigger>
-                      <AccordionContent className="text-sm text-muted-foreground">
-                        {faq.description}
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              ) : (
-                <div className="text-sm text-muted-foreground">
-                  No frequently asked questions available.
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <FAQDisplay faqs={testSeries?.faq} />
         </motion.div>
       </div>
 
