@@ -3,7 +3,15 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { BookOpen, Crown, Gift, ArrowRight, Users, Clock } from "lucide-react";
+import {
+  BookOpen,
+  Crown,
+  Gift,
+  ArrowRight,
+  Users,
+  Clock,
+  Loader2,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +23,10 @@ import {
 } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { useBatchRazorpayPayment } from "@/hooks/use-batch-payment";
+import { useTestSeriesRazorpayPayment } from "@/hooks/use-test-series-payment";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export type CourseType = "batch" | "test-series";
 
@@ -61,11 +73,25 @@ export function ExploreCourseCard({
   isFree = false,
   durationDays,
 }: BaseCourseCardProps) {
+  const router = useRouter();
+  const {
+    initializePayment: initializeBatchPayment,
+    isLoading: isBatchLoading,
+  } = useBatchRazorpayPayment();
+  const {
+    initializePayment: initializeTestSeriesPayment,
+    isLoading: isTestSeriesLoading,
+  } = useTestSeriesRazorpayPayment();
+
   const finalPrice =
     type === "test-series" && isFree
       ? 0
       : Math.round(totalPrice * (1 - discountPercentage / 100));
   const savings = totalPrice - finalPrice;
+
+  const isProcessing =
+    (type === "batch" && isBatchLoading) ||
+    (type === "test-series" && isTestSeriesLoading);
 
   const formatShortDate = (date: Date | string) => {
     const d = typeof date === "string" ? new Date(date) : date;
@@ -123,6 +149,78 @@ export function ExploreCourseCard({
   const buttonText =
     type === "test-series" && isFree ? "Enroll Free" : "Buy Now";
 
+  // Handle payment for batch and test series
+  const handlePayment = () => {
+    if (type === "batch") {
+      toast.loading("Initializing payment...");
+      initializeBatchPayment(
+        id,
+        title,
+        finalPrice,
+        async (verificationResult) => {
+          toast.dismiss();
+          toast.success("Payment successful! 🎉", {
+            description: "Redirecting to your learning dashboard...",
+          });
+          setTimeout(() => {
+            router.push(`/student/my-learning`);
+          }, 1000);
+        },
+        (error) => {
+          toast.dismiss();
+          console.error("Payment failed:", error);
+          const errorMessage =
+            (error && typeof error === "object" && "response" in error
+              ? (error.response as { data?: { message?: string } })?.data
+                  ?.message
+              : null) ||
+            (error instanceof Error ? error.message : null) ||
+            "Payment failed. Please try again or contact support.";
+          toast.error("Payment failed", {
+            description: errorMessage,
+            duration: 5000,
+          });
+        }
+      );
+    } else if (type === "test-series") {
+      if (isFree) {
+        // For free test series, navigate to detail page to enroll
+        router.push(detailUrl);
+      } else {
+        toast.loading("Initializing payment...");
+        initializeTestSeriesPayment(
+          id,
+          title,
+          finalPrice,
+          async (verificationResult) => {
+            toast.dismiss();
+            toast.success("Payment successful! 🎉", {
+              description: "Redirecting to your test series...",
+            });
+            setTimeout(() => {
+              router.push(`/student/my-learning`);
+            }, 1000);
+          },
+          (error) => {
+            toast.dismiss();
+            console.error("Payment failed:", error);
+            const errorMessage =
+              (error && typeof error === "object" && "response" in error
+                ? (error.response as { data?: { message?: string } })?.data
+                    ?.message
+                : null) ||
+              (error instanceof Error ? error.message : null) ||
+              "Payment failed. Please try again or contact support.";
+            toast.error("Payment failed", {
+              description: errorMessage,
+              duration: 5000,
+            });
+          }
+        );
+      }
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -135,7 +233,7 @@ export function ExploreCourseCard({
         <div
           className={cn(
             "relative h-40 sm:h-44 md:h-48 lg:h-52 overflow-hidden",
-            imageUrl ? "" : `bg-gradient-to-br ${gradientClass}`
+            imageUrl ? "" : `bg-linear-to-br ${gradientClass}`
           )}
         >
           {/* Background Image if available */}
@@ -147,11 +245,11 @@ export function ExploreCourseCard({
                   alt={title}
                   fill
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="!h-full !w-full object-cover"
+                  className="h-full! w-full! object-cover"
                   priority={index < 3}
                 />
               </div>
-              <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-transparent z-[1]" />
+              <div className="absolute inset-0 bg-linear-to-br from-black/20 to-transparent z-1" />
             </>
           )}
 
@@ -339,9 +437,17 @@ export function ExploreCourseCard({
             <div className="flex gap-2">
               <Button
                 className="flex-1 h-10 sm:h-9 font-semibold text-sm bg-black hover:bg-gray-800 text-white min-h-[44px] sm:min-h-0"
-                asChild
+                onClick={handlePayment}
+                disabled={isProcessing}
               >
-                <Link href={detailUrl}>{buttonText}</Link>
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  buttonText
+                )}
               </Button>
               <Button
                 variant="outline"
