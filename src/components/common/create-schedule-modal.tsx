@@ -1,0 +1,480 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar as CalendarIcon, Clock, Youtube } from "lucide-react";
+import { format } from "date-fns";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { FileUpload } from "@/components/common/file-upload";
+import { useGetSubjectsByBatch, useGetTeachersByBatch } from "@/hooks";
+import Image from "next/image";
+
+interface CreateScheduleModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  batchId: string;
+  onSuccess: () => void;
+}
+
+interface Subject {
+  id: string;
+  name: string;
+}
+
+interface Teacher {
+  id: string;
+  name: string;
+}
+
+export function CreateScheduleModal({
+  isOpen,
+  onClose,
+  batchId,
+  onSuccess,
+}: CreateScheduleModalProps) {
+  const [formData, setFormData] = useState({
+    topicId: "",
+    subjectId: "",
+    title: "",
+    description: "",
+    subjectName: "",
+    youtubeLink: "",
+    scheduledAt: "",
+    scheduledTime: "",
+    duration: 60,
+    teacherId: "",
+    thumbnailUrl: "",
+    notifyBeforeMinutes: 30,
+  });
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const { data: subjectsData } = useGetSubjectsByBatch(batchId);
+  const { data: teachersData } = useGetTeachersByBatch(batchId);
+
+  const subjects = (subjectsData?.data as Subject[]) || [];
+  const teachers = (teachersData?.data as Teacher[]) || [];
+
+  useEffect(() => {
+    // Auto-fill subject name when subject is selected
+    if (formData.subjectId) {
+      const selectedSubject = subjects.find((s) => s.id === formData.subjectId);
+      if (selectedSubject) {
+        setFormData((prev) => ({ ...prev, subjectName: selectedSubject.name }));
+      }
+    }
+  }, [formData.subjectId, subjects]);
+
+  const handleInputChange = (field: string, value: string | number) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      setFormData((prev) => ({ ...prev, scheduledAt: date.toISOString() }));
+      if (errors.scheduledAt) {
+        setErrors((prev) => ({ ...prev, scheduledAt: "" }));
+      }
+    }
+  };
+
+  const handleImageUpload = (fileData: {
+    key: string;
+    url: string;
+    bucket: string;
+    originalName: string;
+    size: number;
+    mimeType: string;
+  }) => {
+    setIsUploadingImage(true);
+    try {
+      setFormData((prev) => ({ ...prev, thumbnailUrl: fileData.url }));
+    } catch (error) {
+      console.error("Failed to update thumbnail URL:", error);
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.title.trim()) {
+      newErrors.title = "Title is required";
+    }
+    if (!formData.subjectId) {
+      newErrors.subjectId = "Subject is required";
+    }
+    if (!formData.scheduledAt) {
+      newErrors.scheduledAt = "Schedule date is required";
+    }
+    if (!formData.scheduledTime) {
+      newErrors.scheduledTime = "Schedule time is required";
+    }
+    if (!formData.duration || formData.duration <= 0) {
+      newErrors.duration = "Duration must be greater than 0";
+    }
+    if (formData.youtubeLink && !formData.youtubeLink.includes("youtube.com")) {
+      newErrors.youtubeLink = "Please enter a valid YouTube link";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Combine date and time
+      const scheduledDate = new Date(formData.scheduledAt);
+      const [hours, minutes] = formData.scheduledTime.split(":");
+      scheduledDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+
+      const scheduleData = {
+        organizationId: "", // This should come from context/auth
+        topicId: formData.topicId || undefined,
+        batchId: batchId,
+        subjectId: formData.subjectId,
+        title: formData.title,
+        description: formData.description || undefined,
+        subjectName: formData.subjectName,
+        youtubeLink: formData.youtubeLink,
+        scheduledAt: scheduledDate.toISOString(),
+        duration: formData.duration,
+        teacherId: formData.teacherId || undefined,
+        thumbnailUrl: formData.thumbnailUrl || undefined,
+        notifyBeforeMinutes: formData.notifyBeforeMinutes || undefined,
+      };
+
+      // TODO: Call API to create schedule
+      console.log("Creating schedule:", scheduleData);
+
+      onSuccess();
+      handleClose();
+    } catch (error) {
+      console.error("Failed to create schedule:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleClose = () => {
+    setFormData({
+      topicId: "",
+      subjectId: "",
+      title: "",
+      description: "",
+      subjectName: "",
+      youtubeLink: "",
+      scheduledAt: "",
+      scheduledTime: "",
+      duration: 60,
+      teacherId: "",
+      thumbnailUrl: "",
+      notifyBeforeMinutes: 30,
+    });
+    setErrors({});
+    setIsSubmitting(false);
+    onClose();
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Create Schedule</DialogTitle>
+          <DialogDescription>
+            Schedule a new class or session for this batch
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Title */}
+            <div className="md:col-span-2">
+              <Label htmlFor="title">
+                Title <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => handleInputChange("title", e.target.value)}
+                placeholder="e.g., Introduction to Calculus"
+                className={errors.title ? "border-red-500" : ""}
+              />
+              {errors.title && (
+                <p className="text-sm text-red-500 mt-1">{errors.title}</p>
+              )}
+            </div>
+
+            {/* Subject */}
+            <div>
+              <Label htmlFor="subject">
+                Subject <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={formData.subjectId}
+                onValueChange={(value) => handleInputChange("subjectId", value)}
+              >
+                <SelectTrigger
+                  className={errors.subjectId ? "border-red-500" : ""}
+                >
+                  <SelectValue placeholder="Select subject" />
+                </SelectTrigger>
+                <SelectContent>
+                  {subjects.map((subject) => (
+                    <SelectItem key={subject.id} value={subject.id}>
+                      {subject.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.subjectId && (
+                <p className="text-sm text-red-500 mt-1">{errors.subjectId}</p>
+              )}
+            </div>
+
+            {/* Teacher */}
+            <div>
+              <Label htmlFor="teacher">Teacher (Optional)</Label>
+              <Select
+                value={formData.teacherId}
+                onValueChange={(value) => handleInputChange("teacherId", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select teacher" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teachers.map((teacher) => (
+                    <SelectItem key={teacher.id} value={teacher.id}>
+                      {teacher.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Scheduled Date */}
+            <div>
+              <Label>
+                Schedule Date <span className="text-red-500">*</span>
+              </Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.scheduledAt && "text-muted-foreground",
+                      errors.scheduledAt && "border-red-500"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.scheduledAt ? (
+                      format(new Date(formData.scheduledAt), "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <CalendarComponent
+                    mode="single"
+                    selected={
+                      formData.scheduledAt
+                        ? new Date(formData.scheduledAt)
+                        : undefined
+                    }
+                    onSelect={handleDateChange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {errors.scheduledAt && (
+                <p className="text-sm text-red-500 mt-1">
+                  {errors.scheduledAt}
+                </p>
+              )}
+            </div>
+
+            {/* Scheduled Time */}
+            <div>
+              <Label htmlFor="time">
+                Schedule Time <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="time"
+                  type="time"
+                  value={formData.scheduledTime}
+                  onChange={(e) =>
+                    handleInputChange("scheduledTime", e.target.value)
+                  }
+                  className={cn(
+                    "pl-10",
+                    errors.scheduledTime && "border-red-500"
+                  )}
+                />
+              </div>
+              {errors.scheduledTime && (
+                <p className="text-sm text-red-500 mt-1">
+                  {errors.scheduledTime}
+                </p>
+              )}
+            </div>
+
+            {/* Duration */}
+            <div>
+              <Label htmlFor="duration">
+                Duration (minutes) <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="duration"
+                type="number"
+                min="1"
+                value={formData.duration}
+                onChange={(e) =>
+                  handleInputChange("duration", parseInt(e.target.value))
+                }
+                placeholder="60"
+                className={errors.duration ? "border-red-500" : ""}
+              />
+              {errors.duration && (
+                <p className="text-sm text-red-500 mt-1">{errors.duration}</p>
+              )}
+            </div>
+
+            {/* Notify Before */}
+            <div>
+              <Label htmlFor="notify">Notify Before (minutes)</Label>
+              <Input
+                id="notify"
+                type="number"
+                min="0"
+                value={formData.notifyBeforeMinutes}
+                onChange={(e) =>
+                  handleInputChange(
+                    "notifyBeforeMinutes",
+                    parseInt(e.target.value)
+                  )
+                }
+                placeholder="30"
+              />
+            </div>
+
+            {/* YouTube Link */}
+            <div className="md:col-span-2">
+              <Label htmlFor="youtube">YouTube Link (Optional)</Label>
+              <div className="relative">
+                <Youtube className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
+                <Input
+                  id="youtube"
+                  value={formData.youtubeLink}
+                  onChange={(e) =>
+                    handleInputChange("youtubeLink", e.target.value)
+                  }
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className={cn(
+                    "pl-10",
+                    errors.youtubeLink && "border-red-500"
+                  )}
+                />
+              </div>
+              {errors.youtubeLink && (
+                <p className="text-sm text-red-500 mt-1">
+                  {errors.youtubeLink}
+                </p>
+              )}
+            </div>
+
+            {/* Description */}
+            <div className="md:col-span-2">
+              <Label htmlFor="description">Description (Optional)</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) =>
+                  handleInputChange("description", e.target.value)
+                }
+                placeholder="Add any additional details about this session..."
+                rows={4}
+              />
+            </div>
+
+            {/* Thumbnail Upload */}
+            <div className="md:col-span-2">
+              <Label>Thumbnail Image (Optional)</Label>
+              <FileUpload
+                accept="image/*"
+                onUploadComplete={handleImageUpload}
+                maxSize={5 * 1024 * 1024}
+                className="mt-2"
+              />
+              {formData.thumbnailUrl && (
+                <div className="mt-4 relative w-full aspect-video rounded-lg overflow-hidden border">
+                  <Image
+                    src={formData.thumbnailUrl}
+                    alt="Schedule thumbnail"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting || isUploadingImage}>
+              {isSubmitting ? "Creating..." : "Create Schedule"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
