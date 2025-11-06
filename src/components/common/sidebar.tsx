@@ -126,36 +126,48 @@ function SidebarContent({ className }: { className?: string }) {
   const filteredItems = getNavigationItems(hostname, effectiveRole);
 
   const isActive = (href: string) => {
+    // Normalize: remove client segment if present (e.g., /mit/student/dashboard -> /student/dashboard)
+    const normalizedPath =
+      pathname.replace(/^\/[^/]+(?=\/student)/, "") || pathname;
+
     if (href === "/dashboard") {
       return (
-        pathname === "/admin/dashboard" ||
-        pathname === "/teacher/dashboard" ||
-        pathname === "/student/dashboard"
+        normalizedPath === "/admin/dashboard" ||
+        normalizedPath === "/teacher/dashboard" ||
+        normalizedPath === "/student/dashboard"
+      );
+    }
+    // Handle Explore route - include test-series and batches detail pages
+    if (href === "/student/explore") {
+      return (
+        normalizedPath.startsWith("/student/explore") ||
+        normalizedPath.startsWith("/student/test-series") ||
+        normalizedPath.startsWith("/student/batches")
       );
     }
     // Handle exact matches for admin routes
     if (href === "/admin/users") {
-      return pathname === "/admin/users";
+      return normalizedPath === "/admin/users";
     }
     if (href === "/admin/courses") {
-      return pathname === "/admin/courses";
+      return normalizedPath === "/admin/courses";
     }
     if (href === "/admin/analytics") {
-      return pathname === "/admin/analytics";
+      return normalizedPath === "/admin/analytics";
     }
     if (href === "/admin/clients") {
-      return pathname === "/admin/clients";
+      return normalizedPath === "/admin/clients";
     }
     if (href === "/admin/settings") {
-      return pathname === "/admin/settings";
+      return normalizedPath === "/admin/settings";
     }
     if (href === "/admin/billing") {
-      return pathname === "/admin/billing";
+      return normalizedPath === "/admin/billing";
     }
     if (href === "/admin/test-series") {
-      return pathname === "/admin/test-series";
+      return normalizedPath === "/admin/test-series";
     }
-    return pathname.startsWith(href);
+    return normalizedPath.startsWith(href);
   };
   const handleLogout = () => {
     logoutMutation.mutate();
