@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, lazy } from "react";
+import { Suspense, useState, lazy, useEffect } from "react";
 import { BookOpen, FileText } from "lucide-react";
 import { StudentHeader } from "@/components/student/student-header";
 import { Button } from "@/components/ui/button";
@@ -65,6 +65,30 @@ export default function ExplorePage() {
   } = useGetExploreTestSeries();
   const testSeries: TestSeries[] = testSeriesResponse?.data || [];
 
+  // Check if tabs should be shown (only after data is fetched)
+  const hasBatches = isBatchesFetched && batches.length > 0;
+  const hasTestSeries = isTestSeriesFetched && testSeries.length > 0;
+
+  // Auto-switch to available tab if current tab has no data
+  useEffect(() => {
+    if (isBatchesFetched && isTestSeriesFetched) {
+      if (activeTab === "batches" && !hasBatches && hasTestSeries) {
+        setActiveTab("test-series");
+      } else if (activeTab === "test-series" && !hasTestSeries && hasBatches) {
+        setActiveTab("batches");
+      }
+    }
+  }, [
+    isBatchesFetched,
+    isTestSeriesFetched,
+    hasBatches,
+    hasTestSeries,
+    activeTab,
+  ]);
+
+  // Don't show tabs section if no data is available
+  const showTabs = hasBatches || hasTestSeries;
+
   return (
     <>
       {/* Mobile View */}
@@ -78,32 +102,38 @@ export default function ExplorePage() {
         </header>
 
         {/* Mobile Tabs */}
-        <div className="sticky top-14 z-30 bg-background border-b border-border/40">
-          <div className="flex">
-            <button
-              onClick={() => setActiveTab("batches")}
-              className={`flex-1 flex items-center justify-center gap-2 h-12 font-medium text-sm transition-colors ${
-                activeTab === "batches"
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-muted-foreground"
-              }`}
-            >
-              <BookOpen className="h-4 w-4" />
-              Batches
-            </button>
-            <button
-              onClick={() => setActiveTab("test-series")}
-              className={`flex-1 flex items-center justify-center gap-2 h-12 font-medium text-sm transition-colors ${
-                activeTab === "test-series"
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-muted-foreground"
-              }`}
-            >
-              <FileText className="h-4 w-4" />
-              Test Series
-            </button>
+        {showTabs && (
+          <div className="sticky top-14 z-30 bg-background border-b border-border/40">
+            <div className="flex">
+              {hasBatches && (
+                <button
+                  onClick={() => setActiveTab("batches")}
+                  className={`flex-1 flex items-center justify-center gap-2 h-12 font-medium text-sm transition-colors ${
+                    activeTab === "batches"
+                      ? "text-primary border-b-2 border-primary"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Batches
+                </button>
+              )}
+              {hasTestSeries && (
+                <button
+                  onClick={() => setActiveTab("test-series")}
+                  className={`flex-1 flex items-center justify-center gap-2 h-12 font-medium text-sm transition-colors ${
+                    activeTab === "test-series"
+                      ? "text-primary border-b-2 border-primary"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  <FileText className="h-4 w-4" />
+                  Test Series
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Mobile Content */}
         <div className="px-4 py-6 space-y-4">
@@ -167,35 +197,43 @@ export default function ExplorePage() {
           </div>
 
           {/* Filters & Search */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-8">
-            {/* <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder="Search batches and test series..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-11"
-              />
-            </div> */}
-            <div className="flex gap-2">
-              <Button
-                variant={activeTab === "batches" ? "default" : "outline"}
-                onClick={() => setActiveTab("batches")}
-                className="gap-2"
-              >
-                <BookOpen className="h-4 w-4" />
-                Batches
-              </Button>
-              <Button
-                variant={activeTab === "test-series" ? "default" : "outline"}
-                onClick={() => setActiveTab("test-series")}
-                className="gap-2"
-              >
-                <FileText className="h-4 w-4" />
-                Test Series
-              </Button>
+          {showTabs && (
+            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+              {/* <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder="Search batches and test series..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 h-11"
+                />
+              </div> */}
+              <div className="flex gap-2">
+                {hasBatches && (
+                  <Button
+                    variant={activeTab === "batches" ? "default" : "outline"}
+                    onClick={() => setActiveTab("batches")}
+                    className="gap-2"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Batches
+                  </Button>
+                )}
+                {hasTestSeries && (
+                  <Button
+                    variant={
+                      activeTab === "test-series" ? "default" : "outline"
+                    }
+                    onClick={() => setActiveTab("test-series")}
+                    className="gap-2"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Test Series
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Content Grid */}
           {activeTab === "batches" ? (
