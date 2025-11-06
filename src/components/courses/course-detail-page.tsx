@@ -40,6 +40,8 @@ import { CreateTeacherModal } from "@/components/common/create-teacher-modal";
 import { EditTeacherModal } from "@/components/common/edit-teacher-modal";
 import { CreateSubjectModal } from "@/components/common/create-subject-modal";
 import { EditSubjectModal } from "@/components/common/edit-subject-modal";
+import { CreateScheduleModal } from "@/components/common/create-schedule-modal";
+import { EditScheduleModal } from "@/components/common/edit-schedule-modal";
 import { ROLES } from "@/lib/constants";
 import { SubjectDataTable } from "@/components/courses/subject-data-table";
 import { EditBatchModal } from "@/components/common/edit-batch-modal";
@@ -133,9 +135,12 @@ export function CourseDetailPage({
   const [isEditTeacherOpen, setIsEditTeacherOpen] = useState(false);
   const [isCreateSubjectOpen, setIsCreateSubjectOpen] = useState(false);
   const [isEditSubjectOpen, setIsEditSubjectOpen] = useState(false);
+  const [isCreateScheduleOpen, setIsCreateScheduleOpen] = useState(false);
+  const [isEditScheduleOpen, setIsEditScheduleOpen] = useState(false);
   const [isEditCourseOpen, setIsEditCourseOpen] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState<Teacher | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<Subject | null>(null);
+  const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
   const [activeTab, setActiveTab] = useState("overview");
 
   // API Hooks
@@ -248,6 +253,16 @@ export function CourseDetailPage({
         },
       });
     }
+  };
+
+  const handleCreateSchedule = () => {
+    setIsCreateScheduleOpen(true);
+  };
+
+  const handleScheduleCreated = () => {
+    queryClient.invalidateQueries({
+      queryKey: ["schedules", "batch", courseId],
+    });
   };
 
   // Helper functions
@@ -492,7 +507,7 @@ export function CourseDetailPage({
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>Schedules</CardTitle>
                 {canManageCourse && (
-                  <Button>
+                  <Button onClick={handleCreateSchedule}>
                     <Plus className="mr-2 h-4 w-4" />
                     Add Schedule
                   </Button>
@@ -695,6 +710,28 @@ export function CourseDetailPage({
             }}
             subject={selectedSubject}
             onSuccess={handleSubjectUpdated}
+          />
+        </>
+      )}
+
+      {showSchedulesTab && (
+        <>
+          <CreateScheduleModal
+            isOpen={isCreateScheduleOpen}
+            onClose={() => setIsCreateScheduleOpen(false)}
+            batchId={courseId}
+            onSuccess={handleScheduleCreated}
+          />
+
+          <EditScheduleModal
+            isOpen={isEditScheduleOpen}
+            onClose={() => {
+              setIsEditScheduleOpen(false);
+              setSelectedSchedule(null);
+            }}
+            schedule={selectedSchedule}
+            batchId={courseId}
+            onSuccess={handleScheduleCreated}
           />
         </>
       )}
