@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { FileUpload } from "@/components/common/file-upload";
-import { useGetSubjectsByBatch, useGetTeachersByBatch } from "@/hooks";
+import { useGetSubjectsByBatch } from "@/hooks";
 import Image from "next/image";
 
 interface CreateScheduleModalProps {
@@ -41,11 +41,6 @@ interface CreateScheduleModalProps {
 }
 
 interface Subject {
-  id: string;
-  name: string;
-}
-
-interface Teacher {
   id: string;
   name: string;
 }
@@ -76,10 +71,8 @@ export function CreateScheduleModal({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const { data: subjectsData } = useGetSubjectsByBatch(batchId);
-  const { data: teachersData } = useGetTeachersByBatch(batchId);
 
   const subjects = (subjectsData?.data as Subject[]) || [];
-  const teachers = (teachersData?.data as Teacher[]) || [];
 
   useEffect(() => {
     // Auto-fill subject name when subject is selected
@@ -268,26 +261,6 @@ export function CreateScheduleModal({
               {errors.subjectId && (
                 <p className="text-sm text-red-500 mt-1">{errors.subjectId}</p>
               )}
-            </div>
-
-            {/* Teacher */}
-            <div>
-              <Label htmlFor="teacher">Teacher (Optional)</Label>
-              <Select
-                value={formData.teacherId}
-                onValueChange={(value) => handleInputChange("teacherId", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select teacher" />
-                </SelectTrigger>
-                <SelectContent>
-                  {teachers.map((teacher) => (
-                    <SelectItem key={teacher.id} value={teacher.id}>
-                      {teacher.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
 
             {/* Scheduled Date */}
