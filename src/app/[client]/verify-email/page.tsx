@@ -215,13 +215,14 @@ function ClientStudentVerifyEmailContent() {
         >
           <div className="mb-6">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
                 <Image
                   src={client?.logo || "/images/Logo.png"}
                   alt={client?.name || "Organization"}
-                  width={32}
-                  height={32}
-                  className="rounded"
+                  width={96}
+                  height={96}
+                  quality={100}
+                  className="w-full h-full object-cover"
                 />
               </div>
               <div>

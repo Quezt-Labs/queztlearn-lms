@@ -112,13 +112,14 @@ function ClientLoginContent() {
         >
           <div className="mb-6">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
                 <Image
                   src={client.logo}
                   alt={client.name}
-                  width={32}
-                  height={32}
-                  className="rounded"
+                  width={96}
+                  height={96}
+                  quality={100}
+                  className="w-full h-full object-cover"
                 />
               </div>
               <div>
@@ -166,13 +167,14 @@ function ClientLoginContent() {
           {/* Mobile Header */}
           <div className="lg:hidden text-center mb-8">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0">
                 <Image
                   src={client.logo}
                   alt={client.name}
-                  width={24}
-                  height={24}
-                  className="rounded"
+                  width={80}
+                  height={80}
+                  quality={100}
+                  className="w-full h-full object-cover"
                 />
               </div>
               <div>
