@@ -38,10 +38,19 @@ export type ClientTestSeriesListItem = {
   totalPrice: number;
   discountPercentage: number;
   finalPrice: number;
+  discountedPrice?: number; // Actual discounted price from API
   isFree: boolean;
   durationDays: number;
+  testCount?: number; // Number of tests in series
+  totalQuestions?: number; // Total questions in series
+  isPurchased?: boolean; // Whether user has purchased
   isEnrolled: boolean;
-  enrollmentDetails?: Record<string, unknown>;
+  enrollmentDetails?: {
+    enrolledAt?: string;
+    startDate?: string;
+    endDate?: string;
+    isActive?: boolean;
+  };
   enrollmentCount?: number; // Social proof
   averageScore?: number; // Engagement metric
   totalAttempts?: number; // Engagement metric

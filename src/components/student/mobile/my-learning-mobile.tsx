@@ -126,13 +126,15 @@ export function MyLearningMobile() {
       imageUrl: series.imageUrl,
       totalPrice: series.totalPrice,
       discountPercentage: series.discountPercentage,
-      finalPrice: series.finalPrice,
-      totalTests: 0, // TODO: Get from API if available
-      attemptedTests: 0, // TODO: Get from API if available
-      averageScore: series.averageScore || 0,
-      validUntil: new Date(
-        Date.now() + (series.durationDays || 365) * 24 * 60 * 60 * 1000
-      ),
+      finalPrice: series.discountedPrice || series.finalPrice,
+      totalTests: series.testCount || 0,
+      attemptedTests: 0, // TODO: Need API endpoint for attempt count
+      averageScore: 0, // TODO: Need API endpoint for average score
+      validUntil: series.enrollmentDetails?.endDate
+        ? new Date(series.enrollmentDetails.endDate)
+        : new Date(
+            Date.now() + (series.durationDays || 365) * 24 * 60 * 60 * 1000
+          ),
     })
   );
   const [settingsOpen, setSettingsOpen] = useState(false);
