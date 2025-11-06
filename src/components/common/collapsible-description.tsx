@@ -26,9 +26,7 @@ export function CollapsibleDescription({
 
   if (!html && !plainText) {
     return (
-      <p className="text-muted-foreground text-sm">
-        No description available.
-      </p>
+      <p className="text-muted-foreground text-sm">No description available.</p>
     );
   }
 
@@ -44,36 +42,34 @@ export function CollapsibleDescription({
           !isExpanded ? "mask-gradient-bottom" : ""
         }`}
       >
-        {html ? (
+        {html && (
           <div
             className="prose prose-sm sm:prose-base dark:prose-invert max-w-none"
             dangerouslySetInnerHTML={{ __html: html }}
           />
-        ) : (
-          <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-wrap">
-            {plainText}
-          </p>
         )}
       </motion.div>
 
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="mt-2 text-primary hover:text-primary hover:bg-primary/10 w-full sm:w-auto"
-      >
-        {isExpanded ? (
-          <>
-            {collapseText}
-            <ChevronUp className="h-4 w-4 ml-1" />
-          </>
-        ) : (
-          <>
-            {expandText}
-            <ChevronDown className="h-4 w-4 ml-1" />
-          </>
-        )}
-      </Button>
+      <div className="flex justify-center">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="mt-2 text-primary hover:text-primary hover:bg-primary/10 dark:text-primary-foreground dark:hover:text-primary-foreground dark:hover:bg-primary/10"
+        >
+          {isExpanded ? (
+            <>
+              {collapseText}
+              <ChevronUp className="h-4 w-4 ml-1" />
+            </>
+          ) : (
+            <>
+              {expandText}
+              <ChevronDown className="h-4 w-4 ml-1" />
+            </>
+          )}
+        </Button>
+      </div>
 
       <style jsx global>{`
         .mask-gradient-bottom::after {
@@ -90,8 +86,20 @@ export function CollapsibleDescription({
           );
           pointer-events: none;
         }
+
+        /* Override inline styles in dark mode */
+        .dark .prose div[style],
+        .dark .prose p[style],
+        .dark .prose span[style] {
+          background: hsl(var(--background)) !important;
+          color: hsl(var(--foreground)) !important;
+        }
+
+        /* Ensure all prose elements adapt to dark mode */
+        .dark .prose * {
+          border-color: hsl(var(--border)) !important;
+        }
       `}</style>
     </div>
   );
 }
-

@@ -120,12 +120,13 @@ export function FAQDisplay({
               </AccordionTrigger>
               <AccordionContent
                 className={cn(
-                  "text-muted-foreground prose prose-sm max-w-none",
+                  "text-muted-foreground prose prose-sm dark:prose-invert max-w-none",
                   answerClassName
                 )}
               >
                 {allowHTML && faq.answer ? (
                   <div
+                    className="faq-content"
                     dangerouslySetInnerHTML={{
                       __html: DOMPurify.sanitize(faq.answer),
                     }}
@@ -147,17 +148,41 @@ export function FAQDisplay({
 
   if (showCard) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <HelpCircle className="h-5 w-5 text-primary" />
-            {title}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>{content}</CardContent>
-      </Card>
+      <>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <HelpCircle className="h-5 w-5 text-primary" />
+              {title}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>{content}</CardContent>
+        </Card>
+        <style jsx global>{`
+          /* Override inline styles in dark mode for FAQ content */
+          .dark .faq-content div[style],
+          .dark .faq-content p[style],
+          .dark .faq-content span[style] {
+            background: hsl(var(--background)) !important;
+            color: hsl(var(--foreground)) !important;
+          }
+        `}</style>
+      </>
     );
   }
 
-  return content;
+  return (
+    <>
+      {content}
+      <style jsx global>{`
+        /* Override inline styles in dark mode for FAQ content */
+        .dark .faq-content div[style],
+        .dark .faq-content p[style],
+        .dark .faq-content span[style] {
+          background: hsl(var(--background)) !important;
+          color: hsl(var(--foreground)) !important;
+        }
+      `}</style>
+    </>
+  );
 }

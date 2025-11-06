@@ -34,7 +34,7 @@ export default function BatchDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="p-2.5 lg:px-10 lg:py-8">
+      <div className="p-2.5 lg:px-10 lg:py-8 bg-background">
         <DescriptionPageShimmer />
       </div>
     );
@@ -42,10 +42,12 @@ export default function BatchDetailPage() {
 
   if (error || !data?.success || !data?.data) {
     return (
-      <div className="container max-w-7xl mx-auto px-4 py-8">
+      <div className="container max-w-7xl mx-auto px-4 py-8 bg-background">
         <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
           <div className="text-6xl">😕</div>
-          <h2 className="text-2xl font-bold">Batch Not Found</h2>
+          <h2 className="text-2xl font-bold text-foreground">
+            Batch Not Found
+          </h2>
           <p className="text-muted-foreground">
             The batch you&apos;re looking for doesn&apos;t exist or has been
             removed.
@@ -75,7 +77,7 @@ export default function BatchDetailPage() {
   const isHotDeal = batch.discountPercentage >= 30;
 
   return (
-    <div className="h-full">
+    <div className="h-full bg-background">
       <div className="hidden lg:block sticky top-0 z-50">
         <BatchDetailHeader
           batch={batch}
@@ -101,7 +103,7 @@ export default function BatchDetailPage() {
       </div>
 
       {/* Main Content - Optimized spacing for mobile */}
-      <div className="px-3 py-4 lg:px-10 lg:py-8">
+      <div className="px-3 py-4 lg:px-10 lg:py-8 bg-background">
         <div className="container max-w-7xl mx-auto">
           <Suspense fallback={<DescriptionPageShimmer />}>
             {activeTab === "description" ? (
@@ -120,7 +122,7 @@ export default function BatchDetailPage() {
 
       {/* Sticky Bottom CTA (Mobile) - Optimized for thumb reach */}
       {!batch.isPurchased && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-lg border-t shadow-2xl safe-area-bottom">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 dark:bg-background/98 backdrop-blur-lg border-t border-border dark:border-gray-800 shadow-2xl safe-area-bottom">
           <div className="container max-w-7xl mx-auto px-3 py-3">
             <div className="flex items-center justify-between gap-3">
               <div className="shrink-0">
@@ -138,7 +140,7 @@ export default function BatchDetailPage() {
                 <Button
                   variant="outline"
                   size="default"
-                  className="shrink-0 h-11 px-4"
+                  className="shrink-0 h-11 px-4 dark:border-gray-700 dark:hover:bg-gray-800"
                   onClick={() => setActiveTab("description")}
                 >
                   Details
@@ -148,9 +150,14 @@ export default function BatchDetailPage() {
                   className="shrink-0 h-11 px-6 font-semibold shadow-md"
                   onClick={() => {
                     // Scroll to pricing section or trigger enrollment
-                    const pricingSection = document.querySelector('[data-pricing-card]');
+                    const pricingSection = document.querySelector(
+                      "[data-pricing-card]"
+                    );
                     if (pricingSection) {
-                      pricingSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      pricingSection.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                      });
                     }
                   }}
                 >

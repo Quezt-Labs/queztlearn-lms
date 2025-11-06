@@ -228,7 +228,7 @@ export function ExploreCourseCard({
       transition={{ duration: 0.4, delay: index * 0.1 }}
       className="h-full"
     >
-      <Card className="p-0 group h-full flex flex-col overflow-hidden border-2 hover:border-primary/50 hover:shadow-2xl transition-all duration-300 gap-0 rounded-xl">
+      <Card className="p-0 group h-full flex flex-col overflow-hidden border-2 hover:border-primary/50 hover:shadow-2xl transition-all duration-300 gap-0 rounded-xl bg-card dark:bg-card/95">
         {/* Gradient Header Section */}
         <div
           className={cn(
@@ -310,7 +310,7 @@ export function ExploreCourseCard({
                     className="h-7 w-7 sm:h-8 sm:w-8 border-2 border-white shadow-md shrink-0"
                   >
                     <AvatarImage src={teacher.imageUrl} alt={teacher.name} />
-                    <AvatarFallback className="text-[10px] sm:text-xs bg-white/90 text-gray-700">
+                    <AvatarFallback className="text-[10px] sm:text-xs bg-white/90 dark:bg-gray-800/90 text-gray-700 dark:text-gray-200">
                       {teacher.name
                         .split(" ")
                         .map((n) => n[0])
@@ -325,7 +325,7 @@ export function ExploreCourseCard({
           )}
 
           {/* Feature Overlay Banner */}
-          <div className="absolute bottom-0 left-0 right-0 bg-gray-800/90 backdrop-blur-sm px-2 sm:px-3 py-1.5 rounded-b-xl">
+          <div className="absolute bottom-0 left-0 right-0 bg-gray-800/90 dark:bg-gray-900/95 backdrop-blur-sm px-2 sm:px-3 py-1.5 rounded-b-xl">
             <div className="flex items-center gap-1.5 sm:gap-2 text-white text-[11px] sm:text-xs font-medium">
               <Users className="h-3 w-3 shrink-0" />
               <span className="truncate">{features.join(", ")}</span>
@@ -334,7 +334,7 @@ export function ExploreCourseCard({
         </div>
 
         {/* Content Section */}
-        <CardContent className="flex-1 flex flex-col p-3 sm:p-5 space-y-3 sm:space-y-4 bg-white">
+        <CardContent className="flex-1 flex flex-col p-3 sm:p-5 space-y-3 sm:space-y-4 bg-card dark:bg-card/50">
           {/* Category & Title Section */}
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
@@ -402,7 +402,7 @@ export function ExploreCourseCard({
             <div className="flex flex-col gap-1">
               {type === "test-series" && isFree ? (
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-emerald-600">
+                  <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-emerald-600 dark:text-emerald-400">
                     Free
                   </span>
                 </div>
@@ -419,7 +419,7 @@ export function ExploreCourseCard({
                       >
                         Save ₹{savings.toLocaleString("en-IN")}
                       </Badge>
-                      <Badge className="bg-green-500 text-white text-[10px] sm:text-xs font-bold px-1.5 py-0.5">
+                      <Badge className="bg-green-500 dark:bg-green-600 text-white text-[10px] sm:text-xs font-bold px-1.5 py-0.5">
                         {discountPercentage}% OFF
                       </Badge>
                     </div>
@@ -436,7 +436,7 @@ export function ExploreCourseCard({
             {/* Action Buttons */}
             <div className="flex gap-2">
               <Button
-                className="flex-1 h-10 sm:h-9 font-semibold text-sm bg-black hover:bg-gray-800 text-white min-h-[44px] sm:min-h-0"
+                className="flex-1 h-10 sm:h-9 font-semibold text-sm bg-black hover:bg-gray-800 dark:bg-white dark:hover:bg-gray-200 text-white dark:text-black min-h-[44px] sm:min-h-0"
                 onClick={handlePayment}
                 disabled={isProcessing}
               >
@@ -452,7 +452,7 @@ export function ExploreCourseCard({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-10 sm:h-9 w-10 sm:w-9 p-0 min-w-[44px] sm:min-w-[36px] shrink-0"
+                className="h-10 sm:h-9 w-10 sm:w-9 p-0 min-w-[44px] sm:min-w-[36px] shrink-0 dark:border-gray-700 dark:hover:bg-gray-800"
                 asChild
               >
                 <Link href={detailUrl}>

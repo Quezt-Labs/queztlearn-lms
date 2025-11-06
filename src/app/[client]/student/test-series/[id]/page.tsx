@@ -191,7 +191,7 @@ export default function StudentTestSeriesDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="p-2.5 lg:px-10 lg:py-8">
+      <div className="p-2.5 lg:px-10 lg:py-8 bg-background">
         <DescriptionPageShimmer />
       </div>
     );
@@ -199,10 +199,12 @@ export default function StudentTestSeriesDetailPage() {
 
   if (!testSeries) {
     return (
-      <div className="container max-w-7xl mx-auto px-4 py-8">
+      <div className="container max-w-7xl mx-auto px-4 py-8 bg-background">
         <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
           <div className="text-6xl">😕</div>
-          <h2 className="text-2xl font-bold">Test Series Not Found</h2>
+          <h2 className="text-2xl font-bold text-foreground">
+            Test Series Not Found
+          </h2>
           <p className="text-muted-foreground">
             The test series you&apos;re looking for doesn&apos;t exist or has
             been removed.
@@ -219,7 +221,7 @@ export default function StudentTestSeriesDetailPage() {
   console.log(testSeries, "testSeries");
 
   return (
-    <div className="relative">
+    <div className="relative bg-background">
       {/* Desktop Header - Scrollable */}
       <div className="hidden lg:block">
         <TestSeriesDetailHeader
@@ -265,7 +267,7 @@ export default function StudentTestSeriesDetailPage() {
       )}
 
       {/* Main Content - Optimized spacing for mobile */}
-      <div className="px-3 py-4 lg:px-10 lg:py-8">
+      <div className="px-3 py-4 lg:px-10 lg:py-8 bg-background">
         <div className="container max-w-7xl mx-auto relative">
           <Suspense fallback={<DescriptionPageShimmer />}>
             {activeTab === "description" ? (
@@ -296,7 +298,7 @@ export default function StudentTestSeriesDetailPage() {
 
       {/* Sticky Bottom CTA (Mobile) - Optimized for thumb reach */}
       {!isEnrolled && (
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-lg border-t shadow-2xl safe-area-bottom">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-background/95 dark:bg-background/98 backdrop-blur-lg border-t border-border dark:border-gray-800 shadow-2xl safe-area-bottom">
           <div className="container max-w-7xl mx-auto px-3 py-3">
             <div className="flex items-center justify-between gap-3">
               <div className="shrink-0">
@@ -314,7 +316,7 @@ export default function StudentTestSeriesDetailPage() {
                 <Button
                   variant="outline"
                   size="default"
-                  className="shrink-0 h-11 px-4"
+                  className="shrink-0 h-11 px-4 dark:border-gray-700 dark:hover:bg-gray-800"
                   onClick={() => setActiveTab("description")}
                 >
                   Details
@@ -359,6 +361,7 @@ export default function StudentTestSeriesDetailPage() {
               variant="outline"
               onClick={() => setIsEnrollDialogOpen(false)}
               disabled={isProcessing}
+              className="dark:border-gray-700 dark:hover:bg-gray-800"
             >
               Cancel
             </Button>

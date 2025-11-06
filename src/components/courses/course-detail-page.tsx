@@ -398,7 +398,7 @@ export function CourseDetailPage({
                   <div>
                     <h3 className="font-semibold mb-2">Description</h3>
                     <div
-                      className="prose prose-sm max-w-none text-muted-foreground"
+                      className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground course-description"
                       dangerouslySetInnerHTML={{
                         __html: courseData.description || "",
                       }}
@@ -531,7 +531,7 @@ export function CourseDetailPage({
                                   : "";
                                 return decodedContent ? (
                                   <div
-                                    className="prose prose-sm max-w-none text-muted-foreground [&_p]:m-0 [&_p]:mb-2 [&_h1]:text-base [&_h2]:text-base [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mb-2 [&_h3]:mt-2 [&_h3]:text-foreground [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-2 [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-2 [&_li]:mb-1 [&_li]:text-sm [&_strong]:font-semibold [&_em]:italic"
+                                    className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground course-description [&_p]:m-0 [&_p]:mb-2 [&_h1]:text-base [&_h2]:text-base [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:mb-2 [&_h3]:mt-2 [&_h3]:text-foreground [&_ol]:list-decimal [&_ol]:ml-6 [&_ol]:mb-2 [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:mb-2 [&_li]:mb-1 [&_li]:text-sm [&_strong]:font-semibold [&_em]:italic"
                                     dangerouslySetInnerHTML={{
                                       __html: decodedContent,
                                     }}
@@ -692,6 +692,16 @@ export function CourseDetailPage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      <style jsx global>{`
+        /* Override inline styles in dark mode for course description */
+        .dark .course-description div[style],
+        .dark .course-description p[style],
+        .dark .course-description span[style] {
+          background: hsl(var(--background)) !important;
+          color: hsl(var(--foreground)) !important;
+        }
+      `}</style>
     </div>
   );
 }

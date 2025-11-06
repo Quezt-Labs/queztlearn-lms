@@ -279,7 +279,7 @@ export function TestSeriesDetailPage({
                 <CardContent>
                   {testSeries.description?.html ? (
                     <div
-                      className="prose prose-sm max-w-none text-muted-foreground"
+                      className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground test-series-description"
                       dangerouslySetInnerHTML={{
                         __html: testSeries.description.html,
                       }}
@@ -564,6 +564,16 @@ export function TestSeriesDetailPage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      <style jsx global>{`
+        /* Override inline styles in dark mode for test series description */
+        .dark .test-series-description div[style],
+        .dark .test-series-description p[style],
+        .dark .test-series-description span[style] {
+          background: hsl(var(--background)) !important;
+          color: hsl(var(--foreground)) !important;
+        }
+      `}</style>
     </div>
   );
 }
