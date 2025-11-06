@@ -1,11 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Clock, CheckCircle2, Play, FileText } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Clock, FileText } from "lucide-react";
+import { TestCard } from "@/components/common/test-card";
 import { ClientTestInSeries } from "@/hooks/test-series-client";
 
 interface TestSeriesTestsTabProps {
@@ -65,79 +62,22 @@ export function TestSeriesTestsTab({
         transition={{ duration: 0.5 }}
         className="space-y-3"
       >
-        {tests.map((test, index) => (
-          <motion.div
+        {tests?.map((test, index) => (
+          <TestCard
             key={test.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: index * 0.1 }}
-          >
-            <Card className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold text-lg mb-2">{test.title}</h4>
-                    <div className="flex flex-wrap items-center gap-4 mt-2 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        {test.durationMinutes} min
-                      </span>
-                      <span>{test.totalMarks} marks</span>
-                      {test.isFree && (
-                        <Badge variant="secondary" className="text-xs">
-                          Free
-                        </Badge>
-                      )}
-                    </div>
-                    {test.attemptStatus && (
-                      <Badge
-                        variant={
-                          test.attemptStatus === "COMPLETED"
-                            ? "default"
-                            : test.attemptStatus === "IN_PROGRESS"
-                            ? "secondary"
-                            : "outline"
-                        }
-                        className="mt-3"
-                      >
-                        {test.attemptStatus === "COMPLETED" ? (
-                          <span className="flex items-center gap-1">
-                            <CheckCircle2 className="h-3 w-3" />
-                            Completed
-                          </span>
-                        ) : test.attemptStatus === "IN_PROGRESS" ? (
-                          "In Progress"
-                        ) : (
-                          "Not Started"
-                        )}
-                      </Badge>
-                    )}
-                  </div>
-                  {isEnrolled && (
-                    <Button
-                      asChild
-                      size="sm"
-                      variant={
-                        test.attemptStatus === "COMPLETED"
-                          ? "outline"
-                          : "default"
-                      }
-                      className="shrink-0"
-                    >
-                      <Link href={`/student/tests/${test.id}/instructions`}>
-                        <Play className="mr-2 h-4 w-4" />
-                        {test.attemptStatus === "COMPLETED"
-                          ? "Review"
-                          : test.attemptStatus === "IN_PROGRESS"
-                          ? "Resume"
-                          : "Start"}
-                      </Link>
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+            id={test.id}
+            title={test.title}
+            durationMinutes={test.durationMinutes}
+            totalMarks={test.totalMarks}
+            isFree={test.isFree}
+            attemptStatus={test.attemptStatus}
+            isEnrolled={isEnrolled}
+            isPurchased={isEnrolled}
+            testLink={
+              isEnrolled ? `/student/tests/${test.id}/instructions` : undefined
+            }
+            index={index}
+          />
         ))}
       </motion.div>
     </div>
