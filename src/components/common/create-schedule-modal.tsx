@@ -137,8 +137,15 @@ export function CreateScheduleModal({
     if (!formData.duration || formData.duration <= 0) {
       newErrors.duration = "Duration must be greater than 0";
     }
-    if (formData.youtubeLink && !formData.youtubeLink.includes("youtube.com")) {
-      newErrors.youtubeLink = "Please enter a valid YouTube link";
+    if (!formData.youtubeLink.trim()) {
+      newErrors.youtubeLink = "YouTube link is required";
+    } else {
+      const youtubeEmbedRegex =
+        /^(https?:\/\/)?(www\.)?(youtube\.com\/embed\/|youtu\.be\/)[\w-]{11}(\?.*)?$/;
+
+      if (!youtubeEmbedRegex.test(formData.youtubeLink)) {
+        newErrors.youtubeLink = "Please enter a valid YouTube link (embed URL)";
+      }
     }
 
     setErrors(newErrors);
@@ -366,7 +373,9 @@ export function CreateScheduleModal({
 
             {/* YouTube Link */}
             <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="youtube">YouTube Link (Optional)</Label>
+              <Label htmlFor="youtube">
+                YouTube Link <span className="text-red-500">*</span>
+              </Label>
               <div className="relative">
                 <Youtube className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
                 <Input
@@ -375,7 +384,7 @@ export function CreateScheduleModal({
                   onChange={(e) =>
                     handleInputChange("youtubeLink", e.target.value)
                   }
-                  placeholder="https://www.youtube.com/watch?v=..."
+                  placeholder="https://www.youtube.com/embed/..."
                   className={cn(
                     "pl-10",
                     errors.youtubeLink && "border-red-500"

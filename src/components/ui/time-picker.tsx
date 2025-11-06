@@ -93,14 +93,6 @@ export function TimePicker({
     }
   };
 
-  const handlePeriodToggle = () => {
-    const newPeriod = period === "AM" ? "PM" : "AM";
-    setPeriod(newPeriod);
-    if (selectedHour !== null && selectedMinute !== null) {
-      handleTimeSelect(selectedHour, selectedMinute, newPeriod);
-    }
-  };
-
   const scrollHour = (direction: "up" | "down") => {
     if (hourScrollRef.current) {
       const scrollAmount = 36; // Approximate button height + margin

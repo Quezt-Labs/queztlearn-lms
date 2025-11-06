@@ -176,8 +176,22 @@ export function EditScheduleModal({
     if (!formData.duration || formData.duration <= 0) {
       newErrors.duration = "Duration must be greater than 0";
     }
-    if (formData.youtubeLink && !formData.youtubeLink.includes("youtube.com")) {
-      newErrors.youtubeLink = "Please enter a valid YouTube link";
+    if (!formData.youtubeLink.trim()) {
+      newErrors.youtubeLink = "YouTube link is required";
+    } else {
+      // YouTube embed link regex: https://www.youtube.com/embed/VIDEO_ID or https://youtu.be/VIDEO_ID
+      const youtubeEmbedRegex =
+        /^(https?:\/\/)?(www\.)?(youtube\.com\/embed\/|youtu\.be\/)[\w-]{11}(\?.*)?$/;
+      const youtubeWatchRegex =
+        /^(https?:\/\/)?(www\.)?youtube\.com\/watch\?v=[\w-]{11}(&.*)?$/;
+
+      if (
+        !youtubeEmbedRegex.test(formData.youtubeLink) &&
+        !youtubeWatchRegex.test(formData.youtubeLink)
+      ) {
+        newErrors.youtubeLink =
+          "Please enter a valid YouTube link (embed or watch URL)";
+      }
     }
 
     setErrors(newErrors);
@@ -408,7 +422,9 @@ export function EditScheduleModal({
 
             {/* YouTube Link */}
             <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="youtube">YouTube Link (Optional)</Label>
+              <Label htmlFor="youtube">
+                YouTube Link <span className="text-red-500">*</span>
+              </Label>
               <div className="relative">
                 <Youtube className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
                 <Input
@@ -417,7 +433,7 @@ export function EditScheduleModal({
                   onChange={(e) =>
                     handleInputChange("youtubeLink", e.target.value)
                   }
-                  placeholder="https://www.youtube.com/watch?v=..."
+                  placeholder="https://www.youtube.com/embed/... or https://www.youtube.com/watch?v=..."
                   className={cn(
                     "pl-10",
                     errors.youtubeLink && "border-red-500"
@@ -486,31 +502,6 @@ export function EditScheduleModal({
                   }
                   placeholder="30"
                 />
-              </div>
-
-              {/* YouTube Link */}
-              <div className="md:col-span-2">
-                <Label htmlFor="youtube">YouTube Link (Optional)</Label>
-                <div className="relative">
-                  <Youtube className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-red-500" />
-                  <Input
-                    id="youtube"
-                    value={formData.youtubeLink}
-                    onChange={(e) =>
-                      handleInputChange("youtubeLink", e.target.value)
-                    }
-                    placeholder="https://www.youtube.com/watch?v=..."
-                    className={cn(
-                      "pl-10",
-                      errors.youtubeLink && "border-red-500"
-                    )}
-                  />
-                </div>
-                {errors.youtubeLink && (
-                  <p className="text-sm text-red-500 mt-1">
-                    {errors.youtubeLink}
-                  </p>
-                )}
               </div>
 
               {/* Description */}
