@@ -3,6 +3,33 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* YouTube Clean Player Styles - Hide native YouTube controls */
+.youtube-clean-player .vjs-tech {
+  pointer-events: auto !important;
+}
+
+.youtube-clean-player iframe {
+  pointer-events: auto !important;
+}
+
+/* Hide YouTube native control overlays */
+.youtube-clean-player .ytp-chrome-top,
+.youtube-clean-player .ytp-show-cards-title,
+.youtube-clean-player .ytp-title,
+.youtube-clean-player .ytp-watermark,
+.youtube-clean-player .ytp-chrome-bottom,
+.youtube-clean-player .ytp-progress-bar-container,
+.youtube-clean-player .ytp-chrome-controls {
+  display: none !important;
+}
+
+/* Ensure Video.js controls are always visible */
+.youtube-clean-player .vjs-control-bar {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
