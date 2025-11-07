@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,12 +13,21 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Mail, User, Building, Loader2, ArrowLeft } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Mail,
+  User,
+  Building,
+  Loader2,
+  ArrowLeft,
+  CheckCircle2,
+  RefreshCw,
+} from "lucide-react";
 import Link from "next/link";
 import { useEnhancedFormValidation, useLoadingState } from "@/hooks/common";
 import { getFriendlyErrorMessage } from "@/lib/utils/error-handling";
 import { ErrorMessage } from "@/components/common/error-message";
-import { useStudentRegister } from "@/hooks/api";
+import { useStudentRegister, useStudentResendVerification } from "@/hooks/api";
 import { useStudentAuthStore } from "@/lib/store/student-auth";
 import { ClientProvider, useClient } from "@/components/client/client-provider";
 import Image from "next/image";
@@ -27,6 +37,7 @@ function ClientStudentRegisterContent() {
   const router = useRouter();
   const { client } = useClient();
   const registerMutation = useStudentRegister();
+  const resendVerificationMutation = useStudentResendVerification();
   const { setStudentData } = useStudentAuthStore();
 
   // Form validation
@@ -47,7 +58,12 @@ function ClientStudentRegisterContent() {
     autoReset: true,
   });
 
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
+  const [isRegistrationSuccess, setIsRegistrationSuccess] =
+    useState<boolean>(false);
+  const [registeredEmail, setRegisteredEmail] = useState<string>("");
+  const [canResend, setCanResend] = useState<boolean>(true);
+  const [resendCount, setResendCount] = useState<number>(0);
 
   // Check if user is already authenticated and redirect accordingly
   useEffect(() => {
@@ -85,7 +101,7 @@ function ClientStudentRegisterContent() {
     try {
       await executeWithLoading(async () => {
         const result = await registerMutation.mutateAsync({
-          organizationId: client.organizationId, // Use organizationId from client config
+          organizationId: client.organizationId,
           email: getFieldValue("email"),
           username: getFieldValue("username"),
         });
@@ -98,12 +114,32 @@ function ClientStudentRegisterContent() {
             organizationId: client.organizationId,
           });
 
-          // Show success message and redirect to verification page
-          alert(
-            "Registration successful! Please check your email for verification link."
-          );
-          router.push(`/verify-email`);
+          // Show success state instead of redirecting
+          setRegisteredEmail(getFieldValue("email"));
+          setIsRegistrationSuccess(true);
         }
+      });
+    } catch (error: unknown) {
+      setError(getFriendlyErrorMessage(error));
+    }
+  };
+
+  const handleResendEmail = async () => {
+    if (!canResend || !registeredEmail) return;
+
+    try {
+      await executeWithLoading(async () => {
+        await resendVerificationMutation.mutateAsync({
+          email: registeredEmail,
+        });
+
+        setResendCount((prev) => prev + 1);
+        setCanResend(false);
+
+        // Allow resend after 60 seconds
+        setTimeout(() => {
+          setCanResend(true);
+        }, 60000);
       });
     } catch (error: unknown) {
       setError(getFriendlyErrorMessage(error));
@@ -122,10 +158,166 @@ function ClientStudentRegisterContent() {
     );
   }
 
+  // Show success state after registration
+  if (isRegistrationSuccess) {
+    return (
+      <div className="min-h-screen flex overflow-hidden">
+        {/* Left Side - Branding */}
+        <div className="hidden lg:flex lg:w-2/5 bg-linear-to-br from-primary to-primary/80 flex-col justify-center p-8 text-primary-foreground">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5 }}
+            className="max-w-md"
+          >
+            <div className="mb-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
+                  <Image
+                    src={client?.logo || "/images/Logo.png"}
+                    alt={client?.name || "Organization"}
+                    width={96}
+                    height={96}
+                    quality={100}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold">
+                    {client?.name || "Organization"}
+                  </h1>
+                  <p className="text-primary-foreground/80">Email Sent</p>
+                </div>
+              </div>
+              <p className="text-primary-foreground/80">
+                We've sent a verification link to your email address.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-primary-foreground/30 rounded-full flex items-center justify-center">
+                  <CheckCircle2 className="h-4 w-4" />
+                </div>
+                <span className="text-sm font-medium">Account Created</span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-primary-foreground/30 rounded-full flex items-center justify-center">
+                  <Mail className="h-4 w-4" />
+                </div>
+                <span className="text-sm font-medium">
+                  Verification Email Sent
+                </span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-primary-foreground/10 rounded-full flex items-center justify-center">
+                  <div className="w-2 h-2 bg-primary-foreground/50 rounded-full"></div>
+                </div>
+                <span className="text-sm text-primary-foreground/70">
+                  Check your email
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Right Side - Success Message */}
+        <div className="flex-1 lg:w-3/5 flex items-center justify-center p-6 bg-background">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="w-full max-w-lg"
+          >
+            {/* Success Icon */}
+            <div className="text-center mb-8">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/20 mb-4"
+              >
+                <CheckCircle2 className="h-10 w-10 text-green-600 dark:text-green-400" />
+              </motion.div>
+              <h2 className="text-2xl font-bold mb-2">Check Your Email!</h2>
+              <p className="text-muted-foreground">
+                We've sent a verification link to
+              </p>
+              <p className="text-foreground font-semibold mt-1">
+                {registeredEmail}
+              </p>
+            </div>
+
+            {/* Instructions Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Next Steps</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Alert>
+                  <Mail className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Check your inbox</strong> and click the verification
+                    link to activate your account.
+                  </AlertDescription>
+                </Alert>
+
+                <ErrorMessage error={error} />
+
+                {/* Resend Button */}
+                <div className="pt-4 border-t">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Didn't receive the email?
+                  </p>
+                  <Button
+                    variant="outline"
+                    onClick={handleResendEmail}
+                    disabled={
+                      !canResend || resendVerificationMutation.isPending
+                    }
+                    className="w-full"
+                  >
+                    {resendVerificationMutation.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Resend Verification Email
+                        {!canResend && " (Wait 60s)"}
+                      </>
+                    )}
+                  </Button>
+                  {resendCount > 0 && (
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      Email sent {resendCount} time{resendCount > 1 ? "s" : ""}
+                    </p>
+                  )}
+                </div>
+
+                {/* Back to Login */}
+                <div className="text-center pt-2">
+                  <Button variant="ghost" asChild>
+                    <Link href={`/login`}>
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back to Login
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex overflow-hidden">
       {/* Left Side - Branding */}
-      <div className="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-primary to-primary/80 flex-col justify-center p-8 text-primary-foreground">
+      <div className="hidden lg:flex lg:w-2/5 bg-linear-to-br from-primary to-primary/80 flex-col justify-center p-8 text-primary-foreground">
         <div className="max-w-md">
           <div className="mb-6">
             <div className="flex items-center space-x-3 mb-4">
