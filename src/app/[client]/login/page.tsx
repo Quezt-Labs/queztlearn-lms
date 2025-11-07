@@ -80,9 +80,7 @@ function ClientLoginContent() {
             userData &&
             (userData as { role?: string }).role?.toLowerCase() === "student"
           ) {
-            // Redirect authenticated students to My Learning page
-            const clientSlug = params.client as string;
-            router.push(`/${clientSlug}/student/my-learning`);
+            router.push(`/student/my-learning`);
             return;
           }
         }
