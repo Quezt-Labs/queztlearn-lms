@@ -190,7 +190,7 @@ function ClientStudentRegisterContent() {
                 </div>
               </div>
               <p className="text-primary-foreground/80">
-                We've sent a verification link to your email address.
+                We&apos;ve sent a verification link to your email address.
               </p>
             </div>
 
@@ -241,7 +241,7 @@ function ClientStudentRegisterContent() {
               </motion.div>
               <h2 className="text-2xl font-bold mb-2">Check Your Email!</h2>
               <p className="text-muted-foreground">
-                We've sent a verification link to
+                We&apos;ve sent a verification link to
               </p>
               <p className="text-foreground font-semibold mt-1">
                 {registeredEmail}
@@ -267,7 +267,7 @@ function ClientStudentRegisterContent() {
                 {/* Resend Button */}
                 <div className="pt-4 border-t">
                   <p className="text-sm text-muted-foreground mb-3">
-                    Didn't receive the email?
+                    Didn&apos;t receive the email?
                   </p>
                   <Button
                     variant="outline"
