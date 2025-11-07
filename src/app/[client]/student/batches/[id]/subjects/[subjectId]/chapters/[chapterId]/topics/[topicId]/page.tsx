@@ -2,9 +2,17 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, FileText, Video, Download } from "lucide-react";
+import {
+  ArrowLeft,
+  FileText,
+  Video,
+  Download,
+  PlayCircle,
+  Clock,
+  CheckCircle2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGetClientTopic, useGetContentsByTopic } from "@/hooks";
@@ -41,6 +49,13 @@ export default function TopicDetailPage() {
   const handleGoBack = () => {
     router.push(
       `/student/batches/${batchId}/subjects/${subjectId}/chapters/${chapterId}`
+    );
+  };
+
+  const handleOpenVideo = (content: Content) => {
+    // Navigate to dedicated video player page
+    router.push(
+      `/student/batches/${batchId}/subjects/${subjectId}/chapters/${chapterId}/topics/${topicId}/content/${content.id}`
     );
   };
 
@@ -102,25 +117,34 @@ export default function TopicDetailPage() {
         </div>
       </div>
 
-      {/* Content */}
-      {contents.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="font-semibold mb-2">No content available</h3>
-            <p className="text-muted-foreground text-center max-w-md">
-              This topic doesn&apos;t have any lectures or PDFs yet.
+      {/* Content Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight mb-1">Content</h2>
+            <p className="text-muted-foreground text-sm">
+              {contents.length} {contents.length === 1 ? "Item" : "Items"}{" "}
+              available
             </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Content ({contents.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
+          </div>
+        </div>
+
+        {contents.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold mb-2">
+                No content available
+              </h3>
+              <p className="text-muted-foreground text-center max-w-md">
+                This topic doesn&apos;t have any lectures or PDFs yet.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
             <Tabs defaultValue="all" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-3 max-w-md">
                 <TabsTrigger value="all">All ({contents.length})</TabsTrigger>
                 <TabsTrigger value="lectures">
                   Lectures ({lectures.length})
@@ -128,69 +152,86 @@ export default function TopicDetailPage() {
                 <TabsTrigger value="pdfs">PDFs ({pdfs.length})</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="all" className="mt-4 space-y-3">
-                {contents.map((content, index) => (
-                  <motion.div
-                    key={content.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                  >
-                    <ContentCard
-                      content={content}
-                      formatDuration={formatDuration}
-                    />
-                  </motion.div>
-                ))}
-              </TabsContent>
-
-              <TabsContent value="lectures" className="mt-4 space-y-3">
-                {lectures.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No lectures available
-                  </div>
-                ) : (
-                  lectures.map((content, index) => (
+              <TabsContent value="all" className="mt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+                  {contents.map((content, index) => (
                     <motion.div
                       key={content.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
                     >
                       <ContentCard
                         content={content}
                         formatDuration={formatDuration}
+                        onPlayVideo={handleOpenVideo}
                       />
                     </motion.div>
-                  ))
+                  ))}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="lectures" className="mt-6">
+                {lectures.length === 0 ? (
+                  <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                      <Video className="h-12 w-12 text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">
+                        No lectures available
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+                    {lectures.map((content, index) => (
+                      <motion.div
+                        key={content.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                      >
+                        <ContentCard
+                          content={content}
+                          formatDuration={formatDuration}
+                          onPlayVideo={handleOpenVideo}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
                 )}
               </TabsContent>
 
-              <TabsContent value="pdfs" className="mt-4 space-y-3">
+              <TabsContent value="pdfs" className="mt-6">
                 {pdfs.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No PDFs available
-                  </div>
+                  <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                      <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground">No PDFs available</p>
+                    </CardContent>
+                  </Card>
                 ) : (
-                  pdfs.map((content, index) => (
-                    <motion.div
-                      key={content.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 }}
-                    >
-                      <ContentCard
-                        content={content}
-                        formatDuration={formatDuration}
-                      />
-                    </motion.div>
-                  ))
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+                    {pdfs.map((content, index) => (
+                      <motion.div
+                        key={content.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                      >
+                        <ContentCard
+                          content={content}
+                          formatDuration={formatDuration}
+                          onPlayVideo={handleOpenVideo}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
                 )}
               </TabsContent>
             </Tabs>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -198,9 +239,11 @@ export default function TopicDetailPage() {
 function ContentCard({
   content,
   formatDuration,
+  onPlayVideo,
 }: {
   content: Content;
   formatDuration: (seconds?: number) => string;
+  onPlayVideo: (content: Content) => void;
 }) {
   const isLecture = content.type === "Lecture" && content.videoUrl;
   const isPdf = content.type === "PDF" && content.pdfUrl;
@@ -209,72 +252,125 @@ function ContentCard({
     window.open(url, "_blank");
   };
 
-  const handlePlayVideo = (url: string) => {
-    window.open(url, "_blank");
+  const handlePlayVideo = () => {
+    onPlayVideo(content);
   };
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4 lg:p-6">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            {isLecture && <Video className="h-5 w-5 text-green-600 shrink-0" />}
-            {isPdf && <FileText className="h-5 w-5 text-purple-600 shrink-0" />}
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-base lg:text-lg truncate">
-                {content.name}
-              </h3>
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                <Badge
-                  variant="secondary"
-                  className={
-                    content.type === "Lecture"
-                      ? "bg-green-100 text-green-800 text-xs"
-                      : content.type === "PDF"
-                      ? "bg-purple-100 text-purple-800 text-xs"
-                      : "bg-blue-100 text-blue-800 text-xs"
-                  }
-                >
-                  {content.type}
-                </Badge>
-                {isLecture && content.videoDuration && (
-                  <span className="text-xs text-muted-foreground">
-                    {formatDuration(content.videoDuration)}
-                  </span>
-                )}
-                {content.videoType && (
-                  <Badge variant="outline" className="text-xs">
-                    {content.videoType}
-                  </Badge>
-                )}
-                {content.isCompleted && (
-                  <Badge variant="default" className="text-xs bg-green-600">
-                    Completed
-                  </Badge>
-                )}
+    <Card className="group relative overflow-hidden border-2 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer h-full flex flex-col hover:border-primary/50">
+      {/* Gradient Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+      <CardContent className="relative p-0 flex flex-col h-full">
+        {/* Thumbnail/Icon Section */}
+        {isLecture && content.videoThumbnail ? (
+          <div
+            className="relative aspect-video overflow-hidden bg-muted cursor-pointer"
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePlayVideo();
+            }}
+          >
+            <img
+              src={content.videoThumbnail}
+              alt={content.name}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+              <div className="h-12 w-12 rounded-full bg-white/90 dark:bg-black/50 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <PlayCircle className="h-6 w-6 text-primary" />
               </div>
             </div>
+            {content.isCompleted && (
+              <div className="absolute top-2 right-2">
+                <Badge className="bg-green-600 text-white">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Completed
+                </Badge>
+              </div>
+            )}
           </div>
-          <div className="flex gap-2 shrink-0">
-            {isLecture && content.videoUrl && (
+        ) : (
+          <div className="relative aspect-video bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+            {isLecture ? (
+              <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center">
+                <Video className="h-8 w-8 text-primary" />
+              </div>
+            ) : (
+              <div className="h-16 w-16 rounded-full bg-purple-500/20 flex items-center justify-center">
+                <FileText className="h-8 w-8 text-purple-600" />
+              </div>
+            )}
+            {content.isCompleted && (
+              <div className="absolute top-2 right-2">
+                <Badge className="bg-green-600 text-white">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Completed
+                </Badge>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Content Info */}
+        <div className="p-6 flex flex-col flex-1">
+          <div className="mb-3">
+            <h3 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors line-clamp-2">
+              {content.name}
+            </h3>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge
+                variant="secondary"
+                className={
+                  content.type === "Lecture"
+                    ? "bg-green-500/10 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 text-xs"
+                    : "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 text-xs"
+                }
+              >
+                {content.type}
+              </Badge>
+              {isLecture && content.videoDuration && (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Clock className="h-3 w-3" />
+                  {formatDuration(content.videoDuration)}
+                </div>
+              )}
+              {content.videoType && (
+                <Badge variant="outline" className="text-xs">
+                  {content.videoType}
+                </Badge>
+              )}
+            </div>
+          </div>
+
+          {/* CTA Button */}
+          <div className="mt-auto pt-4 border-t border-border/50">
+            {isLecture && content.videoUrl ? (
               <Button
                 size="sm"
-                onClick={() => handlePlayVideo(content.videoUrl!)}
+                className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePlayVideo();
+                }}
               >
-                <Video className="h-4 w-4 mr-2" />
-                Watch
+                <PlayCircle className="h-4 w-4 mr-2" />
+                Watch Now
               </Button>
-            )}
-            {isPdf && content.pdfUrl && (
+            ) : isPdf && content.pdfUrl ? (
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => handleOpenPdf(content.pdfUrl!)}
+                className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenPdf(content.pdfUrl!);
+                }}
               >
                 <Download className="h-4 w-4 mr-2" />
-                Download
+                Download PDF
               </Button>
-            )}
+            ) : null}
           </div>
         </div>
       </CardContent>

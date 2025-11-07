@@ -1,7 +1,7 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { Suspense, lazy, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, lazy, useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGetExploreBatch } from "@/hooks";
@@ -32,10 +32,32 @@ const BatchScheduleTab = lazy(() =>
 export default function BatchDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const id = params.id as string;
+
+  // Get tab from URL params, default to "description"
+  const tabFromUrl = searchParams.get("tab") as
+    | "description"
+    | "subjects"
+    | "schedule"
+    | null;
   const [activeTab, setActiveTab] = useState<
     "description" | "subjects" | "schedule"
-  >("description");
+  >(
+    tabFromUrl && ["description", "subjects", "schedule"].includes(tabFromUrl)
+      ? tabFromUrl
+      : "description"
+  );
+
+  // Update tab when URL param changes
+  useEffect(() => {
+    if (
+      tabFromUrl &&
+      ["description", "subjects", "schedule"].includes(tabFromUrl)
+    ) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
 
   const { data, isLoading, error } = useGetExploreBatch(id);
 
@@ -83,6 +105,16 @@ export default function BatchDetailPage() {
   const savings = batch.totalPrice - finalPrice;
   const isHotDeal = batch.discountPercentage >= 30;
 
+  // Handle tab change and update URL
+  const handleTabChange = (tab: "description" | "subjects" | "schedule") => {
+    setActiveTab(tab);
+    // Update URL without adding to history to avoid back loop
+    const newUrl = `/student/batches/${id}${
+      tab !== "description" ? `?tab=${tab}` : ""
+    }`;
+    router.replace(newUrl, { scroll: false });
+  };
+
   return (
     <div className="h-full bg-background">
       <div className="hidden lg:block sticky top-0 z-50">
@@ -92,8 +124,8 @@ export default function BatchDetailPage() {
           isUpcoming={isUpcoming}
           isEnded={isEnded}
           activeTab={activeTab}
-          onTabChange={setActiveTab}
-          onBack={() => router.back()}
+          onTabChange={handleTabChange}
+          onBack={() => router.push("/student/explore")}
         />
       </div>
 
@@ -105,10 +137,10 @@ export default function BatchDetailPage() {
           isUpcoming={isUpcoming}
           isEnded={isEnded}
           isHotDeal={isHotDeal}
-          onBack={() => router.back()}
+          onBack={() => router.push("/student/explore")}
         />
         {/* Mobile Tabs */}
-        <MobileBatchTabs activeTab={activeTab} onTabChange={setActiveTab} />
+        <MobileBatchTabs activeTab={activeTab} onTabChange={handleTabChange} />
       </div>
 
       {/* Main Content - Optimized spacing for mobile */}
@@ -152,7 +184,7 @@ export default function BatchDetailPage() {
                   variant="outline"
                   size="default"
                   className="shrink-0 h-11 px-4 dark:border-gray-700 dark:hover:bg-gray-800"
-                  onClick={() => setActiveTab("description")}
+                  onClick={() => handleTabChange("description")}
                 >
                   Details
                 </Button>
