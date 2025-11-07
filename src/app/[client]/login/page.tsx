@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,12 +22,15 @@ import { getFriendlyErrorMessage } from "@/lib/utils/error-handling";
 import { ErrorMessage } from "@/components/common/error-message";
 import { useStudentLogin } from "@/hooks/api";
 import { useRouter } from "next/navigation";
+import { cookieStorage } from "@/lib/utils/storage";
 
 // Client Login Component
 function ClientLoginContent() {
   const router = useRouter();
+  const params = useParams();
   const { client, isLoading, error } = useClient();
   const [showPassword, setShowPassword] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const studentLoginMutation = useStudentLogin();
 
   // Form validation
@@ -54,6 +57,51 @@ function ClientLoginContent() {
     autoReset: true,
   });
 
+  // Check if user is already authenticated and redirect to My Learning
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const checkAuthAndRedirect = async () => {
+      try {
+        // Check if QUEZT_AUTH token exists in cookies
+        const authData = cookieStorage.get<{
+          token: string;
+          user: { role: string };
+        }>("QUEZT_AUTH");
+
+        if (
+          authData &&
+          typeof authData === "object" &&
+          "token" in authData &&
+          authData.token
+        ) {
+          const userData = authData.user;
+          if (
+            userData &&
+            (userData as { role?: string }).role?.toLowerCase() === "student"
+          ) {
+            // Redirect authenticated students to My Learning page
+            const clientSlug = params.client as string;
+            router.push(`/${clientSlug}/student/my-learning`);
+            return;
+          }
+        }
+        setIsCheckingAuth(false);
+      } catch (error) {
+        console.error("Auth check error:", error);
+        setIsCheckingAuth(false);
+      }
+    };
+
+    // Only check after client is loaded
+    if (!isLoading && client) {
+      const timer = setTimeout(checkAuthAndRedirect, 100);
+      return () => clearTimeout(timer);
+    } else if (!isLoading) {
+      setIsCheckingAuth(false);
+    }
+  }, [router, params.client, isLoading, client]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -76,10 +124,15 @@ function ClientLoginContent() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isCheckingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="text-muted-foreground">
+            {isCheckingAuth ? "Checking authentication..." : "Loading..."}
+          </p>
+        </div>
       </div>
     );
   }

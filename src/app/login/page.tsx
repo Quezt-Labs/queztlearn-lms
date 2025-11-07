@@ -18,6 +18,7 @@ import { BrandingSidebar } from "@/components/onboarding/branding-sidebar";
 import { tokenManager } from "@/lib/api/client";
 import { useEnhancedFormValidation, useLoadingState } from "@/hooks/common";
 import { ErrorMessage } from "@/components/common/error-message";
+import { cookieStorage } from "@/lib/utils/storage";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -50,24 +51,41 @@ export default function LoginPage() {
 
     const checkAuthAndRedirect = async () => {
       try {
-        if (tokenManager.isAuthenticated()) {
-          const userData = tokenManager.getUser();
+        // Check if QUEZT_AUTH token exists in cookies
+        const authData = cookieStorage.get<{
+          token: string;
+          user: { role: string };
+        }>("QUEZT_AUTH");
+
+        console.log(authData, "authData");
+        if (
+          authData &&
+          typeof authData === "object" &&
+          "token" in authData &&
+          authData.token
+        ) {
+          const userData = authData.user;
+          console.log(userData, "userData");
           if (userData) {
             // Redirect based on user role
-            switch ((userData as { role?: string }).role?.toLowerCase()) {
+            const userRole = (
+              userData as { role?: string }
+            ).role?.toLowerCase();
+            switch (userRole) {
               case "admin":
                 router.push("/admin/dashboard");
-                break;
+                return;
               case "teacher":
                 router.push("/teacher/dashboard");
-                break;
+                return;
               case "student":
-                router.push("/student/dashboard");
-                break;
+                // Redirect students to My Learning page
+                router.push("/student/my-learning");
+                return;
               default:
                 router.push("/admin/dashboard");
+                return;
             }
-            return;
           }
         }
         setIsCheckingAuth(false);

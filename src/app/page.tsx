@@ -10,7 +10,7 @@ import {
   Video,
   FileText,
 } from "lucide-react";
-import { tokenManager } from "@/lib/api/client";
+import { cookieStorage } from "@/lib/utils/storage";
 import { HeroSection } from "@/components/ui/3d-hero-section-boxes";
 import { FeatureSection } from "@/components/ui/feature-section";
 import { HowItWorks } from "@/components/ui/how-it-works";
@@ -32,25 +32,52 @@ export default function Home() {
     const checkAuthAndRedirect = async () => {
       try {
         console.log("Homepage: Checking authentication...");
-        console.log(
-          "Homepage: isAuthenticated:",
-          tokenManager.isAuthenticated()
-        );
 
-        if (tokenManager.isAuthenticated()) {
-          const userData = tokenManager.getUser();
+        // Check if QUEZT_AUTH token exists in cookies
+        const authData = cookieStorage.get<{
+          token: string;
+          user: { role: string };
+        }>("QUEZT_AUTH");
+
+        console.log("Homepage: authData:", authData);
+
+        if (
+          authData &&
+          typeof authData === "object" &&
+          "token" in authData &&
+          authData.token
+        ) {
+          const userData = authData.user;
           console.log("Homepage: User data:", userData);
 
           if (userData) {
-            console.log(
-              "Homepage: User role:",
-              (userData as { role?: string }).role
-            );
-            // Don't auto-redirect, let user choose
-            setIsCheckingAuth(false);
-            return;
+            const userRole = (
+              userData as { role?: string }
+            ).role?.toLowerCase();
+            console.log("Homepage: User role:", userRole);
+
+            // Auto-redirect authenticated users to their dashboard
+            switch (userRole) {
+              case "admin":
+                console.log("Homepage: Redirecting to admin dashboard");
+                router.push("/admin/dashboard");
+                return;
+              case "teacher":
+                console.log("Homepage: Redirecting to teacher dashboard");
+                router.push("/teacher/dashboard");
+                return;
+              case "student":
+                console.log("Homepage: Redirecting to student my-learning");
+                router.push("/student/my-learning");
+                return;
+              default:
+                console.log("Homepage: Unknown role, redirecting to admin");
+                router.push("/admin/dashboard");
+                return;
+            }
           }
         }
+
         console.log("Homepage: Not authenticated, showing homepage");
         setIsCheckingAuth(false);
       } catch (error) {
