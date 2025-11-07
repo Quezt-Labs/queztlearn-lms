@@ -60,6 +60,12 @@ export {
   useEnrollFreeBatch,
   useGetExploreTestSeries,
   useGetExploreTestSeriesById,
+  useGetClientSubjectsByBatch,
+  useGetClientSubject,
+  useGetClientChaptersBySubject,
+  useGetClientChapter,
+  useGetClientTopicsByChapter,
+  useGetClientTopic,
   queryKeys,
 } from "./api";
 

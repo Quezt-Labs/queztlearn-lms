@@ -17,8 +17,8 @@ interface BatchDetailHeaderProps {
   isLive: boolean;
   isUpcoming: boolean;
   isEnded: boolean;
-  activeTab: "description" | "classes";
-  onTabChange: (tab: "description" | "classes") => void;
+  activeTab: "description" | "subjects" | "schedule";
+  onTabChange: (tab: "description" | "subjects" | "schedule") => void;
   onBack: () => void;
 }
 
@@ -95,10 +95,10 @@ export function BatchDetailHeader({
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-6 px-1">
+        <div className="flex gap-6 px-1 overflow-x-auto">
           <button
             onClick={() => onTabChange("description")}
-            className={`relative py-4 px-2 text-sm font-semibold transition-colors ${
+            className={`relative py-4 px-2 text-sm font-semibold transition-colors whitespace-nowrap ${
               activeTab === "description"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
@@ -115,15 +115,33 @@ export function BatchDetailHeader({
             )}
           </button>
           <button
-            onClick={() => onTabChange("classes")}
-            className={`relative py-4 px-2 text-sm font-semibold transition-colors ${
-              activeTab === "classes"
+            onClick={() => onTabChange("subjects")}
+            className={`relative py-4 px-2 text-sm font-semibold transition-colors whitespace-nowrap ${
+              activeTab === "subjects"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            Classes
-            {activeTab === "classes" && (
+            Subjects
+            {activeTab === "subjects" && (
+              <motion.div
+                layoutId="activeTab"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                initial={false}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              />
+            )}
+          </button>
+          <button
+            onClick={() => onTabChange("schedule")}
+            className={`relative py-4 px-2 text-sm font-semibold transition-colors whitespace-nowrap ${
+              activeTab === "schedule"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Schedule
+            {activeTab === "schedule" && (
               <motion.div
                 layoutId="activeTab"
                 className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"

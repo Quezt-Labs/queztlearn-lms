@@ -6,29 +6,28 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useGetBatchSchedules } from "@/hooks";
 import { useParams } from "next/navigation";
-import { Calendar, Clock, ExternalLink, Play, Video } from "lucide-react";
+import { Calendar, Clock, Video, Radio } from "lucide-react";
 
 interface Schedule {
   id: string;
   title: string;
   description?: string;
   subjectName: string;
-  youtubeLink?: string;
   scheduledAt: string;
   duration?: number;
   status: "SCHEDULED" | "LIVE" | "COMPLETED";
 }
 
-export function BatchClassesTab() {
+export function BatchScheduleTab() {
   const params = useParams();
   const batchId = params.id as string;
 
   const { data: schedulesResponse, isLoading } = useGetBatchSchedules(batchId);
   const allSchedules: Schedule[] = schedulesResponse?.data || [];
 
-  // Filter only completed classes with recordings (youtubeLink)
+  // Filter only live and scheduled classes (not completed)
   const schedules = allSchedules.filter(
-    (schedule) => schedule.status === "COMPLETED" && schedule.youtubeLink
+    (schedule) => schedule.status === "SCHEDULED" || schedule.status === "LIVE"
   );
 
   if (isLoading) {
@@ -62,13 +61,11 @@ export function BatchClassesTab() {
       >
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <div className="text-6xl mb-4">📚</div>
-            <h3 className="text-lg font-semibold mb-2">
-              No Recorded Classes Available
-            </h3>
+            <div className="text-6xl mb-4">📅</div>
+            <h3 className="text-lg font-semibold mb-2">No Live Classes Scheduled</h3>
             <p className="text-muted-foreground text-center max-w-md">
-              Recorded class sessions will be available here once they are
-              completed and uploaded.
+              Upcoming and live class sessions will be displayed here. Check back
+              soon for scheduled classes.
             </p>
           </CardContent>
         </Card>
@@ -90,7 +87,7 @@ export function BatchClassesTab() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: index * 0.1 }}
         >
-          <Card>
+          <Card className={schedule.status === "LIVE" ? "border-primary border-2" : ""}>
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1 flex-1">
@@ -103,14 +100,15 @@ export function BatchClassesTab() {
                     </Badge>
                     <Badge
                       variant={
-                        schedule.status === "COMPLETED"
-                          ? "secondary"
-                          : schedule.status === "LIVE"
+                        schedule.status === "LIVE"
                           ? "destructive"
                           : "default"
                       }
                       className="text-xs"
                     >
+                      {schedule.status === "LIVE" && (
+                        <Radio className="h-3 w-3 mr-1 animate-pulse" />
+                      )}
                       {schedule.status}
                     </Badge>
                   </div>
@@ -156,22 +154,9 @@ export function BatchClassesTab() {
                   </div>
                 )}
               </div>
-              {schedule.youtubeLink && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full sm:w-auto"
-                  asChild
-                >
-                  <a
-                    href={schedule.youtubeLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    Watch Recording
-                    <ExternalLink className="h-3 w-3 ml-2" />
-                  </a>
+              {schedule.status === "LIVE" && (
+                <Button size="sm" className="w-full sm:w-auto">
+                  Join Live Class
                 </Button>
               )}
             </CardContent>
@@ -181,3 +166,4 @@ export function BatchClassesTab() {
     </motion.div>
   );
 }
+

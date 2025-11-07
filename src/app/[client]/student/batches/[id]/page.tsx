@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useGetExploreBatch } from "@/hooks";
 import { BatchDetailHeader } from "@/components/student/batch-detail-header";
 import { MobileBatchHero } from "@/components/student/mobile-batch-hero";
+import { MobileBatchTabs } from "@/components/student/mobile-batch-tabs";
 import { DescriptionPageShimmer } from "@/components/common/description-page-shimmer";
 
 // Lazy load tab content components
@@ -16,9 +17,15 @@ const BatchDescriptionTab = lazy(() =>
   }))
 );
 
-const BatchClassesTab = lazy(() =>
-  import("@/components/student/batch-classes-tab").then((mod) => ({
-    default: mod.BatchClassesTab,
+const BatchSubjectsTab = lazy(() =>
+  import("@/components/student/batch-subjects-tab").then((mod) => ({
+    default: mod.BatchSubjectsTab,
+  }))
+);
+
+const BatchScheduleTab = lazy(() =>
+  import("@/components/student/batch-schedule-tab").then((mod) => ({
+    default: mod.BatchScheduleTab,
   }))
 );
 
@@ -26,9 +33,9 @@ export default function BatchDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const [activeTab, setActiveTab] = useState<"description" | "classes">(
-    "description"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "description" | "subjects" | "schedule"
+  >("description");
 
   const { data, isLoading, error } = useGetExploreBatch(id);
 
@@ -100,6 +107,8 @@ export default function BatchDetailPage() {
           isHotDeal={isHotDeal}
           onBack={() => router.back()}
         />
+        {/* Mobile Tabs */}
+        <MobileBatchTabs activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
 
       {/* Main Content - Optimized spacing for mobile */}
@@ -113,8 +122,10 @@ export default function BatchDetailPage() {
                 savings={savings}
                 isHotDeal={isHotDeal}
               />
+            ) : activeTab === "subjects" ? (
+              <BatchSubjectsTab />
             ) : (
-              <BatchClassesTab />
+              <BatchScheduleTab />
             )}
           </Suspense>
         </div>
