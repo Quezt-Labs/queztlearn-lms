@@ -10,9 +10,41 @@ import { TestAttemptCard } from "@/components/student/test-attempt-card";
 import { BatchCard } from "@/components/student/batch-card";
 import { TestSeriesCard } from "@/components/student/test-series-card";
 import { useClientMyEnrollments } from "@/hooks/test-series-client";
+import { useGetMyBatches } from "@/hooks";
 import { useIsMobile } from "@/hooks";
 import { motion } from "framer-motion";
 import { Play, FileText, BookOpen, TrendingUp } from "lucide-react";
+
+interface Batch {
+  id: string;
+  name: string;
+  description?: string | null;
+  class: "11" | "12" | "12+" | "Grad";
+  exam: string;
+  imageUrl?: string;
+  startDate: string;
+  endDate: string;
+  language: string;
+  totalPrice: number;
+  discountPercentage: number;
+}
+
+interface PurchasedBatch {
+  id: string;
+  name: string;
+  class: string;
+  exam: string;
+  imageUrl?: string;
+  startDate: Date;
+  endDate: Date;
+  language: string;
+  totalPrice: number;
+  discountPercentage: number;
+  finalPrice: number;
+  progress: number;
+  totalSubjects: number;
+  completedSubjects: number;
+}
 
 const recentVideos = [
   {
@@ -79,43 +111,6 @@ const recentTests = [
   },
 ];
 
-const purchasedBatches = [
-  {
-    id: "1",
-    name: "JEE Main 2025 Complete Course",
-    class: "12th",
-    exam: "JEE",
-    imageUrl:
-      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400",
-    startDate: new Date("2025-01-01"),
-    endDate: new Date("2025-12-31"),
-    language: "English",
-    totalPrice: 15000,
-    discountPercentage: 20,
-    finalPrice: 12000,
-    progress: 45,
-    totalSubjects: 3,
-    completedSubjects: 1,
-  },
-  {
-    id: "2",
-    name: "NEET Biology Mastery",
-    class: "12th",
-    exam: "NEET",
-    imageUrl:
-      "https://images.unsplash.com/photo-1576086213369-97a306d36557?w=400",
-    startDate: new Date("2025-02-01"),
-    endDate: new Date("2025-11-30"),
-    language: "Hindi",
-    totalPrice: 8000,
-    discountPercentage: 15,
-    finalPrice: 6800,
-    progress: 68,
-    totalSubjects: 1,
-    completedSubjects: 0,
-  },
-];
-
 export default function MyLearningPage() {
   const { isMobile, isClient } = useIsMobile();
 
@@ -125,6 +120,31 @@ export default function MyLearningPage() {
       { page: 1, limit: 6 },
       { enabled: isClient && isMobile === false }
     );
+
+  // Fetch purchased batches from API - only for desktop
+  const { data: batchesResponse, isLoading: isLoadingBatches } =
+    useGetMyBatches(1, 6);
+
+  const purchasedBatches: PurchasedBatch[] = (batchesResponse?.data || []).map(
+    (batch: Batch) => ({
+      id: batch.id,
+      name: batch.name,
+      class: batch.class,
+      exam: batch.exam,
+      imageUrl: batch.imageUrl,
+      startDate: new Date(batch.startDate),
+      endDate: new Date(batch.endDate),
+      language: batch.language,
+      totalPrice: batch.totalPrice,
+      discountPercentage: batch.discountPercentage,
+      finalPrice: Math.round(
+        batch.totalPrice * (1 - batch.discountPercentage / 100)
+      ),
+      progress: 0, // TODO: Need API endpoint for progress tracking
+      totalSubjects: 0, // TODO: Need API endpoint for subject count
+      completedSubjects: 0, // TODO: Need API endpoint for completed subjects
+    })
+  );
 
   const purchasedTestSeries = (enrollmentsResponse?.data || []).map(
     (series) => ({
@@ -227,11 +247,35 @@ export default function MyLearningPage() {
                 }
               />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {purchasedBatches.map((batch, index) => (
-                  <BatchCard key={batch.id} {...batch} index={index} />
-                ))}
-              </div>
+              {isLoadingBatches ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-64 bg-muted animate-pulse rounded-lg"
+                    />
+                  ))}
+                </div>
+              ) : purchasedBatches.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No batches enrolled yet.</p>
+                  <p className="text-sm mt-2">
+                    <Link
+                      href="/student/explore"
+                      className="text-primary hover:underline"
+                    >
+                      Explore batches
+                    </Link>{" "}
+                    to get started.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
+                  {purchasedBatches.map((batch, index) => (
+                    <BatchCard key={batch.id} {...batch} index={index} />
+                  ))}
+                </div>
+              )}
             </motion.section>
 
             <motion.section

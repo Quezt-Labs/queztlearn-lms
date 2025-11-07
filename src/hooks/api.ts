@@ -982,11 +982,30 @@ export const useClearOrganizationCache = () => {
 // ==========================================
 
 // Get all batches for students/clients (explore page)
-export const useGetExploreBatches = () => {
+export const useGetExploreBatches = (page = 1, limit = 10) => {
   return useQuery({
-    queryKey: ["explore", "batches"],
-    queryFn: () => apiClient.get("/api/batches").then((res) => res.data),
+    queryKey: ["explore", "batches", page, limit],
+    queryFn: () =>
+      apiClient
+        .get("/api/batches", {
+          params: { page, limit },
+        })
+        .then((res) => res.data),
     enabled: true,
+  });
+};
+
+// Get all purchased batches for student
+export const useGetMyBatches = (page = 1, limit = 10) => {
+  return useQuery({
+    queryKey: ["myBatches", page, limit],
+    queryFn: () =>
+      apiClient
+        .get("/api/batches/my-batches", {
+          params: { page, limit },
+        })
+        .then((res) => res.data),
+    enabled: tokenManager.isAuthenticated(),
   });
 };
 
@@ -996,6 +1015,18 @@ export const useGetExploreBatch = (id: string) => {
     queryKey: ["explore", "batch", id],
     queryFn: () => apiClient.get(`/api/batches/${id}`).then((res) => res.data),
     enabled: !!id,
+  });
+};
+
+// Get all schedules for a purchased batch (STUDENT)
+export const useGetBatchSchedules = (batchId: string) => {
+  return useQuery({
+    queryKey: ["batch", "schedules", batchId],
+    queryFn: () =>
+      apiClient
+        .get(`/api/batches/${batchId}/schedules`)
+        .then((res) => res.data),
+    enabled: !!batchId && tokenManager.isAuthenticated(),
   });
 };
 
@@ -1029,6 +1060,8 @@ export const useCreateBatchCheckout = () => {
 };
 
 export const useVerifyBatchPayment = () => {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (data: {
       orderId: string;
@@ -1039,5 +1072,27 @@ export const useVerifyBatchPayment = () => {
       apiClient
         .post(`/api/batches/verify-payment`, data)
         .then((res) => res.data),
+    onSuccess: () => {
+      // Invalidate my batches query to refetch purchased batches
+      queryClient.invalidateQueries({ queryKey: ["myBatches"] });
+      queryClient.invalidateQueries({ queryKey: ["explore", "batches"] });
+    },
+  });
+};
+
+// Enroll in free batch
+export const useEnrollFreeBatch = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (batchId: string) =>
+      apiClient
+        .post(`/api/batches/${batchId}/enroll-free`)
+        .then((res) => res.data),
+    onSuccess: () => {
+      // Invalidate my batches query to refetch purchased batches
+      queryClient.invalidateQueries({ queryKey: ["myBatches"] });
+      queryClient.invalidateQueries({ queryKey: ["explore", "batches"] });
+    },
   });
 };

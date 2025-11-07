@@ -46,9 +46,10 @@ export function BatchCard({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3, delay: index * 0.1 }}
+      className="h-full"
     >
-      <Card className="p-0 group hover:shadow-xl transition-all duration-300 overflow-hidden border-2 hover:border-primary/50">
-        <div className="relative h-48 overflow-hidden bg-linear-to-br from-primary/20 to-primary/5">
+      <Card className="p-0 group hover:shadow-xl transition-all duration-300 overflow-hidden border-2 hover:border-primary/50 h-full flex flex-col">
+        <div className="relative h-48 overflow-hidden bg-linear-to-br from-primary/20 to-primary/5 flex-shrink-0">
           {imageUrl ? (
             <img
               src={imageUrl}
@@ -70,7 +71,7 @@ export function BatchCard({
             </Badge>
           </div>
         </div>
-        <CardContent className="p-5 space-y-4">
+        <CardContent className="p-5 space-y-4 flex-1 flex flex-col">
           <div>
             <h3 className="font-bold text-lg group-hover:text-primary transition-colors line-clamp-2">
               {name}
@@ -98,7 +99,7 @@ export function BatchCard({
             <span>{formatDateRange(startDate, endDate)}</span>
           </div>
 
-          <Button className="w-full" asChild>
+          <Button className="w-full mt-auto" asChild>
             <Link href={`/student/batches/${id}`}>
               Continue Learning
               <ChevronRight className="h-4 w-4 ml-2" />

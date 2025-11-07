@@ -1,14 +1,45 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { Settings, Play, FileText, BookOpen, TrendingUp } from "lucide-react";
+import { Play, FileText, BookOpen, TrendingUp } from "lucide-react";
 import { VideoCard } from "@/components/student/video-card";
 import { TestAttemptCard } from "@/components/student/test-attempt-card";
 import { BatchCard } from "@/components/student/batch-card";
 import { TestSeriesCard } from "@/components/student/test-series-card";
 import { SectionHeader } from "@/components/student/section-header";
 import { useClientMyEnrollments } from "@/hooks/test-series-client";
+import { useGetMyBatches } from "@/hooks";
+
+interface Batch {
+  id: string;
+  name: string;
+  description?: string | null;
+  class: "11" | "12" | "12+" | "Grad";
+  exam: string;
+  imageUrl?: string;
+  startDate: string;
+  endDate: string;
+  language: string;
+  totalPrice: number;
+  discountPercentage: number;
+}
+
+interface PurchasedBatch {
+  id: string;
+  name: string;
+  class: string;
+  exam: string;
+  imageUrl?: string;
+  startDate: Date;
+  endDate: Date;
+  language: string;
+  totalPrice: number;
+  discountPercentage: number;
+  finalPrice: number;
+  progress: number;
+  totalSubjects: number;
+  completedSubjects: number;
+}
 
 // Mock data - Replace with actual API calls
 const recentVideos = [
@@ -76,47 +107,35 @@ const recentTests = [
   },
 ];
 
-const purchasedBatches = [
-  {
-    id: "1",
-    name: "JEE Main 2025 Complete Course",
-    class: "12th",
-    exam: "JEE",
-    imageUrl:
-      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400",
-    startDate: new Date("2025-01-01"),
-    endDate: new Date("2025-12-31"),
-    language: "English",
-    totalPrice: 15000,
-    discountPercentage: 20,
-    finalPrice: 12000,
-    progress: 45,
-    totalSubjects: 3,
-    completedSubjects: 1,
-  },
-  {
-    id: "2",
-    name: "NEET Biology Mastery",
-    class: "12th",
-    exam: "NEET",
-    imageUrl:
-      "https://images.unsplash.com/photo-1576086213369-97a306d36557?w=400",
-    startDate: new Date("2025-02-01"),
-    endDate: new Date("2025-11-30"),
-    language: "Hindi",
-    totalPrice: 8000,
-    discountPercentage: 15,
-    finalPrice: 6800,
-    progress: 68,
-    totalSubjects: 1,
-    completedSubjects: 0,
-  },
-];
-
 export function MyLearningMobile() {
   // Fetch enrolled test series from API
   const { data: enrollmentsResponse, isLoading: isLoadingTestSeries } =
     useClientMyEnrollments({ page: 1, limit: 10 });
+
+  // Fetch purchased batches from API
+  const { data: batchesResponse, isLoading: isLoadingBatches } =
+    useGetMyBatches(1, 10);
+
+  const purchasedBatches: PurchasedBatch[] = (batchesResponse?.data || []).map(
+    (batch: Batch) => ({
+      id: batch.id,
+      name: batch.name,
+      class: batch.class,
+      exam: batch.exam,
+      imageUrl: batch.imageUrl,
+      startDate: new Date(batch.startDate),
+      endDate: new Date(batch.endDate),
+      language: batch.language,
+      totalPrice: batch.totalPrice,
+      discountPercentage: batch.discountPercentage,
+      finalPrice: Math.round(
+        batch.totalPrice * (1 - batch.discountPercentage / 100)
+      ),
+      progress: 0, // TODO: Need API endpoint for progress tracking
+      totalSubjects: 0, // TODO: Need API endpoint for subject count
+      completedSubjects: 0, // TODO: Need API endpoint for completed subjects
+    })
+  );
 
   const purchasedTestSeries = (enrollmentsResponse?.data || []).map(
     (series) => ({
@@ -137,7 +156,6 @@ export function MyLearningMobile() {
           ),
     })
   );
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background pb-20 md:hidden">
@@ -145,13 +163,6 @@ export function MyLearningMobile() {
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border/40">
         <div className="flex items-center justify-between px-4 h-14">
           <h1 className="text-xl font-bold text-foreground">My Learning</h1>
-          <button
-            onClick={() => setSettingsOpen(true)}
-            className="p-2 -mr-2 text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Settings"
-          >
-            <Settings className="h-5 w-5" />
-          </button>
         </div>
       </header>
 
@@ -214,16 +225,40 @@ export function MyLearningMobile() {
               }
             />
           </div>
-          <div className="flex gap-4 overflow-x-auto px-4 mt-4 pb-2 scrollbar-hide snap-x snap-mandatory">
-            {purchasedBatches.map((batch, index) => (
-              <div
-                key={batch.id}
-                className="shrink-0 w-[85vw] sm:w-[400px] snap-start"
-              >
-                <BatchCard {...batch} index={index} />
-              </div>
-            ))}
-          </div>
+          {isLoadingBatches ? (
+            <div className="flex gap-4 overflow-x-auto px-4 mt-4 pb-2">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="shrink-0 w-[85vw] sm:w-[400px] h-64 bg-muted animate-pulse rounded-lg snap-start"
+                />
+              ))}
+            </div>
+          ) : purchasedBatches.length === 0 ? (
+            <div className="px-4 py-8 text-center text-muted-foreground">
+              <p className="text-sm">No batches enrolled yet.</p>
+              <p className="text-xs mt-2">
+                <Link
+                  href="/student/explore"
+                  className="text-primary hover:underline"
+                >
+                  Explore batches
+                </Link>{" "}
+                to get started.
+              </p>
+            </div>
+          ) : (
+            <div className="flex gap-4 overflow-x-auto px-4 mt-4 pb-2 scrollbar-hide snap-x snap-mandatory">
+              {purchasedBatches.map((batch, index) => (
+                <div
+                  key={batch.id}
+                  className="shrink-0 w-[85vw] sm:w-[400px] snap-start"
+                >
+                  <BatchCard {...batch} index={index} />
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Purchased Test Series */}
