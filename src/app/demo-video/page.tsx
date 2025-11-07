@@ -228,7 +228,11 @@ export default function DemoVideoPage() {
                       src={selectedContent.videoUrl}
                       poster={selectedContent.videoThumbnail}
                       type={getVideoType(selectedContent.videoType)}
-                      drmConfig={(selectedContent as any).drmConfig}
+                      drmConfig={
+                        "drmConfig" in selectedContent
+                          ? selectedContent.drmConfig
+                          : undefined
+                      }
                       onTimeUpdate={handleVideoTimeUpdate}
                       onEnded={handleVideoEnded}
                       className="w-full"
@@ -254,12 +258,13 @@ export default function DemoVideoPage() {
                         </span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        {(selectedContent as any).drmConfig && (
-                          <Badge variant="destructive" className="text-xs">
-                            <Shield className="h-3 w-3 mr-1" />
-                            DRM Protected
-                          </Badge>
-                        )}
+                        {"drmConfig" in selectedContent &&
+                          selectedContent.drmConfig && (
+                            <Badge variant="destructive" className="text-xs">
+                              <Shield className="h-3 w-3 mr-1" />
+                              DRM Protected
+                            </Badge>
+                          )}
                         {selectedContent.videoType === "HLS" && (
                           <Badge variant="secondary" className="text-xs">
                             <Zap className="h-3 w-3 mr-1" />

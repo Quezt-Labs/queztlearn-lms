@@ -405,7 +405,25 @@ export function UnifiedVideoPlayer({
             .substr(2, 9)}`;
           videoRef.current.id = videoId;
 
-          const playerConfig: any = {
+          interface PlayerConfig {
+            controls: boolean;
+            responsive: boolean;
+            fluid?: boolean;
+            aspectRatio?: string;
+            autoplay?: boolean;
+            muted?: boolean;
+            loop?: boolean;
+            preload?: string;
+            volume?: number;
+            playbackRates?: number[];
+            techOrder: string[];
+            sources: Array<{ src: string; type: string }>;
+            poster?: string;
+            youtube?: Record<string, unknown>;
+            html5?: Record<string, unknown>;
+            [key: string]: unknown;
+          }
+          const playerConfig: PlayerConfig = {
             controls: true,
             responsive: true,
             fluid: !aspectRatio, // Use fluid unless aspectRatio is specified
@@ -552,7 +570,7 @@ export function UnifiedVideoPlayer({
 
           // Handle error event
           if (onError) {
-            player.on("error", (error: any) => {
+            player.on("error", (error: Error | unknown) => {
               onError(error);
             });
           }
@@ -659,7 +677,13 @@ export function UnifiedVideoPlayer({
    * @param player - Video.js player instance
    * @param analytics - Analytics configuration object
    */
-  const setupAnalytics = (player: Player, analytics: any) => {
+  interface AnalyticsConfig {
+    trackingId?: string;
+    customEndpoint?: string;
+    events?: string[];
+    [key: string]: unknown;
+  }
+  const setupAnalytics = (player: Player, analytics: AnalyticsConfig) => {
     const events = analytics.events || [
       "play",
       "pause",
@@ -672,9 +696,9 @@ export function UnifiedVideoPlayer({
       // Google Analytics tracking
       events.forEach((event: string) => {
         player.on(event, () => {
-          // @ts-ignore - gtag is loaded by Google Analytics
+          // @ts-expect-error - gtag is loaded by Google Analytics
           if (typeof gtag !== "undefined") {
-            // @ts-ignore - gtag is loaded by Google Analytics
+            // @ts-expect-error - gtag is loaded by Google Analytics
             gtag("event", "video_" + event, {
               event_category: "Video",
               event_label: src,
@@ -687,9 +711,10 @@ export function UnifiedVideoPlayer({
 
     if (analytics.customEndpoint) {
       // Custom analytics endpoint
+      const endpoint = analytics.customEndpoint;
       events.forEach((event: string) => {
         player.on(event, () => {
-          fetch(analytics.customEndpoint, {
+          fetch(endpoint, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -720,10 +745,11 @@ export function UnifiedVideoPlayer({
       console.log("DRM: Video metadata loaded");
     });
 
-    player.on("error", (error: any) => {
-      if (error.code === 4) {
+    player.on("error", (error: Error | unknown) => {
+      const drmError = error as { code?: number };
+      if (drmError.code === 4) {
         console.error("DRM: License request failed");
-      } else if (error.code === 5) {
+      } else if (drmError.code === 5) {
         console.error("DRM: License expired");
       }
     });
@@ -732,7 +758,7 @@ export function UnifiedVideoPlayer({
       console.log("DRM: Key loaded successfully");
     });
 
-    player.on("keyerror", (error: any) => {
+    player.on("keyerror", (error: Error | unknown) => {
       console.error("DRM: Key error:", error);
     });
 

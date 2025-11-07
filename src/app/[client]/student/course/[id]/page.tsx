@@ -72,9 +72,17 @@ export default function StudentCourseDetailPage() {
 
   // For now, we'll use a mock course since we don't have a specific course hook
   const { data: coursesData } = useCourses();
-  const courseData = (coursesData as any)?.courses?.find(
-    (c: any) => c.id === courseId
-  );
+  interface Course {
+    id: string;
+    [key: string]: unknown;
+  }
+  interface CoursesResponse {
+    courses?: Course[];
+    [key: string]: unknown;
+  }
+  const courseData = (
+    coursesData as CoursesResponse | undefined
+  )?.courses?.find((c: Course) => c.id === courseId);
   const isLoading = false; // Mock loading state
   const error = null; // Mock error state
 
@@ -153,8 +161,8 @@ export default function StudentCourseDetailPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title={course?.title || "Course Details"}
-        description={course?.description || ""}
+        title={(course?.title as string) || "Course Details"}
+        description={(course?.description as string) || ""}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -202,9 +210,11 @@ export default function StudentCourseDetailPage() {
                 <CardTitle>Course Content</CardTitle>
               </CardHeader>
               <CardContent>
-                {course?.subjects && course.subjects.length > 0 ? (
+                {course?.subjects &&
+                Array.isArray(course.subjects) &&
+                course.subjects.length > 0 ? (
                   <div className="space-y-2">
-                    {course.subjects.map((subject: Subject) =>
+                    {(course.subjects as Subject[]).map((subject: Subject) =>
                       subject.chapters?.map((chapter: Chapter) => (
                         <div
                           key={chapter.id}
@@ -319,7 +329,7 @@ export default function StudentCourseDetailPage() {
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
               <p className="text-muted-foreground">
-                {course?.description || "No description available."}
+                {(course?.description as string) || "No description available."}
               </p>
             </CardContent>
           </Card>
