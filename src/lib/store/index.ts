@@ -97,3 +97,6 @@ export const useHasRole = (allowedRoles: UserRole[]) => {
 
 // Export onboarding store
 export * from "./onboarding";
+
+// Export organization config store
+export * from "./organization-config";

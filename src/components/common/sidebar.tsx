@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   BookOpen,
@@ -20,13 +20,19 @@ import {
   FileText,
   Award,
   LogOut,
+  GraduationCap,
+  UserIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRole } from "@/lib/store";
 import { getNavigationItems, ROLES } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCurrentUser, useLogout } from "@/hooks";
+import {
+  Sidebar as UISidebar,
+  SidebarBody,
+  useSidebar,
+} from "@/components/ui/sidebar";
 
 const iconMap = {
   LayoutDashboard,
@@ -41,17 +47,65 @@ const iconMap = {
   Building2,
   FileText,
   Award,
+  GraduationCap,
 };
 
 interface SidebarProps {
   className?: string;
 }
 
-export function Sidebar({ className }: SidebarProps) {
+// Custom SidebarLink wrapper that handles Next.js Link
+function CustomSidebarLink({
+  link,
+  className,
+  isActive,
+}: {
+  link: {
+    label: string;
+    href: string;
+    icon: React.ReactNode;
+  };
+  className?: string;
+  isActive?: boolean;
+}) {
+  const { open: sidebarOpen } = useSidebar();
+
+  return (
+    <Link
+      href={link.href}
+      className={cn(
+        "flex items-center justify-between w-full group/sidebar py-2 rounded-md transition-colors",
+        "px-2", // Consistent padding for all items
+        isActive && "bg-accent text-accent-foreground",
+        !isActive && "hover:bg-accent",
+        className
+      )}
+    >
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <span className="shrink-0 w-5 h-5 flex items-center justify-center">
+          {link.icon}
+        </span>
+        <motion.span
+          animate={{
+            display: sidebarOpen ? "inline-block" : "none",
+            opacity: sidebarOpen ? 1 : 0,
+            width: sidebarOpen ? "auto" : 0,
+          }}
+          className="text-neutral-700 dark:text-neutral-200 text-sm whitespace-nowrap overflow-hidden"
+        >
+          {link.label}
+        </motion.span>
+      </div>
+    </Link>
+  );
+}
+
+function SidebarContent({ className }: { className?: string }) {
   const pathname = usePathname();
   const role = useRole();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [hostname, setHostname] = useState("");
+  const { open: sidebarOpen } = useSidebar();
   const { data: user, isLoading: userLoading } = useCurrentUser();
   const logoutMutation = useLogout();
 
@@ -72,170 +126,237 @@ export function Sidebar({ className }: SidebarProps) {
   const filteredItems = getNavigationItems(hostname, effectiveRole);
 
   const isActive = (href: string) => {
+    // Normalize: remove client segment if present (e.g., /mit/student/dashboard -> /student/dashboard)
+    const normalizedPath =
+      pathname.replace(/^\/[^/]+(?=\/student)/, "") || pathname;
+
     if (href === "/dashboard") {
       return (
-        pathname === "/admin/dashboard" ||
-        pathname === "/teacher/dashboard" ||
-        pathname === "/student/dashboard"
+        normalizedPath === "/admin/dashboard" ||
+        normalizedPath === "/teacher/dashboard" ||
+        normalizedPath === "/student/dashboard"
+      );
+    }
+    // Handle Explore route - include test-series and batches detail pages
+    if (href === "/student/explore") {
+      return (
+        normalizedPath.startsWith("/student/explore") ||
+        normalizedPath.startsWith("/student/test-series") ||
+        normalizedPath.startsWith("/student/batches")
       );
     }
     // Handle exact matches for admin routes
     if (href === "/admin/users") {
-      return pathname === "/admin/users";
+      return normalizedPath === "/admin/users";
     }
     if (href === "/admin/courses") {
-      return pathname === "/admin/courses";
+      return normalizedPath === "/admin/courses";
     }
     if (href === "/admin/analytics") {
-      return pathname === "/admin/analytics";
+      return normalizedPath === "/admin/analytics";
     }
     if (href === "/admin/clients") {
-      return pathname === "/admin/clients";
+      return normalizedPath === "/admin/clients";
     }
     if (href === "/admin/settings") {
-      return pathname === "/admin/settings";
+      return normalizedPath === "/admin/settings";
     }
     if (href === "/admin/billing") {
-      return pathname === "/admin/billing";
+      return normalizedPath === "/admin/billing";
     }
-    return pathname.startsWith(href);
+    if (href === "/admin/test-series") {
+      return normalizedPath === "/admin/test-series";
+    }
+    return normalizedPath.startsWith(href);
   };
   const handleLogout = () => {
     logoutMutation.mutate();
   };
 
+  // Convert navigation items to sidebar links format
+  const convertToSidebarLinks = () => {
+    return filteredItems.map((item) => {
+      const Icon = iconMap[item.icon as keyof typeof iconMap] || BookOpen;
+      const isItemActive = isActive(item.href);
+      const hasChildren = item.children && item.children.length > 0;
+
+      return {
+        ...item,
+        icon: (
+          <Icon className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
+        ),
+        isActive: isItemActive,
+        hasChildren,
+      };
+    });
+  };
+
+  const sidebarLinks = convertToSidebarLinks();
+
   return (
-    <div
-      className={cn("flex h-full w-64 flex-col border-r bg-card", className)}
-    >
-      {/* Welcome Section */}
-      <div className="flex h-16 items-center border-b px-6">
-        <div className="flex items-center space-x-3 w-full">
-          <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center shrink-0">
-            <span className="text-sm font-medium text-primary-foreground">
-              {userLoading
-                ? "..."
-                : user?.username?.charAt(0).toUpperCase() ||
-                  role?.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-muted-foreground leading-none">
-              Welcome back,
-            </p>
-            <p className="text-sm font-medium truncate leading-tight">
-              {userLoading
-                ? "Loading..."
-                : user?.username ||
-                  (role === "admin"
-                    ? "Admin"
-                    : role === "teacher"
-                    ? "Teacher"
-                    : "Student")}
-            </p>
+    <SidebarBody className={cn("justify-between border-r bg-card", className)}>
+      <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto min-h-0">
+        {/* Welcome Section */}
+        <div className="mb-4 pb-4 border-b">
+          <div className="flex items-center gap-3 px-2 min-w-0">
+            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+              <UserIcon className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <motion.div
+              animate={{
+                display: sidebarOpen ? "block" : "none",
+                opacity: sidebarOpen ? 1 : 0,
+                width: sidebarOpen ? "auto" : 0,
+              }}
+              className="flex-1 min-w-0 max-w-full overflow-hidden"
+            >
+              <p className="text-xs text-muted-foreground leading-none mb-0.5 truncate">
+                Welcome back,
+              </p>
+              <p className="text-sm font-medium truncate leading-tight max-w-full">
+                {userLoading
+                  ? "Loading..."
+                  : user?.username ||
+                    (role === "admin"
+                      ? "Admin"
+                      : role === "teacher"
+                      ? "Teacher"
+                      : "Student")}
+              </p>
+            </motion.div>
           </div>
         </div>
-      </div>
 
-      {/* Navigation */}
-      <ScrollArea className="flex-1 px-6 py-4">
-        <nav className="space-y-1">
-          {filteredItems.map((item) => {
-            const Icon = iconMap[item.icon as keyof typeof iconMap] || BookOpen;
-            const isItemActive = isActive(item.href);
-            const hasChildren = item.children && item.children.length > 0;
-            const isExpanded = expandedItems.includes(item.title);
+        {/* Navigation */}
+        <nav className="space-y-0.5 px-1">
+          {sidebarLinks?.map((item) => {
+            const link = {
+              label: item.title,
+              href: item.href,
+              icon: item.icon,
+            };
 
-            if (hasChildren) {
+            if (item.hasChildren) {
+              const isExpanded = expandedItems.includes(item.title);
               return (
                 <div key={item.title}>
-                  <Button
-                    variant="ghost"
+                  <div
                     className={cn(
-                      "w-full justify-between px-3 py-2 h-auto font-normal",
-                      isItemActive && "bg-accent text-accent-foreground"
+                      "flex items-center justify-between w-full group/sidebar py-2 cursor-pointer rounded-md transition-colors",
+                      "px-2", // Consistent padding matching other items
+                      item.isActive && "bg-accent text-accent-foreground",
+                      !item.isActive && "hover:bg-accent"
                     )}
                     onClick={() => toggleExpanded(item.title)}
                   >
-                    <div className="flex items-center space-x-3">
-                      <Icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="shrink-0 w-5 h-5 flex items-center justify-center">
+                        {link.icon}
+                      </span>
+                      <motion.span
+                        animate={{
+                          display: sidebarOpen ? "inline-block" : "none",
+                          opacity: sidebarOpen ? 1 : 0,
+                          width: sidebarOpen ? "auto" : 0,
+                        }}
+                        className="text-neutral-700 dark:text-neutral-200 text-sm whitespace-nowrap overflow-hidden"
+                      >
+                        {link.label}
+                      </motion.span>
                     </div>
-                    {isExpanded ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                  </Button>
-
-                  {isExpanded && (
                     <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="ml-6 mt-1 space-y-1"
+                      animate={{
+                        display: sidebarOpen ? "inline-block" : "none",
+                        opacity: sidebarOpen ? 1 : 0,
+                        width: sidebarOpen ? "auto" : 0,
+                      }}
+                      className="shrink-0"
                     >
-                      {item.children!.map((child) => {
-                        const ChildIcon =
-                          iconMap[child.icon as keyof typeof iconMap] ||
-                          BookOpen;
-                        const isChildActive = isActive(child.href);
-
-                        return (
-                          <Button
-                            key={child.title}
-                            variant="ghost"
-                            asChild
-                            className={cn(
-                              "w-full justify-start px-3 py-2 h-auto font-normal text-sm",
-                              isChildActive &&
-                                "bg-accent text-accent-foreground"
-                            )}
-                          >
-                            <Link href={child.href}>
-                              <ChildIcon className="h-4 w-4 mr-3" />
-                              {child.title}
-                            </Link>
-                          </Button>
-                        );
-                      })}
+                      {isExpanded ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
                     </motion.div>
-                  )}
+                  </div>
+
+                  <AnimatePresence>
+                    {isExpanded && sidebarOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="ml-7 mt-1 space-y-0.5"
+                      >
+                        {item.children!.map((child) => {
+                          const ChildIcon =
+                            iconMap[child.icon as keyof typeof iconMap] ||
+                            BookOpen;
+                          const isChildActive = isActive(child.href);
+                          const childLink = {
+                            label: child.title,
+                            href: child.href,
+                            icon: (
+                              <ChildIcon className="h-5 w-5 shrink-0 text-neutral-700 dark:text-neutral-200" />
+                            ),
+                          };
+
+                          return (
+                            <CustomSidebarLink
+                              key={child.title}
+                              link={childLink}
+                              isActive={isChildActive}
+                              className="text-sm"
+                            />
+                          );
+                        })}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               );
             }
 
             return (
-              <Button
+              <CustomSidebarLink
                 key={item.title}
-                variant="ghost"
-                asChild
-                className={cn(
-                  "w-full justify-start px-3 py-2 h-auto font-normal",
-                  isItemActive && "bg-accent text-accent-foreground"
-                )}
-              >
-                <Link href={item.href}>
-                  <Icon className="h-4 w-4 mr-3" />
-                  {item.title}
-                </Link>
-              </Button>
+                link={link}
+                isActive={item.isActive}
+              />
             );
           })}
         </nav>
-        {/* Logout Section */}
-      </ScrollArea>
-      <div className="border-t p-2">
+      </div>
+
+      {/* Logout Section */}
+      <div className="border-t pt-2 mt-auto">
         <Button
           variant="ghost"
           onClick={handleLogout}
           size="sm"
-          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950"
+          className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 h-9"
         >
-          <LogOut className="h-4 w-4 mr-2" />
-          Log out
+          <LogOut className="h-4 w-4 shrink-0" />
+          <motion.span
+            animate={{
+              display: sidebarOpen ? "inline-block" : "none",
+              opacity: sidebarOpen ? 1 : 0,
+              width: sidebarOpen ? "auto" : 0,
+            }}
+            className="ml-2 whitespace-nowrap overflow-hidden"
+          >
+            Log out
+          </motion.span>
         </Button>
       </div>
-    </div>
+    </SidebarBody>
+  );
+}
+
+export function Sidebar({ className }: SidebarProps) {
+  return (
+    <UISidebar>
+      <SidebarContent className={className} />
+    </UISidebar>
   );
 }

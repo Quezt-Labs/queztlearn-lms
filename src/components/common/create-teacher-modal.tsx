@@ -14,15 +14,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { FileUpload } from "@/components/common/file-upload";
-import {
-  X,
-  Plus,
-  Bold,
-  Italic,
-  Underline,
-  List,
-  ListOrdered,
-} from "lucide-react";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { X, Plus } from "lucide-react";
 import { useCreateTeacher } from "@/hooks";
 
 interface CreateTeacherModalProps {
@@ -49,11 +42,6 @@ export function CreateTeacherModal({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const createTeacherMutation = useCreateTeacher();
-
-  // Rich text editor functions
-  const formatText = (command: string, value?: string) => {
-    document.execCommand(command, false, value);
-  };
 
   const handleImageUpload = (fileData: {
     key: string;
@@ -219,75 +207,17 @@ export function CreateTeacherModal({
           {/* Teacher Highlights/Achievements */}
           <div className="space-y-2">
             <Label>Teacher Highlights & Achievements</Label>
-            <div className="border rounded-lg">
-              {/* Rich Text Toolbar */}
-              <div className="flex items-center space-x-1 p-2 border-b bg-muted/50">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => formatText("bold")}
-                  className="h-8 w-8 p-0"
-                >
-                  <Bold className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => formatText("italic")}
-                  className="h-8 w-8 p-0"
-                >
-                  <Italic className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => formatText("underline")}
-                  className="h-8 w-8 p-0"
-                >
-                  <Underline className="h-4 w-4" />
-                </Button>
-                <div className="w-px h-6 bg-border mx-1" />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => formatText("insertUnorderedList")}
-                  className="h-8 w-8 p-0"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => formatText("insertOrderedList")}
-                  className="h-8 w-8 p-0"
-                >
-                  <ListOrdered className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {/* Rich Text Editor */}
-              <div
-                contentEditable
-                className="min-h-[120px] p-3 focus:outline-none"
-                style={{ whiteSpace: "pre-wrap" }}
-                onInput={(e) => {
-                  const target = e.target as HTMLElement;
-                  setFormData((prev) => ({
-                    ...prev,
-                    highlights: target.innerText,
-                  }));
-                }}
-                suppressContentEditableWarning={true}
-              >
-                {formData.highlights ||
-                  "Enter teacher details, achievements, experience, and highlights..."}
-              </div>
-            </div>
+            <RichTextEditor
+              content={formData.highlights}
+              onChange={(content: string) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  highlights: content,
+                }))
+              }
+              placeholder="Enter teacher details, achievements, experience, and highlights..."
+              className="min-h-[200px]"
+            />
             <p className="text-xs text-muted-foreground">
               Describe the teacher&apos;s experience, achievements,
               qualifications, and what makes them special.

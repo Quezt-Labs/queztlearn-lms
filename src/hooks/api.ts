@@ -3,13 +3,20 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, tokenManager } from "@/lib/api/client";
 import apiClient from "@/lib/api/client";
-import { ApiResponse, Organization, LoginResponse } from "@/lib/types/api";
+import {
+  ApiResponse,
+  Organization,
+  LoginResponse,
+  CreateOrganizationConfigData,
+  CreateOrganizationConfigResponse,
+} from "@/lib/types/api";
 import { useRouter } from "next/navigation";
 
 // Query Keys
 export const queryKeys = {
   user: ["user"] as const,
   organization: ["organization"] as const,
+  organizationConfig: (slug: string) => ["organizationConfig", slug] as const,
   emailAvailability: (email: string) => ["emailAvailability", email] as const,
   users: ["users"] as const,
   batches: ["batches"] as const,
@@ -23,8 +30,44 @@ export const useLogin = () => {
   const router = useRouter();
 
   return useMutation({
-    mutationFn: (data: { email: string; password: string }) =>
-      api.login(data).then((res) => res.data),
+    mutationFn: async (data: { email: string; password: string }) => {
+      try {
+        const response = await api.login(data);
+        const result = response.data;
+
+        // If login failed, throw error with API message
+        if (!result.success) {
+          const error = new Error(result.message) as Error & {
+            response?: { data?: { message?: string } };
+          };
+          error.response = { data: { message: result.message } };
+          throw error;
+        }
+
+        return result;
+      } catch (error: unknown) {
+        // If it's an axios error, preserve the structure
+        if (
+          error &&
+          typeof error === "object" &&
+          "response" in error &&
+          (error as { response?: { data?: { message?: string } } }).response
+            ?.data?.message
+        ) {
+          throw error; // Already has the correct structure
+        }
+        // If it's our thrown error, re-throw it
+        if (error && typeof error === "object" && "message" in error) {
+          throw error;
+        }
+        // Otherwise, wrap it
+        const errorMessage =
+          error && typeof error === "object" && "message" in error
+            ? String((error as { message: unknown }).message)
+            : "Login failed. Please try again.";
+        throw new Error(errorMessage);
+      }
+    },
     onSuccess: (data: ApiResponse<LoginResponse>) => {
       if (data.success && data.data) {
         // Store complete auth data (token + user) in QUEZT_AUTH cookie
@@ -39,6 +82,7 @@ export const useLogin = () => {
     },
     onError: (error) => {
       console.error("Login failed:", error);
+      // Don't throw here, let the component handle it
     },
   });
 };
@@ -84,7 +128,7 @@ export const useCreateOrganization = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { name: string }) =>
+    mutationFn: (data: { name: string; slug: string }) =>
       api.createOrganization(data).then((res) => res.data),
     onSuccess: (data: ApiResponse<Organization>) => {
       if (data.success && data.data) {
@@ -94,6 +138,71 @@ export const useCreateOrganization = () => {
     },
     onError: (error) => {
       console.error("Failed to create organization:", error);
+    },
+  });
+};
+
+// Organization Configuration Hook (Public endpoint)
+export const useOrganizationConfig = (slug: string) => {
+  return useQuery({
+    queryKey: queryKeys.organizationConfig(slug),
+    queryFn: () => api.getOrganizationConfig(slug).then((res) => res.data),
+    enabled: !!slug,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+  });
+};
+
+// Organization Configuration Hook (Admin endpoint)
+export const useCreateOrganizationConfig = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateOrganizationConfigData) =>
+      api.createOrganizationConfig(data).then((res) => res.data),
+    onSuccess: (data: CreateOrganizationConfigResponse) => {
+      if (data.success && data.data) {
+        // Cache the organization configuration
+        queryClient.setQueryData(
+          queryKeys.organizationConfig(data.data.slug),
+          data
+        );
+      }
+    },
+    onError: (error) => {
+      console.error("Failed to create organization configuration:", error);
+    },
+  });
+};
+
+// Get Organization Configuration (Admin endpoint)
+export const useOrganizationConfigAdmin = () => {
+  return useQuery({
+    queryKey: ["organizationConfig", "admin"],
+    queryFn: () => api.getOrganizationConfigAdmin().then((res) => res.data),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+};
+
+// Update Organization Configuration Hook (Admin endpoint)
+export const useUpdateOrganizationConfig = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: CreateOrganizationConfigData) =>
+      api.updateOrganizationConfig(data).then((res) => res.data),
+    onSuccess: (data: CreateOrganizationConfigResponse) => {
+      if (data.success && data.data) {
+        // Invalidate and update cache
+        queryClient.invalidateQueries({ queryKey: ["organizationConfig"] });
+        queryClient.setQueryData(
+          queryKeys.organizationConfig(data.data.slug),
+          data
+        );
+      }
+    },
+    onError: (error) => {
+      console.error("Failed to update organization configuration:", error);
     },
   });
 };
@@ -146,6 +255,83 @@ export const useResendVerification = () => {
       api.resendVerification(data).then((res) => res.data),
     onError: (error) => {
       console.error("Resend verification failed:", error);
+    },
+  });
+};
+
+// Student Authentication Hooks
+export const useStudentRegister = () => {
+  return useMutation({
+    mutationFn: (data: {
+      organizationId: string;
+      email: string;
+      username: string;
+    }) => api.studentRegister(data).then((res) => res.data),
+    onError: (error) => {
+      console.error("Student registration failed:", error);
+    },
+  });
+};
+
+export const useStudentVerifyEmail = () => {
+  return useMutation({
+    mutationFn: (data: { token: string }) =>
+      api.studentVerifyEmail(data).then((res) => res.data),
+    onError: (error) => {
+      console.error("Student email verification failed:", error);
+    },
+  });
+};
+
+export const useStudentSetPassword = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { userId: string; password: string }) =>
+      api.studentSetPassword(data).then((res) => res.data),
+    onSuccess: (data: ApiResponse<{ message: string }>) => {
+      if (data.success) {
+        // Clear any cached auth data
+        queryClient.invalidateQueries({ queryKey: queryKeys.user });
+      }
+    },
+    onError: (error) => {
+      console.error("Student set password failed:", error);
+    },
+  });
+};
+
+export const useStudentLogin = () => {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (data: { email: string; password: string }) =>
+      api.studentLogin(data).then((res) => res.data),
+    onSuccess: (data: ApiResponse<LoginResponse>) => {
+      if (data.success && data.data) {
+        // Store complete auth data (token + user) in QUEZT_AUTH cookie
+        tokenManager.setAuthData(data.data.token, data.data.user);
+
+        // Update user cache
+        queryClient.setQueryData(queryKeys.user, data.data.user);
+
+        // Redirect to student dashboard
+        router.push("/student/my-learning");
+      }
+    },
+    onError: (error) => {
+      console.error("Student login failed:", error);
+    },
+  });
+};
+
+export const useStudentResendVerification = () => {
+  return useMutation({
+    mutationFn: (data: { email: string }) =>
+      api.studentResendVerification(data).then((res) => res.data),
+    onError: (error) => {
+      console.error("Student resend verification failed:", error);
     },
   });
 };
@@ -259,11 +445,26 @@ export const useCreateBatch = () => {
         description: string;
       }>;
     }) => apiClient.post("/admin/batches", data).then((res) => res.data),
-    onSuccess: () => {
+    onSuccess: (created) => {
       // Invalidate batches query to refetch the list
       queryClient.invalidateQueries({ queryKey: queryKeys.batches });
-      // Redirect to batches page
-      router.push("/admin/batches");
+      // Redirect to created batch detail when possible
+      const extractId = (payload: unknown): string | undefined => {
+        if (!payload || typeof payload !== "object") return undefined;
+        const maybeWithData = payload as { data?: unknown; id?: unknown };
+        if (maybeWithData.data && typeof maybeWithData.data === "object") {
+          const inner = maybeWithData.data as { id?: unknown };
+          if (typeof inner.id === "string") return inner.id;
+        }
+        if (typeof maybeWithData.id === "string") return maybeWithData.id;
+        return undefined;
+      };
+      const createdId = extractId(created);
+      if (createdId) {
+        router.push(`/admin/courses/${createdId}`);
+      } else {
+        router.push("/admin/courses");
+      }
     },
   });
 };
@@ -302,8 +503,8 @@ export const useUpdateBatch = () => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.batch(variables.id),
       });
-      // Redirect to batches page
-      router.push("/admin/batches");
+      // Redirect to updated batch detail page
+      router.push(`/admin/courses/${variables.id}`);
     },
   });
 };
@@ -678,13 +879,12 @@ export const useDeleteTopic = () => {
 interface ContentData {
   name: string;
   topicId?: string;
-  type: "Lecture" | "Video" | "PDF" | "Assignment";
+  type: "Lecture" | "PDF";
   pdfUrl?: string;
   videoUrl?: string;
-  videoType?: "HLS" | "MP4" | "YouTube";
+  videoType?: "YOUTUBE" | "HLS";
   videoThumbnail?: string;
   videoDuration?: number;
-  isCompleted?: boolean;
 }
 
 // Create Content
@@ -701,11 +901,13 @@ export const useCreateContent = () => {
 };
 
 // Get Contents by Topic
+// Note: Both admin and teacher use the same /admin/ endpoint
 export const useGetContentsByTopic = (topicId: string) => {
   return useQuery({
     queryKey: ["contents", "topic", topicId],
     queryFn: () =>
       apiClient.get(`/admin/contents/topic/${topicId}`).then((res) => res.data),
+    enabled: !!topicId, // Only fetch if topicId is provided
   });
 };
 
@@ -744,5 +946,224 @@ export const useDeleteContent = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contents"] });
     },
+  });
+};
+
+// ==========================================
+// Admin Utilities
+// ==========================================
+
+// Clear all cached data for the organization (ADMIN only)
+export const useClearOrganizationCache = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const res = await apiClient.post("/admin/cache/clear");
+      return res.data as {
+        success: boolean;
+        message?: string;
+        data?: { clearedKeys?: number };
+      };
+    },
+    onSuccess: () => {
+      // Invalidate all client-side caches so fresh data is fetched
+      queryClient.invalidateQueries();
+      // Optionally also clear mutations cache if needed in the future
+    },
+    onError: (error) => {
+      console.error("Failed to clear organization cache:", error);
+    },
+  });
+};
+
+// ==========================================
+// Student/Client API Hooks
+// ==========================================
+
+// Get all batches for students/clients (explore page)
+export const useGetExploreBatches = (page = 1, limit = 10) => {
+  return useQuery({
+    queryKey: ["explore", "batches", page, limit],
+    queryFn: () =>
+      apiClient
+        .get("/api/batches", {
+          params: { page, limit },
+        })
+        .then((res) => res.data),
+    enabled: true,
+  });
+};
+
+// Get all purchased batches for student
+export const useGetMyBatches = (page = 1, limit = 10) => {
+  return useQuery({
+    queryKey: ["myBatches", page, limit],
+    queryFn: () =>
+      apiClient
+        .get("/api/batches/my-batches", {
+          params: { page, limit },
+        })
+        .then((res) => res.data),
+    enabled: tokenManager.isAuthenticated(),
+  });
+};
+
+// Get single batch details for students/clients
+export const useGetExploreBatch = (id: string) => {
+  return useQuery({
+    queryKey: ["explore", "batch", id],
+    queryFn: () => apiClient.get(`/api/batches/${id}`).then((res) => res.data),
+    enabled: !!id,
+  });
+};
+
+// Get all schedules for a purchased batch (STUDENT)
+export const useGetBatchSchedules = (batchId: string) => {
+  return useQuery({
+    queryKey: ["batch", "schedules", batchId],
+    queryFn: () =>
+      apiClient
+        .get(`/api/batches/${batchId}/schedules`)
+        .then((res) => res.data),
+    enabled: !!batchId && tokenManager.isAuthenticated(),
+  });
+};
+
+// Get all test series for students/clients (explore page)
+export const useGetExploreTestSeries = () => {
+  return useQuery({
+    queryKey: ["explore", "testSeries"],
+    queryFn: () => apiClient.get("/api/test-series").then((res) => res.data),
+    enabled: true,
+  });
+};
+
+// Get single test series details for students/clients
+export const useGetExploreTestSeriesById = (id: string) => {
+  return useQuery({
+    queryKey: ["explore", "testSeries", id],
+    queryFn: () =>
+      apiClient.get(`/api/test-series/${id}`).then((res) => res.data),
+    enabled: !!id,
+  });
+};
+
+// Create batch checkout order for payment
+export const useCreateBatchCheckout = () => {
+  return useMutation({
+    mutationFn: (batchId: string) =>
+      apiClient
+        .post(`/api/batches/${batchId}/checkout`)
+        .then((res) => res.data),
+  });
+};
+
+export const useVerifyBatchPayment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: {
+      orderId: string;
+      razorpayPaymentId: string;
+      razorpayOrderId: string;
+      razorpaySignature: string;
+    }) =>
+      apiClient
+        .post(`/api/batches/verify-payment`, data)
+        .then((res) => res.data),
+    onSuccess: () => {
+      // Invalidate my batches query to refetch purchased batches
+      queryClient.invalidateQueries({ queryKey: ["myBatches"] });
+      queryClient.invalidateQueries({ queryKey: ["explore", "batches"] });
+    },
+  });
+};
+
+// Enroll in free batch
+export const useEnrollFreeBatch = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (batchId: string) =>
+      apiClient
+        .post(`/api/batches/${batchId}/enroll-free`)
+        .then((res) => res.data),
+    onSuccess: () => {
+      // Invalidate my batches query to refetch purchased batches
+      queryClient.invalidateQueries({ queryKey: ["myBatches"] });
+      queryClient.invalidateQueries({ queryKey: ["explore", "batches"] });
+    },
+  });
+};
+
+// ==========================================
+// Client Subjects API Hooks (for purchased batches)
+// ==========================================
+
+// Get all subjects for a purchased batch (CLIENT)
+export const useGetClientSubjectsByBatch = (batchId: string) => {
+  return useQuery({
+    queryKey: ["client", "subjects", "batch", batchId],
+    queryFn: () =>
+      apiClient.get(`/api/subjects/batch/${batchId}`).then((res) => res.data),
+    enabled: !!batchId && tokenManager.isAuthenticated(),
+  });
+};
+
+// Get subject by ID (CLIENT)
+export const useGetClientSubject = (id: string) => {
+  return useQuery({
+    queryKey: ["client", "subjects", id],
+    queryFn: () => apiClient.get(`/api/subjects/${id}`).then((res) => res.data),
+    enabled: !!id && tokenManager.isAuthenticated(),
+  });
+};
+
+// ==========================================
+// Client Chapters API Hooks (for purchased batches)
+// ==========================================
+
+// Get all chapters for a subject (CLIENT)
+export const useGetClientChaptersBySubject = (subjectId: string) => {
+  return useQuery({
+    queryKey: ["client", "chapters", "subject", subjectId],
+    queryFn: () =>
+      apiClient
+        .get(`/api/chapters/subject/${subjectId}`)
+        .then((res) => res.data),
+    enabled: !!subjectId && tokenManager.isAuthenticated(),
+  });
+};
+
+// Get chapter by ID (CLIENT)
+export const useGetClientChapter = (id: string) => {
+  return useQuery({
+    queryKey: ["client", "chapters", id],
+    queryFn: () => apiClient.get(`/api/chapters/${id}`).then((res) => res.data),
+    enabled: !!id && tokenManager.isAuthenticated(),
+  });
+};
+
+// ==========================================
+// Client Topics API Hooks (for purchased batches)
+// ==========================================
+
+// Get all topics for a chapter (CLIENT)
+export const useGetClientTopicsByChapter = (chapterId: string) => {
+  return useQuery({
+    queryKey: ["client", "topics", "chapter", chapterId],
+    queryFn: () =>
+      apiClient.get(`/api/topics/chapter/${chapterId}`).then((res) => res.data),
+    enabled: !!chapterId && tokenManager.isAuthenticated(),
+  });
+};
+
+// Get topic by ID (CLIENT)
+export const useGetClientTopic = (id: string) => {
+  return useQuery({
+    queryKey: ["client", "topics", id],
+    queryFn: () => apiClient.get(`/api/topics/${id}`).then((res) => res.data),
+    enabled: !!id && tokenManager.isAuthenticated(),
   });
 };

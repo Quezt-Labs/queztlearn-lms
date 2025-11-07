@@ -23,9 +23,9 @@ export function useRolePermissions(): RolePermissions {
   const { data: currentUser } = useCurrentUser();
   const userRole = currentUser?.role || ROLES.STUDENT;
 
-  const isAdmin = userRole === ROLES.ADMIN;
-  const isTeacher = userRole === ROLES.TEACHER;
-  const isStudent = userRole === ROLES.STUDENT;
+  const isAdmin = userRole.toLowerCase() === ROLES.ADMIN;
+  const isTeacher = userRole.toLowerCase() === ROLES.TEACHER;
+  const isStudent = userRole.toLowerCase() === ROLES.STUDENT;
 
   return {
     isAdmin,

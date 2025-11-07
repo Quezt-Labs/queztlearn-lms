@@ -20,13 +20,14 @@ import {
   Star,
   BookOpen,
 } from "lucide-react";
+import { decodeHtmlEntities } from "@/lib/utils";
 
 interface Teacher {
   id: string;
   name: string;
   email: string;
   imageUrl?: string;
-  highlights: string;
+  highlights: string | { content: string };
   subjects: string[];
   rating: number;
   totalStudents: number;
@@ -258,9 +259,16 @@ export function TeacherSelectionStep({
                   </div>
 
                   <div className="mt-3">
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {teacher.highlights}
-                    </p>
+                    <div
+                      className="prose prose-sm max-w-none line-clamp-4 text-muted-foreground [&_p]:m-0 [&_p]:mb-1 [&_h1]:text-sm [&_h2]:text-sm [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:mb-1 [&_h3]:mt-1 [&_ol]:list-decimal [&_ol]:ml-4 [&_ol]:mb-1 [&_ul]:list-disc [&_ul]:ml-4 [&_ul]:mb-1 [&_li]:mb-0.5 [&_li]:text-xs [&_li]:leading-tight"
+                      dangerouslySetInnerHTML={{
+                        __html: decodeHtmlEntities(
+                          typeof teacher.highlights === "string"
+                            ? teacher.highlights
+                            : teacher.highlights?.content || ""
+                        ),
+                      }}
+                    />
                   </div>
                 </div>
               </div>

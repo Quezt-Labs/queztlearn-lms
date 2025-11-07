@@ -26,9 +26,9 @@ import {
   CalendarIcon,
   Plus,
   X,
-  DollarSign,
   BookOpen,
   GraduationCap,
+  IndianRupee,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -504,7 +504,7 @@ export function CreateBatchModal({
           <Card>
             <CardContent className="p-6">
               <h3 className="font-semibold mb-4 flex items-center">
-                <DollarSign className="mr-2 h-5 w-5" />
+                <IndianRupee className="mr-2 h-5 w-5" />
                 Pricing
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -72,9 +72,9 @@ export function EditBatchModal({
 
   const updateBatchMutation = useUpdateBatch();
 
-  // Initialize form data when batch changes
+  // Initialize form data when batch changes or modal opens
   useEffect(() => {
-    if (batch) {
+    if (batch && isOpen) {
       setFormData({
         name: batch.name || "",
         description: batch.description || "",
@@ -99,7 +99,7 @@ export function EditBatchModal({
         })) || []
       );
     }
-  }, [batch]);
+  }, [batch, isOpen]);
 
   const handleImageUpload = (fileData: {
     key: string;

@@ -5,13 +5,7 @@ import { useInviteTeacher, useInviteAdmin } from "@/hooks";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +15,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { UserPlus, Mail, User, Shield, Users } from "lucide-react";
-// Using console.log for now - can be replaced with toast library later
 
 interface InviteUserModalProps {
   isOpen: boolean;
@@ -173,32 +166,38 @@ export function InviteUserModal({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="role" className="flex items-center space-x-2">
+            <Label className="flex items-center space-x-2">
               <Shield className="h-4 w-4" />
               <span>Role</span>
             </Label>
-            <Select
+            <RadioGroup
               value={role}
-              onValueChange={(value: "ADMIN" | "TEACHER") => setRole(value)}
+              onValueChange={(value) => setRole(value as "ADMIN" | "TEACHER")}
+              className="grid grid-cols-2 gap-3"
             >
-              <SelectTrigger disabled={isSubmitting}>
-                <SelectValue placeholder="Select Role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ADMIN">
-                  <div className="flex items-center space-x-2">
-                    <Shield className="h-4 w-4" />
-                    <span>Admin</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="TEACHER">
-                  <div className="flex items-center space-x-2">
-                    <Users className="h-4 w-4" />
-                    <span>Teacher</span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
+              <label className="flex items-center gap-2 rounded-lg border p-3 cursor-pointer hover:bg-accent/40">
+                <RadioGroupItem
+                  value="ADMIN"
+                  id="role-admin"
+                  disabled={isSubmitting}
+                />
+                <div className="flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  <span>Admin</span>
+                </div>
+              </label>
+              <label className="flex items-center gap-2 rounded-lg border p-3 cursor-pointer hover:bg-accent/40">
+                <RadioGroupItem
+                  value="TEACHER"
+                  id="role-teacher"
+                  disabled={isSubmitting}
+                />
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  <span>Teacher</span>
+                </div>
+              </label>
+            </RadioGroup>
           </div>
 
           <DialogFooter className="flex-col sm:flex-row gap-2">

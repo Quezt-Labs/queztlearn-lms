@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, CheckCircle, Globe, Palette } from "lucide-react";
+import { ArrowLeft, CheckCircle, Globe } from "lucide-react";
 import Link from "next/link";
 import { useCreateOrganization } from "@/hooks";
 import { useOnboardingStore } from "@/lib/store";
@@ -41,9 +41,6 @@ export default function CreateOrganizationPage() {
   } = useEnhancedFormValidation({
     organizationName: "",
     subdomain: "",
-    primaryColor: "#3b82f6",
-    secondaryColor: "#1e40af",
-    customDomain: "",
   });
 
   // Loading state management
@@ -72,27 +69,6 @@ export default function CreateOrganizationPage() {
     }
   }, [debouncedOrganizationName, updateField]);
 
-  // Check subdomain availability (commented out for now)
-  // const checkSubdomainAvailability = async (subdomain: string) => {
-  //   if (!subdomain || subdomain.length < 3) return;
-
-  //   // Mock API call - in real app, this would check against existing subdomains
-  //   await new Promise((resolve) => setTimeout(resolve, 500));
-
-  //   // Mock availability check
-  //   const unavailableSubdomains = [
-  //     "admin",
-  //     "api",
-  //     "www",
-  //     "app",
-  //     "test",
-  //     "demo",
-  //   ];
-  //   const isAvailable = !unavailableSubdomains.includes(subdomain);
-
-  //   return isAvailable;
-  // };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -107,11 +83,6 @@ export default function CreateOrganizationPage() {
         const result = (await createOrganizationMutation.mutateAsync({
           name: getFieldValue("organizationName").trim(),
           subdomain: getFieldValue("subdomain"),
-          branding: {
-            primaryColor: getFieldValue("primaryColor"),
-            secondaryColor: getFieldValue("secondaryColor"),
-            customDomain: getFieldValue("customDomain"),
-          },
         })) as {
           success: boolean;
           data?: { id: string; name: string; domain: string };
@@ -259,95 +230,6 @@ export default function CreateOrganizationPage() {
                     )}
                   </div>
                 )}
-
-                {/* Branding Options - Ultra Compact */}
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Palette className="h-3 w-3" />
-                    <Label className="text-xs font-medium">
-                      Branding (Optional)
-                    </Label>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label htmlFor="primaryColor" className="text-xs">
-                        Primary
-                      </Label>
-                      <div className="flex items-center space-x-1">
-                        <Input
-                          id="primaryColor"
-                          type="color"
-                          value={getFieldValue("primaryColor")}
-                          onChange={(e) =>
-                            updateField("primaryColor", e.target.value)
-                          }
-                          className="w-6 h-6 p-0 border rounded"
-                        />
-                        <Input
-                          type="text"
-                          value={getFieldValue("primaryColor")}
-                          onChange={(e) =>
-                            updateField("primaryColor", e.target.value)
-                          }
-                          className="flex-1 text-xs h-6"
-                          placeholder="#3b82f6"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label htmlFor="secondaryColor" className="text-xs">
-                        Secondary
-                      </Label>
-                      <div className="flex items-center space-x-1">
-                        <Input
-                          id="secondaryColor"
-                          type="color"
-                          value={getFieldValue("secondaryColor")}
-                          onChange={(e) =>
-                            updateField("secondaryColor", e.target.value)
-                          }
-                          className="w-6 h-6 p-0 border rounded"
-                        />
-                        <Input
-                          type="text"
-                          value={getFieldValue("secondaryColor")}
-                          onChange={(e) =>
-                            updateField("secondaryColor", e.target.value)
-                          }
-                          className="flex-1 text-xs h-6"
-                          placeholder="#1e40af"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Ultra Compact Branding Preview */}
-                  <div className="bg-muted/50 p-2 rounded">
-                    <div
-                      className="p-2 rounded text-white text-xs"
-                      style={{
-                        background: `linear-gradient(135deg, ${getFieldValue(
-                          "primaryColor"
-                        )}, ${getFieldValue("secondaryColor")})`,
-                      }}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 bg-white/20 rounded flex items-center justify-center">
-                          <span className="text-xs font-bold">L</span>
-                        </div>
-                        <div>
-                          <div className="font-semibold text-xs">
-                            {getFieldValue("organizationName") ||
-                              "Your Organization"}
-                          </div>
-                          <div className="text-xs opacity-90">Platform</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
 
                 <Button
                   type="submit"

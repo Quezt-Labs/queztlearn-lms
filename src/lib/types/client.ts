@@ -1,5 +1,6 @@
 export interface Client {
   id: string;
+  organizationId: string;
   name: string;
   domain: string; // e.g., "khanacademy.queztlearn.in"
   subdomain: string; // e.g., "khanacademy"

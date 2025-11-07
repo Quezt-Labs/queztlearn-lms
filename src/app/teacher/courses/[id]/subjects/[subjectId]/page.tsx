@@ -6,6 +6,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -15,13 +24,25 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   ArrowLeft,
   Plus,
   Edit,
   Trash2,
   BookOpen,
-  ChevronRight,
   FileText,
+  MoreHorizontal,
+  Search,
+  Eye,
+  Copy,
+  Check,
 } from "lucide-react";
 import {
   useGetSubject,
@@ -29,40 +50,16 @@ import {
   useGetChaptersBySubject,
   useDeleteChapter,
   useGetTopicsByChapter,
-  useDeleteTopic,
-  useGetContentsByTopic,
-  useDeleteContent,
 } from "@/hooks";
 import { CreateChapterModal } from "@/components/common/create-chapter-modal";
 import { EditChapterModal } from "@/components/common/edit-chapter-modal";
 import { CreateTopicModal } from "@/components/common/create-topic-modal";
-import { EditTopicModal } from "@/components/common/edit-topic-modal";
-import { CreateContentModal } from "@/components/common/create-content-modal";
-import { EditContentModal } from "@/components/common/edit-content-modal";
 import Image from "next/image";
 
 interface Chapter {
   id: string;
   name: string;
   subjectId: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-interface Topic {
-  id: string;
-  name: string;
-  chapterId: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-interface Content {
-  id: string;
-  name: string;
-  topicId: string;
-  type: string;
-  url?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -78,23 +75,15 @@ export default function SubjectDetailPage() {
   const [isCreateChapterOpen, setIsCreateChapterOpen] = useState(false);
   const [isEditChapterOpen, setIsEditChapterOpen] = useState(false);
   const [isCreateTopicOpen, setIsCreateTopicOpen] = useState(false);
-  const [isEditTopicOpen, setIsEditTopicOpen] = useState(false);
-  const [isCreateContentOpen, setIsCreateContentOpen] = useState(false);
-  const [isEditContentOpen, setIsEditContentOpen] = useState(false);
   const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
-  const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
-  const [selectedContent, setSelectedContent] = useState<Content | null>(null);
-  const [expandedChapters, setExpandedChapters] = useState<Set<string>>(
-    new Set()
-  );
+  const [searchQuery, setSearchQuery] = useState("");
+  const [copiedChapterId, setCopiedChapterId] = useState<string | null>(null);
 
   const { data: subject, isLoading: subjectLoading } = useGetSubject(subjectId);
   const { data: chapters, isLoading: chaptersLoading } =
     useGetChaptersBySubject(subjectId);
   const deleteSubjectMutation = useDeleteSubject();
   const deleteChapterMutation = useDeleteChapter();
-  const deleteTopicMutation = useDeleteTopic();
-  const deleteContentMutation = useDeleteContent();
 
   const handleGoBack = () => {
     router.push(`/teacher/courses/${courseId}`);
@@ -123,121 +112,47 @@ export default function SubjectDetailPage() {
     });
   };
 
+  const handleEditChapter = (chapter: Chapter) => {
+    setSelectedChapter(chapter);
+    setIsEditChapterOpen(true);
+  };
+
   const handleChapterUpdated = () => {
     queryClient.invalidateQueries({
       queryKey: ["chapters", "subject", subjectId],
     });
   };
 
-  const handleEditChapter = (chapter: Chapter) => {
-    setSelectedChapter(chapter);
-    setIsEditChapterOpen(true);
-  };
-
-  const handleDeleteChapter = (chapter: Chapter) => {
-    if (window.confirm(`Are you sure you want to delete ${chapter.name}?`)) {
-      deleteChapterMutation.mutate(chapter.id, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({
-            queryKey: ["chapters", "subject", subjectId],
-          });
-        },
-      });
-    }
-  };
-
-  const toggleChapter = (chapterId: string) => {
-    setExpandedChapters((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(chapterId)) {
-        newSet.delete(chapterId);
-      } else {
-        newSet.add(chapterId);
+  const handleDeleteChapter = async (chapter: Chapter) => {
+    if (
+      window.confirm(
+        `Are you sure you want to delete "${chapter.name}"? This action cannot be undone.`
+      )
+    ) {
+      try {
+        await deleteChapterMutation.mutateAsync(chapter.id);
+        queryClient.invalidateQueries({
+          queryKey: ["chapters", "subject", subjectId],
+        });
+      } catch (error) {
+        console.error("Failed to delete chapter:", error);
       }
-      return newSet;
-    });
-  };
-
-  const handleAddTopic = (chapterId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const chapter = chapters?.data?.find((c: Chapter) => c.id === chapterId);
-    if (chapter) {
-      setSelectedChapter(chapter);
-      setIsCreateTopicOpen(true);
     }
   };
 
-  const handleTopicCreated = () => {
-    queryClient.invalidateQueries({
-      queryKey: ["topics", "chapter"],
-    });
+  const handleViewTopics = (chapterId: string) => {
+    router.push(
+      `/teacher/courses/${courseId}/subjects/${subjectId}/chapters/${chapterId}`
+    );
   };
 
-  const handleTopicUpdated = () => {
-    queryClient.invalidateQueries({
-      queryKey: ["topics", "chapter"],
-    });
-  };
-
-  const handleEditTopic = (topic: Topic, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedTopic(topic);
-    setIsEditTopicOpen(true);
-  };
-
-  const handleDeleteTopic = (topic: Topic, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (window.confirm(`Are you sure you want to delete ${topic.name}?`)) {
-      deleteTopicMutation.mutate(topic.id, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({
-            queryKey: ["topics", "chapter"],
-          });
-        },
-      });
-    }
-  };
-
-  const handleAddContent = (topicId: string) => {
-    const topic = chapters?.data
-      ?.flatMap((c: Chapter) => {
-        const topics = chapters?.data?.find((ch: Chapter) => ch.id === c.id);
-        return topics ? [] : [];
-      })
-      .find((t: Topic) => t.id === topicId);
-    if (topic) {
-      setSelectedTopic(topic);
-      setIsCreateContentOpen(true);
-    }
-  };
-
-  const handleContentCreated = () => {
-    queryClient.invalidateQueries({
-      queryKey: ["contents", "topic"],
-    });
-  };
-
-  const handleContentUpdated = () => {
-    queryClient.invalidateQueries({
-      queryKey: ["contents", "topic"],
-    });
-  };
-
-  const handleEditContent = (content: Content, e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedContent(content);
-    setIsEditContentOpen(true);
-  };
-
-  const handleDeleteContent = (content: Content) => {
-    if (window.confirm(`Are you sure you want to delete ${content.name}?`)) {
-      deleteContentMutation.mutate(content.id, {
-        onSuccess: () => {
-          queryClient.invalidateQueries({
-            queryKey: ["contents", "topic"],
-          });
-        },
-      });
+  const handleCopyChapterId = async (chapterId: string) => {
+    try {
+      await navigator.clipboard.writeText(chapterId);
+      setCopiedChapterId(chapterId);
+      setTimeout(() => setCopiedChapterId(null), 2000);
+    } catch (error) {
+      console.error("Failed to copy Chapter ID:", error);
     }
   };
 
@@ -287,7 +202,7 @@ export default function SubjectDetailPage() {
           </div>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline" onClick={handleAddChapter}>
+          <Button variant="default" onClick={handleAddChapter}>
             <Plus className="mr-2 h-4 w-4" />
             Add Chapter
           </Button>
@@ -312,7 +227,13 @@ export default function SubjectDetailPage() {
       {/* Chapters List */}
       <Card>
         <CardHeader>
-          <CardTitle>Chapters ({chapters?.data?.length || 0})</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Chapters ({chapters?.data?.length || 0})</CardTitle>
+            <Button variant="default" onClick={handleAddChapter}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Chapter
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {chaptersLoading ? (
@@ -323,23 +244,77 @@ export default function SubjectDetailPage() {
               </span>
             </div>
           ) : chapters?.data && chapters.data.length > 0 ? (
-            <div className="space-y-3">
-              {chapters.data.map((chapter: Chapter) => (
-                <ChapterCard
-                  key={chapter.id}
-                  chapter={chapter}
-                  isExpanded={expandedChapters.has(chapter.id)}
-                  onToggle={() => toggleChapter(chapter.id)}
-                  onEdit={() => handleEditChapter(chapter)}
-                  onDelete={() => handleDeleteChapter(chapter)}
-                  onAddTopic={(e) => handleAddTopic(chapter.id, e)}
-                  onEditTopic={(topic, e) => handleEditTopic(topic, e)}
-                  onDeleteTopic={(topic, e) => handleDeleteTopic(topic, e)}
-                  onAddContent={handleAddContent}
-                  onEditContent={handleEditContent}
-                  onDeleteContent={handleDeleteContent}
+            <div className="space-y-4">
+              {/* Search */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search chapters..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
                 />
-              ))}
+              </div>
+
+              {/* Table */}
+              <div className="border rounded-lg">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[200px]">
+                        Chapter Name
+                      </TableHead>
+                      <TableHead className="min-w-[200px]">
+                        Chapter ID
+                      </TableHead>
+                      <TableHead className="w-[100px]">Topics</TableHead>
+                      <TableHead className="w-[120px] text-right">
+                        Actions
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {chapters.data.filter((chapter: Chapter) =>
+                      chapter.name
+                        .toLowerCase()
+                        .includes(searchQuery.toLowerCase())
+                    ).length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={4}
+                          className="text-center py-8 text-muted-foreground"
+                        >
+                          {searchQuery
+                            ? `No chapters found matching "${searchQuery}"`
+                            : "No chapters found"}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      chapters.data
+                        .filter((chapter: Chapter) =>
+                          chapter.name
+                            .toLowerCase()
+                            .includes(searchQuery.toLowerCase())
+                        )
+                        .map((chapter: Chapter) => (
+                          <ChapterTableRow
+                            key={chapter.id}
+                            chapter={chapter}
+                            copiedId={copiedChapterId}
+                            onEdit={() => handleEditChapter(chapter)}
+                            onDelete={() => handleDeleteChapter(chapter)}
+                            onViewTopics={() => handleViewTopics(chapter.id)}
+                            onAddTopic={() => {
+                              setSelectedChapter({ id: chapter.id } as Chapter);
+                              setIsCreateTopicOpen(true);
+                            }}
+                            onCopyId={() => handleCopyChapterId(chapter.id)}
+                          />
+                        ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           ) : (
             <div className="text-center py-8">
@@ -348,6 +323,10 @@ export default function SubjectDetailPage() {
               <p className="text-muted-foreground mb-4">
                 Click &quot;Add Chapter&quot; to get started
               </p>
+              <Button onClick={handleAddChapter}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Chapter
+              </Button>
             </div>
           )}
         </CardContent>
@@ -359,8 +338,9 @@ export default function SubjectDetailPage() {
           <DialogHeader>
             <DialogTitle>Delete Subject</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this subject? This action cannot
-              be undone.
+              Are you sure you want to delete &quot;{subjectData.name}&quot;?
+              This action cannot be undone. All chapters, topics, and content
+              will be permanently removed.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -370,8 +350,14 @@ export default function SubjectDetailPage() {
             >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              {deleteSubjectMutation.isPending ? "Deleting..." : "Delete"}
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deleteSubjectMutation.isPending}
+            >
+              {deleteSubjectMutation.isPending
+                ? "Deleting..."
+                : "Delete Subject"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -402,251 +388,105 @@ export default function SubjectDetailPage() {
           setSelectedChapter(null);
         }}
         chapterId={selectedChapter?.id || ""}
-      />
-
-      <EditTopicModal
-        isOpen={isEditTopicOpen}
-        onClose={() => {
-          setIsEditTopicOpen(false);
-          setSelectedTopic(null);
+        onSuccess={() => {
+          queryClient.invalidateQueries({
+            queryKey: ["topics"],
+          });
         }}
-        topic={selectedTopic}
-      />
-
-      <CreateContentModal
-        isOpen={isCreateContentOpen}
-        onClose={() => {
-          setIsCreateContentOpen(false);
-          setSelectedTopic(null);
-        }}
-        topicId={selectedTopic?.id || ""}
-      />
-
-      <EditContentModal
-        isOpen={isEditContentOpen}
-        onClose={() => {
-          setIsEditContentOpen(false);
-          setSelectedContent(null);
-        }}
-        // @ts-expect-error - Content types mismatch between files
-        content={selectedContent}
       />
     </div>
   );
 }
 
-function ChapterCard({
+function ChapterTableRow({
   chapter,
-  isExpanded,
-  onToggle,
+  copiedId,
   onEdit,
   onDelete,
+  onViewTopics,
   onAddTopic,
-  onEditTopic,
-  onDeleteTopic,
-  onAddContent,
-  onEditContent,
-  onDeleteContent,
+  onCopyId,
 }: {
   chapter: Chapter;
-  isExpanded: boolean;
-  onToggle: () => void;
-  onEdit: (e: React.MouseEvent) => void;
+  copiedId: string | null;
+  onEdit: () => void;
   onDelete: () => void;
-  onAddTopic: (e: React.MouseEvent) => void;
-  onEditTopic: (topic: Topic, e: React.MouseEvent) => void;
-  onDeleteTopic: (topic: Topic, e: React.MouseEvent) => void;
-  onAddContent: (topicId: string) => void;
-  onEditContent: (content: Content, e: React.MouseEvent) => void;
-  onDeleteContent: (content: Content) => void;
+  onViewTopics: () => void;
+  onAddTopic: () => void;
+  onCopyId: () => void;
 }) {
   const { data: topicsData } = useGetTopicsByChapter(chapter.id);
   const topics = topicsData?.data || [];
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-0">
-        <div
-          className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 transition-colors"
-          onClick={onToggle}
-        >
-          <div className="flex items-center space-x-3">
-            <ChevronRight
-              className={`h-5 w-5 transition-transform ${
-                isExpanded ? "rotate-90" : ""
-              }`}
-            />
-            <FileText className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold text-base">{chapter.name}</h3>
-            {topics.length > 0 && (
-              <Badge variant="secondary">{topics.length} topics</Badge>
-            )}
-          </div>
-          <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
-            <Button variant="outline" size="sm" onClick={onEdit}>
-              <Edit className="h-3 w-3 mr-1" />
-              Edit
-            </Button>
-            <Button variant="outline" size="sm" onClick={onDelete}>
-              <Trash2 className="h-3 w-3 mr-1" />
-              Delete
-            </Button>
-          </div>
+    <TableRow className="hover:bg-muted/50">
+      <TableCell className="font-medium">
+        <div className="flex items-center space-x-2">
+          <FileText className="h-4 w-4 text-primary" />
+          <span>{chapter.name}</span>
         </div>
-
-        {isExpanded && (
-          <div className="border-t bg-muted/30">
-            <div className="p-4 space-y-3">
-              {topics.length > 0 ? (
-                topics.map((topic: Topic) => (
-                  <TopicContentDisplay
-                    key={topic.id}
-                    topic={topic}
-                    onEdit={(e) => onEditTopic(topic, e)}
-                    onDelete={(e) => onDeleteTopic(topic, e)}
-                    onAddContent={onAddContent}
-                    onEditContent={onEditContent}
-                    onDeleteContent={onDeleteContent}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-4 text-sm text-muted-foreground">
-                  No topics yet
-                </div>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onAddTopic}
-                className="w-full"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Topic
-              </Button>
-            </div>
-          </div>
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground font-mono">
+            {chapter.id}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0"
+            onClick={onCopyId}
+            title="Copy Chapter ID"
+          >
+            {copiedId === chapter.id ? (
+              <Check className="h-3.5 w-3.5 text-green-600" />
+            ) : (
+              <Copy className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        </div>
+      </TableCell>
+      <TableCell>
+        {topics.length > 0 && (
+          <Badge variant="secondary">{topics.length} topics</Badge>
         )}
-      </CardContent>
-    </Card>
+      </TableCell>
+      <TableCell className="text-right">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onViewTopics}>
+              <Eye className="mr-2 h-4 w-4" />
+              View Topics
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onCopyId}>
+              <Copy className="mr-2 h-4 w-4" />
+              Copy ID
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onAddTopic}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add Topic
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onEdit}>
+              <Edit className="mr-2 h-4 w-4" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onDelete} className="text-red-600">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </TableCell>
+    </TableRow>
   );
-}
-
-function TopicContentDisplay({
-  topic,
-  onEdit,
-  onDelete,
-  onAddContent,
-  onEditContent,
-  onDeleteContent,
-}: {
-  topic: Topic;
-  onEdit: (e: React.MouseEvent) => void;
-  onDelete: (e: React.MouseEvent) => void;
-  onAddContent: (topicId: string) => void;
-  onEditContent: (content: Content, e: React.MouseEvent) => void;
-  onDeleteContent: (content: Content) => void;
-}) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const { data: contents } = useGetContentsByTopic(topic.id);
-
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded);
-  };
-
-  return (
-    <div className="border rounded-lg bg-background">
-      <div className="flex items-center justify-between p-3 cursor-pointer hover:bg-muted/50 transition-colors">
-        <div className="flex items-center space-x-2 flex-1">
-          <button
-            onClick={toggleExpanded}
-            className="flex items-center space-x-2 flex-1"
-          >
-            <ChevronRight
-              className={`h-4 w-4 transition-transform ${
-                isExpanded ? "rotate-90" : ""
-              }`}
-            />
-            <FileText className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">{topic.name}</span>
-            {contents?.data && contents.data.length > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {contents.data.length} content
-              </Badge>
-            )}
-          </button>
-        </div>
-        <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
-          <Button variant="outline" size="sm" onClick={onEdit}>
-            <Edit className="h-3 w-3" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onDelete}
-            className="text-red-500 hover:text-red-700"
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        </div>
-      </div>
-
-      {isExpanded && contents?.data && contents.data.length > 0 && (
-        <div className="border-t p-3 space-y-2">
-          {contents.data.map((content: Content) => (
-            <div
-              key={content.id}
-              className="flex items-center justify-between p-2 bg-muted/30 rounded hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center space-x-2">
-                {getContentTypeIcon(content.type)}
-                <span className="text-sm">{content.name}</span>
-              </div>
-              <div
-                className="flex space-x-2"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => onEditContent(content, e)}
-                >
-                  <Edit className="h-3 w-3" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onDeleteContent(content)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
-          ))}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onAddContent(topic.id)}
-            className="w-full"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add Content
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function getContentTypeIcon(type: string) {
-  switch (type) {
-    case "Video":
-      return <FileText className="h-4 w-4 text-blue-500" />;
-    case "PDF":
-      return <FileText className="h-4 w-4 text-red-500" />;
-    case "Assignment":
-      return <FileText className="h-4 w-4 text-green-500" />;
-    default:
-      return <FileText className="h-4 w-4 text-muted-foreground" />;
-  }
 }

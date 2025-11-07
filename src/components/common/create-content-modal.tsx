@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useCreateContent } from "@/hooks";
-import { Video, FileText, BookOpen, Clipboard } from "lucide-react";
+import { Video, FileText, BookOpen } from "lucide-react";
 import { FileUpload } from "@/components/common/file-upload";
 
 interface CreateContentModalProps {
@@ -38,17 +38,17 @@ export function CreateContentModal({
 }: CreateContentModalProps) {
   const [formData, setFormData] = useState({
     name: "",
-    type: "Lecture" as "Lecture" | "Video" | "PDF" | "Assignment",
+    type: "Lecture" as "Lecture" | "PDF",
     pdfUrl: "",
     videoUrl: "",
-    videoType: "HLS" as "HLS" | "MP4" | "YouTube",
+    videoType: "YOUTUBE" as "YOUTUBE" | "HLS",
     videoThumbnail: "",
     videoDuration: 0,
-    isCompleted: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pdfFile, setPdfFile] = useState<string>("");
   const [videoFile, setVideoFile] = useState<string>("");
+  const [thumbnailFile, setThumbnailFile] = useState<string>("");
 
   const createContentMutation = useCreateContent();
 
@@ -56,6 +56,14 @@ export function CreateContentModal({
     e.preventDefault();
 
     if (!formData.name.trim()) {
+      return;
+    }
+
+    // Validate videoDuration for Lecture type
+    if (
+      formData.type === "Lecture" &&
+      (!formData.videoDuration || formData.videoDuration <= 0)
+    ) {
       return;
     }
 
@@ -67,11 +75,13 @@ export function CreateContentModal({
         topicId: topicId,
         type: formData.type,
         pdfUrl: pdfFile || formData.pdfUrl || undefined,
-        videoUrl: videoFile || formData.videoUrl || undefined,
+        videoUrl:
+          formData.videoType === "YOUTUBE"
+            ? formData.videoUrl
+            : videoFile || formData.videoUrl || undefined,
         videoType: formData.videoType,
-        videoThumbnail: formData.videoThumbnail || undefined,
+        videoThumbnail: thumbnailFile || formData.videoThumbnail || undefined,
         videoDuration: formData.videoDuration,
-        isCompleted: formData.isCompleted,
       };
 
       await createContentMutation.mutateAsync(contentData);
@@ -90,13 +100,13 @@ export function CreateContentModal({
       type: "Lecture",
       pdfUrl: "",
       videoUrl: "",
-      videoType: "HLS",
+      videoType: "YOUTUBE",
       videoThumbnail: "",
       videoDuration: 0,
-      isCompleted: false,
     });
     setPdfFile("");
     setVideoFile("");
+    setThumbnailFile("");
     onClose();
   };
 
@@ -106,7 +116,7 @@ export function CreateContentModal({
         <DialogHeader>
           <DialogTitle>Create New Content</DialogTitle>
           <DialogDescription>
-            Add content to this topic (Lecture, Video, PDF, or Assignment).
+            Add content to this topic (Lecture or PDF).
           </DialogDescription>
         </DialogHeader>
 
@@ -147,22 +157,10 @@ export function CreateContentModal({
                     <span>Lecture</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="Video">
-                  <div className="flex items-center space-x-2">
-                    <Video className="h-4 w-4" />
-                    <span>Video</span>
-                  </div>
-                </SelectItem>
                 <SelectItem value="PDF">
                   <div className="flex items-center space-x-2">
                     <FileText className="h-4 w-4" />
                     <span>PDF</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="Assignment">
-                  <div className="flex items-center space-x-2">
-                    <Clipboard className="h-4 w-4" />
-                    <span>Assignment</span>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -170,51 +168,18 @@ export function CreateContentModal({
           </div>
 
           {/* Conditional Fields based on Type */}
-          {formData.type === "Video" && (
+          {formData.type === "Lecture" && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="videoFile">Upload Video File</Label>
-                <FileUpload
-                  accept="video/*"
-                  onUploadComplete={(fileData) => {
-                    setVideoFile(fileData.url);
-                  }}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Upload video files (MP4, WebM, etc.) or use YouTube URLs
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="videoUrl">Video URL</Label>
-                <Input
-                  id="videoUrl"
-                  placeholder={
-                    formData.videoType === "YouTube"
-                      ? "https://www.youtube.com/watch?v=VIDEO_ID"
-                      : "Enter video URL"
-                  }
-                  value={formData.videoUrl}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      videoUrl: e.target.value,
-                    }))
-                  }
-                />
-                {formData.videoType === "YouTube" && (
-                  <p className="text-xs text-muted-foreground">
-                    Supports YouTube URLs (youtube.com or youtu.be)
-                  </p>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="videoType">Video Type</Label>
+                <Label htmlFor="videoType">Video Type *</Label>
                 <Select
                   value={formData.videoType}
                   onValueChange={(value) =>
                     setFormData((prev) => ({
                       ...prev,
                       videoType: value as typeof formData.videoType,
+                      videoUrl: "", // Reset URL when changing type
+                      videoDuration: 0, // Reset duration when changing type
                     }))
                   }
                 >
@@ -222,39 +187,108 @@ export function CreateContentModal({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="HLS">HLS (Streaming)</SelectItem>
-                    <SelectItem value="MP4">MP4 (Direct)</SelectItem>
-                    <SelectItem value="YouTube">YouTube</SelectItem>
+                    <SelectItem value="YOUTUBE">
+                      <div className="flex items-center space-x-2">
+                        <Video className="h-4 w-4" />
+                        <span>YouTube</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="HLS">HLS</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* YouTube URL Input */}
+              {formData.videoType === "YOUTUBE" && (
+                <div className="space-y-2">
+                  <Label htmlFor="videoUrl">YouTube URL *</Label>
+                  <Input
+                    id="videoUrl"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    value={formData.videoUrl}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        videoUrl: e.target.value,
+                      }))
+                    }
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Enter the full YouTube video URL or video ID
+                  </p>
+                </div>
+              )}
+
+              {/* Video Upload for HLS */}
+              {formData.videoType === "HLS" && (
+                <div className="space-y-2">
+                  <Label htmlFor="videoUpload">Upload Video *</Label>
+                  <FileUpload
+                    accept="video/*"
+                    maxSize={500}
+                    onUploadComplete={(fileData) => {
+                      setVideoFile(fileData.url);
+                    }}
+                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="videoUrl">Or Enter Video URL</Label>
+                    <Input
+                      id="videoUrl"
+                      placeholder="Enter video URL (optional)"
+                      value={formData.videoUrl}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          videoUrl: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
-                <Label htmlFor="videoThumbnail">Video Thumbnail URL</Label>
-                <Input
-                  id="videoThumbnail"
-                  placeholder="Enter thumbnail URL"
-                  value={formData.videoThumbnail}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      videoThumbnail: e.target.value,
-                    }))
-                  }
+                <Label htmlFor="videoThumbnail">Video Thumbnail</Label>
+                <FileUpload
+                  accept="image/*"
+                  maxSize={10}
+                  onUploadComplete={(fileData) => {
+                    setThumbnailFile(fileData.url);
+                  }}
                 />
+                <div className="space-y-2">
+                  <Label htmlFor="videoThumbnailUrl">
+                    Or Enter Thumbnail URL
+                  </Label>
+                  <Input
+                    id="videoThumbnailUrl"
+                    placeholder="Enter thumbnail URL (optional)"
+                    value={formData.videoThumbnail}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        videoThumbnail: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="videoDuration">Duration (seconds)</Label>
+                <Label htmlFor="videoDuration">Duration (seconds) *</Label>
                 <Input
                   id="videoDuration"
                   type="number"
-                  placeholder="0"
-                  value={formData.videoDuration}
+                  placeholder="Enter duration in seconds"
+                  value={formData.videoDuration || ""}
                   onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      videoDuration: Number(e.target.value),
+                      videoDuration: Number(e.target.value) || 0,
                     }))
                   }
+                  required
+                  min="1"
                 />
               </div>
             </>
@@ -291,7 +325,12 @@ export function CreateContentModal({
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || !formData.name.trim()}
+              disabled={
+                isSubmitting ||
+                !formData.name.trim() ||
+                (formData.type === "Lecture" &&
+                  (!formData.videoDuration || formData.videoDuration <= 0))
+              }
             >
               {isSubmitting ? "Creating..." : "Create Content"}
             </Button>

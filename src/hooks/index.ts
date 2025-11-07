@@ -7,6 +7,7 @@ export {
   useLogout,
   useCurrentUser,
   useCreateOrganization as useCreateOrganizationApi,
+  useCreateOrganizationConfig,
   useRegister as useRegisterApi,
   useVerifyEmail as useVerifyEmailApi,
   useSetPassword as useSetPasswordApi,
@@ -50,6 +51,21 @@ export {
   useGetContent,
   useUpdateContent,
   useDeleteContent,
+  useGetExploreBatches,
+  useGetExploreBatch,
+  useGetMyBatches,
+  useGetBatchSchedules,
+  useCreateBatchCheckout,
+  useVerifyBatchPayment,
+  useEnrollFreeBatch,
+  useGetExploreTestSeries,
+  useGetExploreTestSeriesById,
+  useGetClientSubjectsByBatch,
+  useGetClientSubject,
+  useGetClientChaptersBySubject,
+  useGetClientChapter,
+  useGetClientTopicsByChapter,
+  useGetClientTopic,
   queryKeys,
 } from "./api";
 
@@ -61,3 +77,9 @@ export * from "./auth";
 
 // Common hooks
 export * from "./common";
+
+// Test Series hooks
+export * from "./test-series";
+export * from "./test-series-client";
+export * from "./test-attempts-client";
+export * from "./tests-client";

@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Explicitly set the tracing root to this workspace to avoid
+  // lockfile root detection warnings when multiple lockfiles exist
+  outputFileTracingRoot: __dirname,
   images: {
     domains: [
       "quezt-learn-lms.vercel.app",

@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,11 +20,18 @@ import Image from "next/image";
 import { useEnhancedFormValidation, useLoadingState } from "@/hooks/common";
 import { getFriendlyErrorMessage } from "@/lib/utils/error-handling";
 import { ErrorMessage } from "@/components/common/error-message";
+import { useStudentLogin } from "@/hooks/api";
+import { useRouter } from "next/navigation";
+import { cookieStorage } from "@/lib/utils/storage";
 
 // Client Login Component
 function ClientLoginContent() {
+  const router = useRouter();
+  const params = useParams();
   const { client, isLoading, error } = useClient();
   const [showPassword, setShowPassword] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const studentLoginMutation = useStudentLogin();
 
   // Form validation
   const {
@@ -37,6 +44,7 @@ function ClientLoginContent() {
   } = useEnhancedFormValidation({
     email: "",
     password: "",
+    userType: "student", // Default to student for client login
   });
 
   // Loading state management
@@ -49,6 +57,49 @@ function ClientLoginContent() {
     autoReset: true,
   });
 
+  // Check if user is already authenticated and redirect to My Learning
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const checkAuthAndRedirect = async () => {
+      try {
+        // Check if QUEZT_AUTH token exists in cookies
+        const authData = cookieStorage.get<{
+          token: string;
+          user: { role: string };
+        }>("QUEZT_AUTH");
+
+        if (
+          authData &&
+          typeof authData === "object" &&
+          "token" in authData &&
+          authData.token
+        ) {
+          const userData = authData.user;
+          if (
+            userData &&
+            (userData as { role?: string }).role?.toLowerCase() === "student"
+          ) {
+            router.push(`/student/my-learning`);
+            return;
+          }
+        }
+        setIsCheckingAuth(false);
+      } catch (error) {
+        console.error("Auth check error:", error);
+        setIsCheckingAuth(false);
+      }
+    };
+
+    // Only check after client is loaded
+    if (!isLoading && client) {
+      const timer = setTimeout(checkAuthAndRedirect, 100);
+      return () => clearTimeout(timer);
+    } else if (!isLoading) {
+      setIsCheckingAuth(false);
+    }
+  }, [router, params.client, isLoading, client]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -60,14 +111,10 @@ function ClientLoginContent() {
 
     try {
       await executeWithLoading(async () => {
-        // Simulate login process
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        // Handle login logic here
-        console.log("Login attempt:", {
+        // Use student login for client login
+        await studentLoginMutation.mutateAsync({
           email: getFieldValue("email"),
           password: getFieldValue("password"),
-          client: client?.id,
         });
       });
     } catch (error: unknown) {
@@ -75,10 +122,15 @@ function ClientLoginContent() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isCheckingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="text-muted-foreground">
+            {isCheckingAuth ? "Checking authentication..." : "Loading..."}
+          </p>
+        </div>
       </div>
     );
   }
@@ -100,9 +152,9 @@ function ClientLoginContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 flex">
+    <div className="min-h-screen bg-linear-to-br from-background to-muted/20 flex">
       {/* Left Side - Client Branding */}
-      <div className="hidden lg:flex lg:w-2/5 bg-gradient-to-br from-primary to-primary/80 flex-col justify-center p-8 text-white">
+      <div className="hidden lg:flex lg:w-2/5 bg-linear-to-br from-primary to-primary/80 flex-col justify-center p-8 text-white">
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -111,13 +163,14 @@ function ClientLoginContent() {
         >
           <div className="mb-6">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+              <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
                 <Image
                   src={client.logo}
                   alt={client.name}
-                  width={32}
-                  height={32}
-                  className="rounded"
+                  width={96}
+                  height={96}
+                  quality={100}
+                  className="w-full h-full object-cover"
                 />
               </div>
               <div>
@@ -165,13 +218,14 @@ function ClientLoginContent() {
           {/* Mobile Header */}
           <div className="lg:hidden text-center mb-8">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0">
                 <Image
                   src={client.logo}
                   alt={client.name}
-                  width={24}
-                  height={24}
-                  className="rounded"
+                  width={80}
+                  height={80}
+                  quality={100}
+                  className="w-full h-full object-cover"
                 />
               </div>
               <div>
@@ -193,7 +247,14 @@ function ClientLoginContent() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <ErrorMessage error={submitError} />
+                <ErrorMessage
+                  error={
+                    submitError ||
+                    (studentLoginMutation.error
+                      ? getFriendlyErrorMessage(studentLoginMutation.error)
+                      : null)
+                  }
+                />
 
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
@@ -250,9 +311,15 @@ function ClientLoginContent() {
                 <Button
                   type="submit"
                   className="w-full"
-                  disabled={!isFormValid || isSubmitting}
+                  disabled={
+                    !isFormValid ||
+                    isSubmitting ||
+                    studentLoginMutation.isPending
+                  }
                 >
-                  {isSubmitting ? "Signing In..." : "Sign In"}
+                  {isSubmitting || studentLoginMutation.isPending
+                    ? "Signing In..."
+                    : "Sign In"}
                 </Button>
               </form>
 
@@ -260,8 +327,12 @@ function ClientLoginContent() {
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground">
                     Don&apos;t have an account?{" "}
-                    <Button variant="link" className="p-0 h-auto">
-                      Contact your administrator
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto"
+                      onClick={() => router.push("/register")}
+                    >
+                      Register as Student
                     </Button>
                   </p>
                 </div>

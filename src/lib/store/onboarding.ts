@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { OrganizationConfig } from "@/lib/types/api";
 
 export interface OrganizationData {
   id: string;
@@ -17,6 +18,10 @@ export interface OnboardingState {
   // Organization data
   organizationData: OrganizationData | null;
   setOrganizationData: (data: OrganizationData) => void;
+
+  // Organization configuration data
+  organizationConfig: OrganizationConfig | null;
+  setOrganizationConfig: (config: OrganizationConfig) => void;
 
   // Admin data
   adminData: AdminData | null;
@@ -52,6 +57,10 @@ export const useOnboardingStore = create<OnboardingState>()(
       organizationData: null,
       setOrganizationData: (data) => set({ organizationData: data }),
 
+      // Organization configuration data
+      organizationConfig: null,
+      setOrganizationConfig: (config) => set({ organizationConfig: config }),
+
       // Admin data
       adminData: null,
       setAdminData: (data) => set({ adminData: data }),
@@ -76,6 +85,7 @@ export const useOnboardingStore = create<OnboardingState>()(
       resetOnboarding: () =>
         set({
           organizationData: null,
+          organizationConfig: null,
           adminData: null,
           userId: null,
           currentStep: 1,
@@ -88,6 +98,7 @@ export const useOnboardingStore = create<OnboardingState>()(
         // Clear onboarding data after completion
         set({
           organizationData: null,
+          organizationConfig: null,
           adminData: null,
           userId: null,
           currentStep: 1,
@@ -100,6 +111,7 @@ export const useOnboardingStore = create<OnboardingState>()(
       name: "onboarding-storage",
       partialize: (state) => ({
         organizationData: state.organizationData,
+        organizationConfig: state.organizationConfig,
         adminData: state.adminData,
         userId: state.userId,
         currentStep: state.currentStep,

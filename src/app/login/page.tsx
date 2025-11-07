@@ -17,8 +17,8 @@ import { useLogin, useLogout } from "@/hooks/api";
 import { BrandingSidebar } from "@/components/onboarding/branding-sidebar";
 import { tokenManager } from "@/lib/api/client";
 import { useEnhancedFormValidation, useLoadingState } from "@/hooks/common";
-import { getFriendlyErrorMessage } from "@/lib/utils/error-handling";
 import { ErrorMessage } from "@/components/common/error-message";
+import { cookieStorage } from "@/lib/utils/storage";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -39,7 +39,7 @@ export default function LoginPage() {
   });
 
   // Loading state management
-  const { isLoading, error, setError, executeWithLoading } = useLoadingState({
+  const { isLoading, error, setError } = useLoadingState({
     autoReset: true,
   });
 
@@ -51,24 +51,41 @@ export default function LoginPage() {
 
     const checkAuthAndRedirect = async () => {
       try {
-        if (tokenManager.isAuthenticated()) {
-          const userData = tokenManager.getUser();
+        // Check if QUEZT_AUTH token exists in cookies
+        const authData = cookieStorage.get<{
+          token: string;
+          user: { role: string };
+        }>("QUEZT_AUTH");
+
+        console.log(authData, "authData");
+        if (
+          authData &&
+          typeof authData === "object" &&
+          "token" in authData &&
+          authData.token
+        ) {
+          const userData = authData.user;
+          console.log(userData, "userData");
           if (userData) {
             // Redirect based on user role
-            switch ((userData as { role?: string }).role?.toLowerCase()) {
+            const userRole = (
+              userData as { role?: string }
+            ).role?.toLowerCase();
+            switch (userRole) {
               case "admin":
                 router.push("/admin/dashboard");
-                break;
+                return;
               case "teacher":
                 router.push("/teacher/dashboard");
-                break;
+                return;
               case "student":
-                router.push("/student/dashboard");
-                break;
+                // Redirect students to My Learning page
+                router.push("/student/my-learning");
+                return;
               default:
                 router.push("/admin/dashboard");
+                return;
             }
-            return;
           }
         }
         setIsCheckingAuth(false);
@@ -84,6 +101,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent form submission
     setError(null);
 
     if (!validateAllFields()) {
@@ -92,14 +110,51 @@ export default function LoginPage() {
     }
 
     try {
-      await executeWithLoading(async () => {
-        await loginMutation.mutateAsync({
-          email: getFieldValue("email"),
-          password: getFieldValue("password"),
-        });
+      const result = await loginMutation.mutateAsync({
+        email: getFieldValue("email"),
+        password: getFieldValue("password"),
       });
+
+      // Check if login was actually successful
+      if (!result.success) {
+        setError(result.message || "");
+        return;
+      }
     } catch (error: unknown) {
-      setError(getFriendlyErrorMessage(error));
+      // Extract error message directly from API response
+      let errorMessage = "";
+
+      if (error && typeof error === "object") {
+        // Check for Axios error structure (when API returns HTTP error status)
+        if ("response" in error) {
+          const axiosError = error as {
+            response?: { data?: { message?: string; success?: boolean } };
+            message?: string;
+          };
+          // Extract message from response.data.message (API's actual message)
+          errorMessage = axiosError.response?.data?.message || "";
+
+          // Fallback to error.message if response.data.message is not available
+          if (!errorMessage && axiosError.message) {
+            errorMessage = axiosError.message;
+          }
+        }
+        // Check for Error object with message (when API returns 200 with success:false)
+        else if ("message" in error) {
+          errorMessage = (error as { message: string }).message;
+        }
+      } else if (typeof error === "string") {
+        errorMessage = error;
+      }
+
+      // Only set error if we have a message
+      if (errorMessage) {
+        setError(errorMessage);
+      } else {
+        setError("Invalid email or password. Please try again.");
+      }
+
+      console.error("Login error:", error);
     }
   };
 
@@ -120,11 +175,11 @@ export default function LoginPage() {
       {/* Left Side - Branding */}
       <BrandingSidebar
         title="Welcome Back"
-        subtitle="Sign in to your admin dashboard"
+        subtitle="Sign in to your dashboard"
         features={[
-          "Access your organization",
-          "Manage users and settings",
-          "Monitor platform analytics",
+          "Access your account",
+          "Manage your content",
+          "Track your progress",
         ]}
       />
 
@@ -142,21 +197,44 @@ export default function LoginPage() {
           {/* Login Form */}
           <Card>
             <CardHeader>
-              <CardTitle>Admin Login</CardTitle>
-              <CardDescription>
-                Sign in to manage your organization
-              </CardDescription>
+              <CardTitle>Sign In</CardTitle>
+              <CardDescription>Sign in to your admin dashboard</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                <ErrorMessage
-                  error={
-                    error ||
-                    (loginMutation.error
-                      ? getFriendlyErrorMessage(loginMutation.error)
-                      : null)
-                  }
-                />
+                {(error || loginMutation.error) && (
+                  <ErrorMessage
+                    error={
+                      error ||
+                      (loginMutation.error
+                        ? (() => {
+                            // Extract API message directly, don't use getFriendlyErrorMessage
+                            // which might show generic messages
+                            const err = loginMutation.error;
+                            if (err && typeof err === "object") {
+                              // Check for Axios error with response.data.message
+                              if ("response" in err) {
+                                const axiosError = err as {
+                                  response?: { data?: { message?: string } };
+                                  message?: string;
+                                };
+                                return (
+                                  axiosError.response?.data?.message ||
+                                  axiosError.message ||
+                                  null
+                                );
+                              }
+                              // Check for Error object with message
+                              if ("message" in err) {
+                                return (err as { message: string }).message;
+                              }
+                            }
+                            return null;
+                          })()
+                        : null)
+                    }
+                  />
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>

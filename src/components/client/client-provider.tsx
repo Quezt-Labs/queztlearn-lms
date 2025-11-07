@@ -7,8 +7,58 @@ import {
   useEffect,
   useState,
 } from "react";
-// Removed client-hooks import - using mock data for now
 import { Client } from "@/lib/types/client";
+import { useOrganizationConfig } from "@/hooks/api";
+import { OrganizationConfig } from "@/lib/types/api";
+import { extractOrganizationSlug } from "@/lib/utils/organization";
+
+// Helper function to map OrganizationConfig to Client interface
+const mapOrganizationConfigToClient = (
+  config: OrganizationConfig,
+  subdomain: string
+): Client => {
+  return {
+    id: config.id,
+    organizationId: config.organizationId,
+    name: config.name,
+    domain: config.domain!,
+    subdomain: subdomain,
+    basePath: "queztlearn",
+    logo: config.logoUrl!,
+    primaryColor:
+      ((config.theme as Record<string, unknown>)?.primaryColor as string) ||
+      "#3b82f6",
+    secondaryColor:
+      ((config.theme as Record<string, unknown>)?.secondaryColor as string) ||
+      "#1e40af",
+    theme: "light", // Default theme, can be enhanced based on config
+    isActive: !config.maintenanceMode,
+    createdAt: new Date().toISOString(), // API doesn't provide this, using current time
+    settings: {
+      allowSelfRegistration:
+        ((config.featuresEnabled as Record<string, unknown>)
+          ?.selfRegistration as boolean) || true,
+      maxUsers: 1000, // Default value, can be configured
+      features: Object.keys(config.featuresEnabled || {}),
+      customBranding: true,
+      customDomain: !!config.domain,
+      analytics:
+        ((config.featuresEnabled as Record<string, unknown>)
+          ?.analytics as boolean) || false,
+      apiAccess:
+        ((config.featuresEnabled as Record<string, unknown>)
+          ?.apiAccess as boolean) || false,
+      theme: {
+        primaryColor:
+          ((config.theme as Record<string, unknown>)?.primaryColor as string) ||
+          "#3b82f6",
+        secondaryColor:
+          ((config.theme as Record<string, unknown>)
+            ?.secondaryColor as string) || "#1e40af",
+      },
+    },
+  };
+};
 
 interface ClientContextType {
   client: Client | null;
@@ -35,105 +85,52 @@ export function ClientProvider({
 
   useEffect(() => {
     // Auto-detect subdomain from hostname if not provided
-    if (!subdomain && typeof window !== "undefined") {
-      const hostname = window.location.hostname;
-
-      // Handle production subdomains (e.g., mit.queztlearn.com)
-      if (hostname.endsWith(".queztlearn.com")) {
-        const parts = hostname.split(".");
-        if (parts.length > 2) {
-          const subdomainFromHost = parts[0];
-          setDetectedSubdomain(subdomainFromHost);
-        }
-      }
-      // Handle localhost development with subdomain parameter
-      else if (hostname === "localhost") {
-        const urlParams = new URLSearchParams(window.location.search);
-        const subdomainFromUrl = urlParams.get("subdomain");
-        if (subdomainFromUrl) {
-          setDetectedSubdomain(subdomainFromUrl);
-        }
+    if (!subdomain) {
+      const detectedSlug = extractOrganizationSlug();
+      if (detectedSlug) {
+        setDetectedSubdomain(detectedSlug);
       }
     }
   }, [subdomain]);
 
   const finalSubdomain = subdomain || detectedSubdomain;
 
-  // Mock client data for now
-  const [client, setClient] = useState<Client | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Use the organization config hook
+  const {
+    data: orgConfigData,
+    isLoading,
+    error: orgConfigError,
+  } = useOrganizationConfig(finalSubdomain || "");
+
+  // Convert organization config to client format
+  const client =
+    orgConfigData?.success && orgConfigData.data
+      ? mapOrganizationConfigToClient(orgConfigData.data, finalSubdomain || "")
+      : null;
+
+  // Handle different error scenarios
+  const error = orgConfigError
+    ? `Failed to load organization configuration${
+        finalSubdomain ? ` for ${finalSubdomain}` : ""
+      }`
+    : !finalSubdomain && !domain
+    ? "No organization slug or domain provided"
+    : null;
 
   // Inject tenant-based theming
   useEffect(() => {
-    // This will be called after client data is loaded to inject CSS variables
-  }, []);
-
-  useEffect(() => {
-    // Simulate API call
-    const fetchClient = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        // Mock client data - in production, fetch from API
-        const mockClient: Client = {
-          id: "client-1",
-          name: "Demo University",
-          domain: finalSubdomain
-            ? `${finalSubdomain}.queztlearn.com`
-            : "demo.queztlearn.com",
-          subdomain: finalSubdomain || "demo",
-          basePath: "queztlearn",
-          logo: "/images/Logo.png",
-          primaryColor: "#3b82f6",
-          secondaryColor: "#1e40af",
-          theme: "light",
-          isActive: true,
-          settings: {
-            allowSelfRegistration: true,
-            maxUsers: 1000,
-            features: ["courses", "assignments", "discussions"],
-            customBranding: true,
-            customDomain: false,
-            analytics: true,
-            apiAccess: true,
-            theme: {
-              primaryColor: "#3b82f6",
-              secondaryColor: "#1e40af",
-            },
-          },
-          createdAt: new Date().toISOString(),
-        };
-
-        setClient(mockClient);
-
-        // Inject tenant-specific CSS variables for theming
-        if (mockClient.settings.theme && typeof window !== "undefined") {
-          const root = document.documentElement;
-          root.style.setProperty(
-            "--tenant-primary",
-            mockClient.settings.theme.primaryColor
-          );
-          root.style.setProperty(
-            "--tenant-secondary",
-            mockClient.settings.theme.secondaryColor
-          );
-        }
-      } catch {
-        setError("Failed to load client data");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    if (finalSubdomain || domain) {
-      fetchClient();
-    } else {
-      setIsLoading(false);
-      setError("No subdomain or domain provided");
+    if (client?.settings.theme && typeof window !== "undefined") {
+      const root = document.documentElement;
+      root.style.setProperty(
+        "--tenant-primary",
+        client.settings.theme.primaryColor
+      );
+      root.style.setProperty(
+        "--tenant-secondary",
+        client.settings.theme.secondaryColor
+      );
     }
-  }, [finalSubdomain, domain]);
+  }, [client]);
 
   return (
     <ClientContext.Provider

@@ -31,7 +31,7 @@ interface Teacher {
   name: string;
   imageUrl?: string;
   subjects: string[];
-  highlights: string;
+  highlights: string | { content: string };
   batchIds: string[];
   createdAt?: string;
   updatedAt?: string;
@@ -71,7 +71,10 @@ export function EditTeacherModal({
         name: teacher.name || "",
         imageUrl: teacher.imageUrl || "",
         subjects: teacher.subjects || [],
-        highlights: teacher.highlights || "",
+        highlights:
+          typeof teacher.highlights === "string"
+            ? teacher.highlights
+            : teacher.highlights?.content || "",
       });
     }
   }, [teacher]);

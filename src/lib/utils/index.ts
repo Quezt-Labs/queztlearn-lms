@@ -14,5 +14,8 @@ export * from "./format";
 // Storage utilities
 export * from "./storage";
 
+// Organization utilities
+export * from "./organization";
+
 // Re-export existing utils
 export { cn } from "../utils";

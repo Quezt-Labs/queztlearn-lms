@@ -10,6 +10,9 @@ import {
   Organization,
   CreateOrganizationData,
   CreateCourseData,
+  OrganizationConfigResponse,
+  CreateOrganizationConfigData,
+  CreateOrganizationConfigResponse,
 } from "@/lib/types/api";
 
 // API Configuration
@@ -58,9 +61,21 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid, redirect to login
-      deleteCookie(QUEZT_AUTH_KEY);
-      window.location.href = "/login";
+      // Only redirect if not already on login/register pages
+      // This prevents redirect loops and allows login errors to be displayed
+      const currentPath =
+        typeof window !== "undefined" ? window.location.pathname : "";
+      const isAuthPage =
+        currentPath.includes("/login") ||
+        currentPath.includes("/register") ||
+        currentPath.includes("/set-password") ||
+        currentPath.includes("/verify-email");
+
+      if (!isAuthPage) {
+        // Token expired or invalid, redirect to login
+        deleteCookie(QUEZT_AUTH_KEY);
+        window.location.href = "/login";
+      }
     }
 
     return Promise.reject(error);
@@ -170,7 +185,7 @@ export const api = {
   createOrganization: (data: CreateOrganizationData) =>
     apiClient.post<ApiResponse<Organization>>("/admin/organizations", data),
 
-  // Auth
+  // Auth - Admin endpoints
   register: (data: {
     organizationId: string;
     email: string;
@@ -199,6 +214,35 @@ export const api = {
       data
     ),
 
+  // Auth - Student endpoints
+  studentRegister: (data: {
+    organizationId: string;
+    email: string;
+    username: string;
+  }) =>
+    apiClient.post<ApiResponse<RegisterResponse>>("/api/auth/register", data),
+
+  studentVerifyEmail: (data: { token: string }) =>
+    apiClient.post<ApiResponse<VerifyEmailResponse>>(
+      "/api/auth/verify-email",
+      data
+    ),
+
+  studentSetPassword: (data: { userId: string; password: string }) =>
+    apiClient.post<ApiResponse<SetPasswordResponse>>(
+      "/api/auth/set-password",
+      data
+    ),
+
+  studentLogin: (data: { email: string; password: string }) =>
+    apiClient.post<ApiResponse<LoginResponse>>("/api/auth/login", data),
+
+  studentResendVerification: (data: { email: string }) =>
+    apiClient.post<ApiResponse<{ message: string }>>(
+      "/api/auth/resend-verification",
+      data
+    ),
+
   inviteUser: (data: { email: string; username: string }) =>
     apiClient.post<ApiResponse<InviteUserResponse>>(
       "/admin/auth/invite-user",
@@ -219,6 +263,28 @@ export const api = {
 
   createCourse: (data: CreateCourseData) =>
     apiClient.post<ApiResponse<unknown>>("/admin/courses", data),
+
+  // Organization Configuration (Public endpoint)
+  getOrganizationConfig: (slug: string) =>
+    apiClient.get<OrganizationConfigResponse>(
+      `/api/organization-config/${slug}`
+    ),
+
+  // Organization Configuration (Admin endpoint)
+  createOrganizationConfig: (data: CreateOrganizationConfigData) =>
+    apiClient.post<CreateOrganizationConfigResponse>(
+      "/admin/organization-config",
+      data
+    ),
+
+  updateOrganizationConfig: (data: CreateOrganizationConfigData) =>
+    apiClient.put<CreateOrganizationConfigResponse>(
+      "/admin/organization-config",
+      data
+    ),
+
+  getOrganizationConfigAdmin: () =>
+    apiClient.get<OrganizationConfigResponse>("/admin/organization-config"),
 };
 
 export default apiClient;

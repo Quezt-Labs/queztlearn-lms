@@ -32,6 +32,18 @@ export const ADMIN_NAVIGATION_ITEMS: NavigationItem[] = [
     icon: "BookOpen",
     roles: ["admin"],
   },
+  {
+    title: "Test Series",
+    href: "/admin/test-series",
+    icon: "FileText",
+    roles: ["admin"],
+  },
+  {
+    title: "Settings",
+    href: "/admin/settings",
+    icon: "Settings",
+    roles: ["admin"],
+  },
 ];
 
 // Teacher navigation items (main domain)
@@ -49,6 +61,12 @@ export const TEACHER_NAVIGATION_ITEMS: NavigationItem[] = [
     roles: ["teacher"],
   },
   {
+    title: "Test Series",
+    href: "/teacher/test-series",
+    icon: "FileText",
+    roles: ["teacher"],
+  },
+  {
     title: "Students",
     href: "/teacher/students",
     icon: "Users",
@@ -59,41 +77,47 @@ export const TEACHER_NAVIGATION_ITEMS: NavigationItem[] = [
 // Student navigation items (subdomain)
 export const STUDENT_NAVIGATION_ITEMS: NavigationItem[] = [
   {
-    title: "Dashboard",
-    href: "/student/dashboard",
+    title: "My Learning",
+    href: "/student/my-learning",
     icon: "LayoutDashboard",
     roles: ["student"],
   },
   {
-    title: "My Batches",
-    href: "/student/batches",
+    title: "Explore",
+    href: "/student/explore",
     icon: "BookOpen",
     roles: ["student"],
   },
   {
-    title: "My Progress",
-    href: "/student/progress",
+    title: "My Profile",
+    href: "/student/profile",
     icon: "TrendingUp",
     roles: ["student"],
   },
-  {
-    title: "Assignments",
-    href: "/student/assignments",
-    icon: "FileText",
-    roles: ["student"],
-  },
-  {
-    title: "Upcoming Classes",
-    href: "/student/classes",
-    icon: "Calendar",
-    roles: ["student"],
-  },
-  {
-    title: "Grades",
-    href: "/student/grades",
-    icon: "Award",
-    roles: ["student"],
-  },
+  // {
+  //   title: "Tests",
+  //   href: "/student/tests",
+  //   icon: "FileText",
+  //   roles: ["student"],
+  // },
+  // {
+  //   title: "Assignments",
+  //   href: "/student/assignments",
+  //   icon: "FileText",
+  //   roles: ["student"],
+  // },
+  // {
+  //   title: "Upcoming Classes",
+  //   href: "/student/classes",
+  //   icon: "Calendar",
+  //   roles: ["student"],
+  // },
+  // {
+  //   title: "Grades",
+  //   href: "/student/grades",
+  //   icon: "Award",
+  //   roles: ["student"],
+  // },
 ];
 
 // Legacy navigation items for backward compatibility
@@ -130,12 +154,6 @@ export const NAVIGATION_ITEMS: NavigationItem[] = [
   },
 ];
 
-export const THEME_OPTIONS = [
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-  { value: "system", label: "System" },
-] as const;
-
 export const COURSE_STATUS = {
   DRAFT: "draft",
   PUBLISHED: "published",
@@ -166,6 +184,47 @@ export const API_ENDPOINTS = {
     UPDATE: "/api/courses/:id",
     DELETE: "/api/courses/:id",
     ENROLL: "/api/courses/:id/enroll",
+  },
+  TEST_SERIES: {
+    LIST: "/api/admin/test-series",
+    CREATE: "/api/admin/test-series",
+    GET: "/api/admin/test-series/:id",
+    UPDATE: "/api/admin/test-series/:id",
+    DELETE: "/api/admin/test-series/:id",
+    PUBLISH: "/api/admin/test-series/:id/publish",
+    STATS: "/api/admin/test-series/:id/stats",
+    ANALYTICS: "/api/admin/test-series/:id/analytics",
+  },
+  TESTS: {
+    LIST: "/api/admin/tests",
+    CREATE: "/api/admin/tests",
+    GET: "/api/admin/tests/:id",
+    UPDATE: "/api/admin/tests/:id",
+    DELETE: "/api/admin/tests/:id",
+    ANALYTICS: "/api/admin/tests/:id/analytics",
+    BY_TEST_SERIES: "/api/admin/tests/test-series/:testSeriesId",
+  },
+  TESTS_SECTIONS: {
+    LIST: "/api/admin/tests/:testId/sections",
+    CREATE: "/api/admin/tests/:testId/sections",
+  },
+  SECTIONS: {
+    LIST: "/api/admin/sections/test/:testId",
+    CREATE: "/api/admin/sections",
+    GET: "/api/admin/sections/:id",
+    UPDATE: "/api/admin/sections/:id",
+    DELETE: "/api/admin/sections/:id",
+  },
+  SECTIONS_QUESTIONS: {
+    LIST: "/api/admin/tests/sections/:sectionId/questions",
+    CREATE: "/api/admin/tests/sections/:sectionId/questions",
+  },
+  QUESTIONS: {
+    LIST: "/api/admin/questions/section/:sectionId",
+    CREATE: "/api/admin/questions",
+    GET: "/api/admin/questions/:id",
+    UPDATE: "/api/admin/questions/:id",
+    DELETE: "/api/admin/questions/:id",
   },
   DASHBOARD: {
     STATS: "/api/dashboard/stats",
@@ -243,3 +302,103 @@ export const getNavigationItems = (
       return STUDENT_NAVIGATION_ITEMS;
   }
 };
+
+// Premium theme presets optimized for both light and dark modes
+export const THEME_OPTIONS = [
+  {
+    id: "ocean",
+    name: "Ocean",
+    description: "Calming blues for a professional look",
+    primaryColor: "#3b82f6",
+    secondaryColor: "#06b6d4",
+    gradient: "from-blue-500 to-cyan-500",
+  },
+  {
+    id: "forest",
+    name: "Forest",
+    description: "Natural greens for an organic feel",
+    primaryColor: "#10b981",
+    secondaryColor: "#059669",
+    gradient: "from-green-500 to-emerald-600",
+  },
+  {
+    id: "sunset",
+    name: "Sunset",
+    description: "Warm oranges and reds for energy",
+    primaryColor: "#f97316",
+    secondaryColor: "#ef4444",
+    gradient: "from-orange-500 to-red-500",
+  },
+  {
+    id: "purple-dream",
+    name: "Purple Dream",
+    description: "Elegant purples for sophistication",
+    primaryColor: "#8b5cf6",
+    secondaryColor: "#a855f7",
+    gradient: "from-purple-500 to-violet-600",
+  },
+  {
+    id: "emerald",
+    name: "Emerald",
+    description: "Rich teals for a modern vibe",
+    primaryColor: "#14b8a6",
+    secondaryColor: "#0d9488",
+    gradient: "from-teal-500 to-cyan-600",
+  },
+  {
+    id: "crimson",
+    name: "Crimson",
+    description: "Bold reds for impact",
+    primaryColor: "#dc2626",
+    secondaryColor: "#b91c1c",
+    gradient: "from-red-600 to-rose-600",
+  },
+  {
+    id: "indigo",
+    name: "Indigo",
+    description: "Deep blues for trust",
+    primaryColor: "#6366f1",
+    secondaryColor: "#4f46e5",
+    gradient: "from-indigo-500 to-blue-600",
+  },
+  {
+    id: "rose",
+    name: "Rose",
+    description: "Soft pinks for warmth",
+    primaryColor: "#f43f5e",
+    secondaryColor: "#ec4899",
+    gradient: "from-rose-500 to-pink-500",
+  },
+  {
+    id: "amber",
+    name: "Amber",
+    description: "Golden yellows for optimism",
+    primaryColor: "#f59e0b",
+    secondaryColor: "#d97706",
+    gradient: "from-amber-500 to-orange-500",
+  },
+  {
+    id: "slate",
+    name: "Slate",
+    description: "Sophisticated grays for minimalism",
+    primaryColor: "#64748b",
+    secondaryColor: "#475569",
+    gradient: "from-slate-500 to-gray-600",
+  },
+  {
+    id: "violet",
+    name: "Violet",
+    description: "Rich violets for creativity",
+    primaryColor: "#7c3aed",
+    secondaryColor: "#6d28d9",
+    gradient: "from-violet-600 to-purple-600",
+  },
+  {
+    id: "sky",
+    name: "Sky",
+    description: "Light blues for clarity",
+    primaryColor: "#0ea5e9",
+    secondaryColor: "#0284c7",
+    gradient: "from-sky-500 to-blue-500",
+  },
+] as const;

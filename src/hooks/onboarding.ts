@@ -4,15 +4,12 @@ import { useMutation } from "@tanstack/react-query";
 // Organization creation hook
 export const useCreateOrganization = () => {
   return useMutation({
-    mutationFn: (data: {
-      name: string;
-      subdomain?: string;
-      branding?: unknown;
-    }) => {
-      // For now, we'll use the real API but only send the name
-      // In the future, you can extend the API to support subdomain and branding
+    mutationFn: (data: { name: string; subdomain: string }) => {
       return api
-        .createOrganization({ name: data.name })
+        .createOrganization({
+          name: data.name,
+          slug: data.subdomain,
+        })
         .then((res: { data: unknown }) => res.data);
     },
     onError: (error) => {

@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import { Trash2, Users, UserPlus, Mail, Calendar, Shield } from "lucide-react";
 import { format } from "date-fns";
+import { PageHeader } from "@/components/common/page-header";
 
 interface User {
   id: string;
@@ -117,19 +118,20 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Manage Users</h1>
-          <p className="text-muted-foreground">
-            View and manage all users in your organization
-          </p>
-        </div>
-        <Button onClick={() => setIsInviteModalOpen(true)}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Invite User
-        </Button>
-      </div>
+      <PageHeader
+        title="Manage Users"
+        description="View and manage all users in your organization"
+        breadcrumbs={[
+          { label: "Admin", href: "/admin/dashboard" },
+          { label: "Users" },
+        ]}
+        actions={
+          <Button onClick={() => setIsInviteModalOpen(true)}>
+            <UserPlus className="h-4 w-4 mr-2" />
+            Invite User
+          </Button>
+        }
+      />
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-3">
@@ -170,7 +172,7 @@ export default function UsersPage() {
 
       {/* Users Table */}
       <Card>
-        <CardHeader>
+        <CardHeader className="sticky top-16 z-30 bg-card/80 backdrop-blur supports-backdrop-filter:bg-card/60 border-b">
           <CardTitle>All Users</CardTitle>
           <CardDescription>
             Manage users in your organization. Click delete to remove a user.

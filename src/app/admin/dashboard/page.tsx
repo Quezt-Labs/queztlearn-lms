@@ -23,14 +23,19 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/common/page-header";
 import { StatsSkeleton } from "@/components/common/loading-skeleton";
-// Removed dashboard stats and activity hooks - using mock data instead
 import { InviteUserModal } from "@/components/common/invite-user-modal";
 import { useCurrentUser } from "@/hooks";
+import { useClearOrganizationCache } from "@/hooks/api";
+import { useRolePermissions } from "@/hooks/common/use-role-permissions";
 import Link from "next/link";
 
 export default function AdminDashboard() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const { data: currentUser } = useCurrentUser();
+  const { isAdmin } = useRolePermissions();
+  console.log(isAdmin, "isAdmin");
+  console.log(currentUser, "currentUser");
+  const clearCache = useClearOrganizationCache();
 
   // Mock data since dashboard stats and activity endpoints are not available
   const stats = {
@@ -94,6 +99,32 @@ export default function AdminDashboard() {
                 Create Course
               </Link>
             </Button>
+            {isAdmin && (
+              <Button
+                variant="outline"
+                onClick={() => clearCache.mutate()}
+                disabled={clearCache.isPending}
+                title="Clear organization cache"
+              >
+                <TrendingUp className="hidden" />
+                {/* Using RefreshCcw icon for clear cache */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="mr-2 h-4 w-4"
+                >
+                  <polyline points="23 4 23 10 17 10" />
+                  <polyline points="1 20 1 14 7 14" />
+                  <path d="M3.51 9a9 9 0 0114.13-3.36L23 10M1 14l5.36 4.36A9 9 0 0020.49 15" />
+                </svg>
+                {clearCache.isPending ? "Clearing..." : "Clear Cache"}
+              </Button>
+            )}
           </div>
         }
       />

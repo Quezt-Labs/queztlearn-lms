@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const hostname = request.headers.get("host") || "";
+  const hostHeader = request.headers.get("host") || "";
+  const hostname = hostHeader.split(":")?.[0];
 
   // Extract subdomain from hostname (e.g., "mit" from "mit.queztlearn.com")
   const subdomain =
@@ -33,26 +34,52 @@ export function middleware(request: NextRequest) {
     // Add subdomain to search params for client identification
     url.searchParams.set("subdomain", subdomain);
 
-    // Rewrite to [client] route structure
+    // Rewrite to [client] route structure with actual subdomain
     if (pathname === "/") {
-      url.pathname = `/[client]`;
+      url.pathname = `/${subdomain}`;
       return NextResponse.rewrite(url);
     }
 
     // Handle login on subdomain
     if (pathname === "/login") {
-      url.pathname = `/[client]/login`;
+      url.pathname = `/${subdomain}/login`;
       return NextResponse.rewrite(url);
     }
 
     // Handle student routes on subdomain
     if (pathname.startsWith("/student")) {
-      url.pathname = `/[client]${pathname}`;
+      url.pathname = `/${subdomain}${pathname}`;
       return NextResponse.rewrite(url);
     }
 
     // For other routes on subdomain, rewrite to client routes
-    url.pathname = `/[client]${pathname}`;
+    url.pathname = `/${subdomain}${pathname}`;
+    return NextResponse.rewrite(url);
+  }
+
+  // Handle localhost subdomain like mit.localhost
+  if (hostname.endsWith(".localhost")) {
+    const url = new URL(request.url);
+    const tenant = hostname.replace(".localhost", "");
+
+    url.searchParams.set("subdomain", tenant);
+
+    if (pathname === "/") {
+      url.pathname = `/${tenant}`;
+      return NextResponse.rewrite(url);
+    }
+
+    if (pathname === "/login") {
+      url.pathname = `/${tenant}/login`;
+      return NextResponse.rewrite(url);
+    }
+
+    if (pathname.startsWith("/student")) {
+      url.pathname = `/${tenant}${pathname}`;
+      return NextResponse.rewrite(url);
+    }
+
+    url.pathname = `/${tenant}${pathname}`;
     return NextResponse.rewrite(url);
   }
 
@@ -108,24 +135,24 @@ export function middleware(request: NextRequest) {
       // For development, treat localhost with subdomain param as if it's a real subdomain
       // Rewrite to [client] routes just like production
       if (pathname === "/") {
-        url.pathname = `/[client]`;
+        url.pathname = `/${subdomainFromUrl}`;
         url.searchParams.set("subdomain", subdomainFromUrl);
         return NextResponse.rewrite(url);
       }
       // Handle login route
       if (pathname === "/login") {
-        url.pathname = `/[client]/login`;
+        url.pathname = `/${subdomainFromUrl}/login`;
         url.searchParams.set("subdomain", subdomainFromUrl);
         return NextResponse.rewrite(url);
       }
       // Handle student routes
       if (pathname.startsWith("/student")) {
-        url.pathname = `/[client]${pathname}`;
+        url.pathname = `/${subdomainFromUrl}${pathname}`;
         url.searchParams.set("subdomain", subdomainFromUrl);
         return NextResponse.rewrite(url);
       }
       // For other routes, rewrite to [client] routes
-      url.pathname = `/[client]${pathname}`;
+      url.pathname = `/${subdomainFromUrl}${pathname}`;
       url.searchParams.set("subdomain", subdomainFromUrl);
       return NextResponse.rewrite(url);
     }

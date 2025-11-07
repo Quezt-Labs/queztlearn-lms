@@ -1,16 +1,16 @@
 "use client";
 
-import { Layout } from "@/components/common/layout";
+import { StudentLayout } from "@/components/common/student-layout";
 import { RouteGuard } from "@/components/common/route-guard";
 
-export default function StudentLayout({
+export default function StudentLayoutWrapper({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
     <RouteGuard allowedRoles={["student", "admin", "teacher"]}>
-      <Layout>{children}</Layout>
+      <StudentLayout>{children}</StudentLayout>
     </RouteGuard>
   );
 }
