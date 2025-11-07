@@ -265,22 +265,49 @@ function ContentCard({
         {/* Thumbnail/Icon Section */}
         {isLecture && content.videoThumbnail ? (
           <div
-            className="relative aspect-video overflow-hidden bg-muted cursor-pointer"
+            className="relative aspect-video overflow-hidden bg-muted cursor-pointer group/thumbnail"
             onClick={(e) => {
               e.stopPropagation();
               handlePlayVideo();
             }}
           >
-            <img
+            <motion.img
               src={content.videoThumbnail}
               alt={content.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className="w-full h-full object-cover"
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
             />
-            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-              <div className="h-12 w-12 rounded-full bg-white/90 dark:bg-black/50 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <PlayCircle className="h-6 w-6 text-primary" />
-              </div>
-            </div>
+            <motion.div
+              className="absolute inset-0 bg-black/30 flex items-center justify-center"
+              initial={{ opacity: 0.3 }}
+              whileHover={{ opacity: 0.2 }}
+              transition={{ duration: 0.2 }}
+            >
+              <motion.div
+                className="h-14 w-14 rounded-full bg-white dark:bg-white/95 flex items-center justify-center shadow-2xl border-2 border-white/20 backdrop-blur-sm"
+                whileHover={{ scale: 1.15 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 400,
+                  damping: 17,
+                }}
+              >
+                <motion.div
+                  animate={{
+                    scale: [1, 1.1, 1],
+                  }}
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                >
+                  <PlayCircle className="h-7 w-7 text-primary fill-primary/20" />
+                </motion.div>
+              </motion.div>
+            </motion.div>
             {content.isCompleted && (
               <div className="absolute top-2 right-2">
                 <Badge className="bg-green-600 text-white">

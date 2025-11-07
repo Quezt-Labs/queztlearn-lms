@@ -1,21 +1,26 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
   FileText,
   Video,
   Clock,
   CheckCircle2,
-  ChevronRight,
-  ChevronLeft,
   BookOpen,
+  Search,
+  X,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import type Player from "video.js/dist/types/player";
 import {
   useGetClientTopic,
   useGetClientChapter,
@@ -27,6 +32,7 @@ import {
 import { UnifiedVideoPlayer } from "@/components/common/unified-video-player";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import "./video-player.css";
 
 interface Content {
   id: string;
@@ -70,6 +76,15 @@ export default function ContentPlayerPage() {
   const topicId = params.topicId as string;
   const contentId = params.contentId as string;
 
+  // State for features
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
+  const [playerInstance, setPlayerInstance] = useState<Player | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Refs for auto-scroll
+  const currentContentRef = useRef<HTMLAnchorElement>(null);
+
   // Fetch current content
   const { data: topicResponse } = useGetClientTopic(topicId);
   const { data: contentsResponse } = useGetContentsByTopic(topicId);
@@ -86,6 +101,49 @@ export default function ContentPlayerPage() {
   const chapters: Chapter[] = chaptersResponse?.data || [];
 
   const currentContent = contents.find((c) => c.id === contentId);
+
+  // Auto-scroll to current content in sidebar
+  useEffect(() => {
+    if (currentContentRef.current) {
+      setTimeout(() => {
+        currentContentRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "nearest",
+        });
+      }, 300);
+    }
+  }, [contentId]);
+
+  // Track playback speed
+  useEffect(() => {
+    if (playerInstance) {
+      const handleRateChange = () => {
+        const rate = playerInstance.playbackRate();
+        if (rate !== null && rate !== undefined) {
+          setPlaybackSpeed(rate);
+        }
+      };
+
+      playerInstance.on("ratechange", handleRateChange);
+      // Get initial playback rate
+      const initialRate = playerInstance.playbackRate();
+      if (initialRate !== null && initialRate !== undefined) {
+        setPlaybackSpeed(initialRate);
+      }
+
+      return () => {
+        playerInstance.off("ratechange", handleRateChange);
+      };
+    }
+  }, [playerInstance]);
+
+  // Filter contents based on search
+  const filteredContents = useMemo(() => {
+    if (!searchQuery.trim()) return contents;
+    const query = searchQuery.toLowerCase();
+    return contents.filter((c) => c.name.toLowerCase().includes(query));
+  }, [contents, searchQuery]);
 
   // Get all contents from current topic for navigation
   const allContents: Array<{
@@ -110,6 +168,12 @@ export default function ContentPlayerPage() {
     currentIndex < allContents.length - 1
       ? allContents[currentIndex + 1]
       : null;
+
+  // Stable references for keyboard navigation
+  const previousContentId = previousContent?.content.id;
+  const previousTopicId = previousContent?.topicId;
+  const nextContentId = nextContent?.content.id;
+  const nextTopicId = nextContent?.topicId;
 
   const getVideoType = (
     videoType?: string
@@ -139,6 +203,43 @@ export default function ContentPlayerPage() {
     );
   };
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input/textarea
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      if (e.key === "ArrowLeft" && previousContentId && previousTopicId) {
+        e.preventDefault();
+        router.push(
+          `/student/batches/${batchId}/subjects/${subjectId}/chapters/${chapterId}/topics/${previousTopicId}/content/${previousContentId}`
+        );
+      } else if (e.key === "ArrowRight" && nextContentId && nextTopicId) {
+        e.preventDefault();
+        router.push(
+          `/student/batches/${batchId}/subjects/${subjectId}/chapters/${chapterId}/topics/${nextTopicId}/content/${nextContentId}`
+        );
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [
+    previousContentId,
+    previousTopicId,
+    nextContentId,
+    nextTopicId,
+    batchId,
+    subjectId,
+    chapterId,
+    router,
+  ]);
+
   if (!currentContent) {
     return (
       <div className="container max-w-7xl mx-auto px-4 py-8">
@@ -160,7 +261,7 @@ export default function ContentPlayerPage() {
     <div className="h-screen flex flex-col bg-background">
       {/* Header */}
       <div className="border-b bg-card shrink-0">
-        <div className="container max-w-[1920px] mx-auto px-4 py-3">
+        <div className="container max-w-[1920px] mx-auto px-4 py-3 space-y-2">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={handleGoBack}>
               <ArrowLeft className="h-5 w-5" />
@@ -173,6 +274,18 @@ export default function ContentPlayerPage() {
                 {chapter?.name || "Chapter"} • {topic?.name || "Topic"}
               </p>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="shrink-0"
+            >
+              {sidebarOpen ? (
+                <PanelLeftClose className="h-5 w-5" />
+              ) : (
+                <PanelLeftOpen className="h-5 w-5" />
+              )}
+            </Button>
             {currentContent.isCompleted && (
               <Badge className="bg-green-600 text-white">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -184,37 +297,65 @@ export default function ContentPlayerPage() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         {/* Video Player Section */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 bg-black flex items-center justify-center p-4">
+        <motion.div
+          className="flex-1 flex flex-col overflow-hidden"
+          animate={{
+            marginRight: sidebarOpen ? 0 : 0,
+          }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        >
+          <div className="flex-1 bg-black relative overflow-hidden">
             {isLecture && currentContent.videoUrl ? (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-                className="w-full max-w-7xl"
+                transition={{
+                  duration: 0.5,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                className="w-full h-full relative"
               >
-                <UnifiedVideoPlayer
-                  src={currentContent.videoUrl}
-                  poster={currentContent.videoThumbnail}
-                  type={getVideoType(currentContent.videoType)}
-                  className="w-full"
-                  autoplay={true}
-                  onEnded={() => {
-                    // Auto-advance to next content if available
-                    if (nextContent) {
-                      handleNavigateContent(
-                        nextContent.content.id,
-                        nextContent.topicId
-                      );
-                    }
-                  }}
-                  onTimeUpdate={(time) => {
-                    // Track progress
-                    console.log("Current time:", time);
-                  }}
+                {/* Subtle background gradient animation */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.8, delay: 0.2 }}
+                  className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none"
                 />
+
+                <div className="w-full h-full relative z-10">
+                  <UnifiedVideoPlayer
+                    src={currentContent.videoUrl}
+                    poster={currentContent.videoThumbnail}
+                    type={getVideoType(currentContent.videoType)}
+                    className="w-full h-full"
+                    autoplay={true}
+                    onReady={(player) => {
+                      setPlayerInstance(player);
+                      // Ensure player fills container
+                      const playerEl = player.el() as HTMLElement;
+                      if (playerEl) {
+                        playerEl.style.width = "100%";
+                        playerEl.style.height = "100%";
+                        // Disable fluid mode to allow full height
+                        player.fluid(false);
+                        // Set dimensions
+                        player.dimensions("100%", "100%");
+                      }
+                    }}
+                    onEnded={() => {
+                      // Auto-advance to next content if available
+                      if (nextContent) {
+                        handleNavigateContent(
+                          nextContent.content.id,
+                          nextContent.topicId
+                        );
+                      }
+                    }}
+                  />
+                </div>
               </motion.div>
             ) : isPdf && currentContent.pdfUrl ? (
               <div className="w-full h-full">
@@ -231,177 +372,201 @@ export default function ContentPlayerPage() {
               </div>
             )}
           </div>
-
-          {/* Content Info Section */}
-          <div className="bg-card border-t shrink-0">
-            <div className="container max-w-7xl mx-auto px-4 py-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <h2 className="text-xl font-bold mb-2">
-                    {currentContent.name}
-                  </h2>
-                  <div className="flex items-center gap-3 flex-wrap mb-3">
-                    <Badge
-                      variant="secondary"
-                      className={
-                        currentContent.type === "Lecture"
-                          ? "bg-green-500/10 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800"
-                          : "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800"
-                      }
-                    >
-                      {currentContent.type}
-                    </Badge>
-                    {isLecture && currentContent.videoDuration && (
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        {formatDuration(currentContent.videoDuration)}
-                      </div>
-                    )}
-                    {currentContent.videoType && (
-                      <Badge variant="outline" className="text-xs">
-                        {currentContent.videoType}
-                      </Badge>
-                    )}
-                  </div>
-                  {currentContent.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {currentContent.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Navigation Buttons */}
-              <div className="flex items-center justify-between gap-4 mt-4 pt-4 border-t">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (previousContent) {
-                      handleNavigateContent(
-                        previousContent.content.id,
-                        previousContent.topicId
-                      );
-                    }
-                  }}
-                  disabled={!previousContent}
-                  className="flex items-center gap-2"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-                <Button
-                  onClick={() => {
-                    if (nextContent) {
-                      handleNavigateContent(
-                        nextContent.content.id,
-                        nextContent.topicId
-                      );
-                    }
-                  }}
-                  disabled={!nextContent}
-                  className="flex items-center gap-2"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        </motion.div>
 
         {/* Sidebar - Course Content */}
-        <div className="w-80 border-l bg-card shrink-0 flex flex-col">
-          <div className="p-4 border-b">
-            <h3 className="font-semibold text-sm">Course Content</h3>
-          </div>
-          <ScrollArea className="flex-1">
-            <div className="p-4 space-y-4">
-              {subjects.map((subject) => {
-                const subjectChapters = chapters.filter(
-                  (ch) => ch.subjectId === subject.id
-                );
-                const isCurrentSubject = subject.id === subjectId;
-
-                return (
-                  <div key={subject.id} className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                      <BookOpen className="h-4 w-4" />
-                      {subject.name}
-                    </div>
-                    {isCurrentSubject &&
-                      subjectChapters.map((ch) => {
-                        const chapterTopics = topics.filter(
-                          (t) => t.chapterId === ch.id
-                        );
-                        const isCurrentChapter = ch.id === chapterId;
-
-                        return (
-                          <div key={ch.id} className="ml-4 space-y-1">
-                            <div
-                              className={cn(
-                                "text-sm font-medium py-1",
-                                isCurrentChapter && "text-primary"
-                              )}
-                            >
-                              {ch.name}
-                            </div>
-                            {isCurrentChapter &&
-                              chapterTopics.map((t) => {
-                                const isCurrentTopic = t.id === topicId;
-                                const topicContents =
-                                  t.id === topicId ? contents : [];
-
-                                return (
-                                  <div key={t.id} className="ml-4 space-y-1">
-                                    <div
-                                      className={cn(
-                                        "text-xs font-medium py-1 text-muted-foreground",
-                                        isCurrentTopic && "text-primary"
-                                      )}
-                                    >
-                                      {t.name}
-                                    </div>
-                                    {isCurrentTopic &&
-                                      topicContents.map((c) => {
-                                        const isCurrent = c.id === contentId;
-                                        return (
-                                          <Link
-                                            key={c.id}
-                                            href={`/student/batches/${batchId}/subjects/${subjectId}/chapters/${chapterId}/topics/${topicId}/content/${c.id}`}
-                                            className={cn(
-                                              "block text-xs py-1.5 px-2 rounded hover:bg-muted transition-colors",
-                                              isCurrent &&
-                                                "bg-primary/10 text-primary font-medium"
-                                            )}
-                                          >
-                                            <div className="flex items-center gap-2">
-                                              {c.type === "Lecture" ? (
-                                                <Video className="h-3 w-3 shrink-0" />
-                                              ) : (
-                                                <FileText className="h-3 w-3 shrink-0" />
-                                              )}
-                                              <span className="truncate">
-                                                {c.name}
-                                              </span>
-                                              {c.isCompleted && (
-                                                <CheckCircle2 className="h-3 w-3 text-green-600 ml-auto shrink-0" />
-                                              )}
-                                            </div>
-                                          </Link>
-                                        );
-                                      })}
-                                  </div>
-                                );
-                              })}
-                          </div>
-                        );
-                      })}
-                  </div>
-                );
-              })}
+        <motion.div
+          className="border-l bg-card shrink-0 flex flex-col"
+          initial={false}
+          animate={{
+            width: sidebarOpen ? 320 : 0,
+            opacity: sidebarOpen ? 1 : 0,
+          }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+          style={{
+            overflow: sidebarOpen ? "visible" : "hidden",
+            minWidth: sidebarOpen ? 320 : 0,
+          }}
+        >
+          {sidebarOpen && (
+            <div className="p-4 border-b space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-sm">Course Content</h3>
+                <Badge variant="outline" className="text-xs">
+                  {allContents.length} items
+                </Badge>
+              </div>
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search content..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 pr-8 h-8 text-sm"
+                />
+                {searchQuery && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-8 w-8 p-0"
+                    onClick={() => setSearchQuery("")}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
             </div>
-          </ScrollArea>
-        </div>
+          )}
+          {sidebarOpen && (
+            <ScrollArea className="flex-1">
+              <div className="p-4 space-y-4">
+                {subjects.map((subject) => {
+                  const subjectChapters = chapters.filter(
+                    (ch) => ch.subjectId === subject.id
+                  );
+                  const isCurrentSubject = subject.id === subjectId;
+
+                  return (
+                    <div key={subject.id} className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                        <BookOpen className="h-4 w-4" />
+                        {subject.name}
+                      </div>
+                      {isCurrentSubject &&
+                        subjectChapters.map((ch) => {
+                          const chapterTopics = topics.filter(
+                            (t) => t.chapterId === ch.id
+                          );
+                          const isCurrentChapter = ch.id === chapterId;
+
+                          return (
+                            <div key={ch.id} className="ml-4 space-y-1">
+                              <div
+                                className={cn(
+                                  "text-sm font-medium py-1",
+                                  isCurrentChapter && "text-primary"
+                                )}
+                              >
+                                {ch.name}
+                              </div>
+                              {isCurrentChapter &&
+                                chapterTopics.map((t) => {
+                                  const isCurrentTopic = t.id === topicId;
+                                  const topicContents =
+                                    t.id === topicId ? contents : [];
+
+                                  return (
+                                    <div key={t.id} className="ml-4 space-y-1">
+                                      <div
+                                        className={cn(
+                                          "text-xs font-medium py-1 text-muted-foreground",
+                                          isCurrentTopic && "text-primary"
+                                        )}
+                                      >
+                                        {t.name}
+                                      </div>
+                                      {isCurrentTopic &&
+                                        (searchQuery
+                                          ? filteredContents
+                                          : topicContents
+                                        ).map((c, idx) => {
+                                          const isCurrent = c.id === contentId;
+                                          const isWatched = c.isCompleted;
+                                          return (
+                                            <Link
+                                              key={c.id}
+                                              ref={
+                                                isCurrent
+                                                  ? currentContentRef
+                                                  : null
+                                              }
+                                              href={`/student/batches/${batchId}/subjects/${subjectId}/chapters/${chapterId}/topics/${topicId}/content/${c.id}`}
+                                              className={cn(
+                                                "block text-xs py-2 px-2 rounded transition-colors group",
+                                                isCurrent
+                                                  ? "bg-primary/10 text-primary font-medium border-l-2 border-primary"
+                                                  : "hover:bg-muted/50"
+                                              )}
+                                            >
+                                              <div className="flex items-start gap-2">
+                                                <div className="mt-0.5 shrink-0">
+                                                  {isWatched ? (
+                                                    <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                                                  ) : (
+                                                    <div
+                                                      className={cn(
+                                                        "h-3.5 w-3.5 rounded-full border-2 flex items-center justify-center",
+                                                        isCurrent
+                                                          ? "border-primary bg-primary/20"
+                                                          : "border-muted-foreground/30"
+                                                      )}
+                                                    >
+                                                      {isCurrent && (
+                                                        <div className="h-1.5 w-1.5 rounded-full bg-primary" />
+                                                      )}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                  <div className="flex items-center gap-1.5 mb-0.5">
+                                                    {c.type === "Lecture" ? (
+                                                      <Video className="h-3 w-3 shrink-0 text-muted-foreground" />
+                                                    ) : (
+                                                      <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
+                                                    )}
+                                                    <span className="truncate text-xs">
+                                                      {c.name}
+                                                    </span>
+                                                  </div>
+                                                  {c.type === "Lecture" &&
+                                                    c.videoDuration && (
+                                                      <div className="text-[10px] text-muted-foreground ml-4.5">
+                                                        {formatDuration(
+                                                          c.videoDuration
+                                                        )}
+                                                      </div>
+                                                    )}
+                                                </div>
+                                              </div>
+                                            </Link>
+                                          );
+                                        })}
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          )}
+        </motion.div>
+
+        {/* Floating toggle button when sidebar is closed */}
+        <AnimatePresence>
+          {!sidebarOpen && (
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.2 }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-10"
+            >
+              <Button
+                variant="default"
+                size="icon"
+                onClick={() => setSidebarOpen(true)}
+                className="rounded-full shadow-lg"
+              >
+                <PanelLeftOpen className="h-5 w-5" />
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
