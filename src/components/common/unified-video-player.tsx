@@ -281,7 +281,7 @@ interface UnifiedVideoPlayerProps {
    * Callback when an error occurs
    * Receives the error object for debugging
    */
-  onError?: (error: any) => void;
+  onError?: (error: Error | unknown) => void;
 
   /**
    * Callback for progress tracking
