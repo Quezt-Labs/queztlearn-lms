@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import {
   Card,
   CardContent,
@@ -96,15 +95,15 @@ export default function TeacherTestSeriesPage() {
       {/* Search and Filters */}
       <Card>
         <CardHeader className="sticky top-16 z-30 bg-card/80 backdrop-blur supports-backdrop-filter:bg-card/60 border-b">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1.5">
               <CardTitle>All Test Series</CardTitle>
               <CardDescription>
                 Browse and manage all test series in your platform
               </CardDescription>
             </div>
             {hasActiveFilters && (
-              <Button variant="outline" size="sm" onClick={handleClearFilters}>
+              <Button variant="outline" size="sm" onClick={handleClearFilters} className="shrink-0">
                 <X className="mr-2 h-4 w-4" />
                 Clear Filters
               </Button>
@@ -216,84 +215,6 @@ export default function TeacherTestSeriesPage() {
           )}
         </CardContent>
       </Card>
-
-      {/* Stats Overview */}
-      {!isLoading && testSeries.length > 0 && (
-        <div className="grid gap-4 md:grid-cols-3">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Test Series
-                </CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {pagination?.totalCount || 0}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Across all subjects
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Total Tests
-                </CardTitle>
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {testSeries.reduce(
-                    (acc: number, series: TestSeries) =>
-                      acc + (series.testCount || 0),
-                    0
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  All tests combined
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  Active Series
-                </CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {testSeries.filter((s: TestSeries) => s.isActive).length}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Currently available
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-      )}
 
       {/* Empty State */}
       {!isLoading && testSeries.length === 0 && (

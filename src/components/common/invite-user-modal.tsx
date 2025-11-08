@@ -20,16 +20,20 @@ interface InviteUserModalProps {
   isOpen: boolean;
   onClose: () => void;
   organizationId: string;
+  defaultRole?: "ADMIN" | "TEACHER";
+  allowedRoles?: ("ADMIN" | "TEACHER")[];
 }
 
 export function InviteUserModal({
   isOpen,
   onClose,
   organizationId,
+  defaultRole = "ADMIN",
+  allowedRoles = ["ADMIN", "TEACHER"],
 }: InviteUserModalProps) {
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
-  const [role, setRole] = useState<"ADMIN" | "TEACHER">("ADMIN");
+  const [role, setRole] = useState<"ADMIN" | "TEACHER">(defaultRole);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const inviteUserMutation = useInviteTeacher();
@@ -42,6 +46,15 @@ export function InviteUserModal({
       setUsername(emailPrefix);
     }
   }, [email, username]);
+
+  // Set role when modal opens or allowedRoles changes
+  useEffect(() => {
+    if (isOpen && allowedRoles.length === 1) {
+      setRole(allowedRoles[0]);
+    } else if (isOpen) {
+      setRole(defaultRole);
+    }
+  }, [isOpen, allowedRoles, defaultRole]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,7 +93,7 @@ export function InviteUserModal({
       // Reset form and close modal
       setEmail("");
       setUsername("");
-      setRole("ADMIN");
+      setRole(defaultRole);
       onClose();
     } catch (error: unknown) {
       console.error("Failed to invite user:", error);
@@ -111,7 +124,7 @@ export function InviteUserModal({
     ) {
       setEmail("");
       setUsername("");
-      setRole("ADMIN");
+      setRole(defaultRole);
       onClose();
     }
   };
@@ -122,11 +135,20 @@ export function InviteUserModal({
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <UserPlus className="h-5 w-5 text-primary" />
-            <span>Invite a new user</span>
+            <span>
+              {allowedRoles.length === 1 && allowedRoles[0] === "TEACHER"
+                ? "Invite a Teacher"
+                : allowedRoles.length === 1 && allowedRoles[0] === "ADMIN"
+                ? "Invite an Admin"
+                : "Invite a new user"}
+            </span>
           </DialogTitle>
           <DialogDescription>
-            Send an invitation to join your organization. The user will receive
-            an email with setup instructions.
+            {allowedRoles.length === 1 && allowedRoles[0] === "TEACHER"
+              ? "Send an invitation to a teacher to join your organization. They will receive an email with setup instructions."
+              : allowedRoles.length === 1 && allowedRoles[0] === "ADMIN"
+              ? "Send an invitation to an admin to join your organization. They will receive an email with setup instructions."
+              : "Send an invitation to join your organization. The user will receive an email with setup instructions."}
           </DialogDescription>
         </DialogHeader>
 
@@ -165,40 +187,46 @@ export function InviteUserModal({
             </p>
           </div>
 
-          <div className="space-y-2">
-            <Label className="flex items-center space-x-2">
-              <Shield className="h-4 w-4" />
-              <span>Role</span>
-            </Label>
-            <RadioGroup
-              value={role}
-              onValueChange={(value) => setRole(value as "ADMIN" | "TEACHER")}
-              className="grid grid-cols-2 gap-3"
-            >
-              <label className="flex items-center gap-2 rounded-lg border p-3 cursor-pointer hover:bg-accent/40">
-                <RadioGroupItem
-                  value="ADMIN"
-                  id="role-admin"
-                  disabled={isSubmitting}
-                />
-                <div className="flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  <span>Admin</span>
-                </div>
-              </label>
-              <label className="flex items-center gap-2 rounded-lg border p-3 cursor-pointer hover:bg-accent/40">
-                <RadioGroupItem
-                  value="TEACHER"
-                  id="role-teacher"
-                  disabled={isSubmitting}
-                />
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  <span>Teacher</span>
-                </div>
-              </label>
-            </RadioGroup>
-          </div>
+          {allowedRoles.length > 1 && (
+            <div className="space-y-2">
+              <Label className="flex items-center space-x-2">
+                <Shield className="h-4 w-4" />
+                <span>Role</span>
+              </Label>
+              <RadioGroup
+                value={role}
+                onValueChange={(value) => setRole(value as "ADMIN" | "TEACHER")}
+                className="grid grid-cols-2 gap-3"
+              >
+                {allowedRoles.includes("ADMIN") && (
+                  <label className="flex items-center gap-2 rounded-lg border p-3 cursor-pointer hover:bg-accent/40">
+                    <RadioGroupItem
+                      value="ADMIN"
+                      id="role-admin"
+                      disabled={isSubmitting}
+                    />
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4" />
+                      <span>Admin</span>
+                    </div>
+                  </label>
+                )}
+                {allowedRoles.includes("TEACHER") && (
+                  <label className="flex items-center gap-2 rounded-lg border p-3 cursor-pointer hover:bg-accent/40">
+                    <RadioGroupItem
+                      value="TEACHER"
+                      id="role-teacher"
+                      disabled={isSubmitting}
+                    />
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      <span>Teacher</span>
+                    </div>
+                  </label>
+                )}
+              </RadioGroup>
+            </div>
+          )}
 
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button

@@ -36,9 +36,10 @@ import {
   Star,
   Clock,
 } from "lucide-react";
-import { useGetAllTeachers, useDeleteTeacher } from "@/hooks";
+import { useGetAllTeachers, useDeleteTeacher, useCurrentUser } from "@/hooks";
 import { ViewTeacherModal } from "@/components/common/view-teacher-modal";
 import { EditTeacherModal } from "@/components/common/edit-teacher-modal";
+import { InviteUserModal } from "@/components/common/invite-user-modal";
 
 interface Teacher {
   id: string;
@@ -74,9 +75,11 @@ export default function AdminTeachersPage() {
     useState<Teacher | null>(null);
   const [selectedTeacherForEdit, setSelectedTeacherForEdit] =
     useState<Teacher | null>(null);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
   const { data: teachersResponse, isLoading } = useGetAllTeachers();
   const deleteTeacherMutation = useDeleteTeacher();
+  const { data: currentUser } = useCurrentUser();
 
   const teachers = (teachersResponse?.data || []) as Teacher[];
 
@@ -90,10 +93,6 @@ export default function AdminTeachersPage() {
       subjectFilter === "all" || teacher.subjects?.includes(subjectFilter);
     return matchesSearch && matchesSubject;
   });
-
-  const handleCreateTeacher = () => {
-    router.push("/admin/teachers/create");
-  };
 
   const handleEditTeacher = (teacherId: string) => {
     const teacher = teachers.find((t) => t.id === teacherId);
@@ -179,275 +178,258 @@ export default function AdminTeachersPage() {
           { label: "Teachers" },
         ]}
         actions={
-          <Button onClick={handleCreateTeacher} className="bg-primary">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Teacher
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => setIsInviteModalOpen(true)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Invite Teacher
+            </Button>
+          </div>
         }
         className="mb-6"
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <GraduationCap className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Total Teachers
-                </p>
-                <p className="text-2xl font-bold">{teachers.length}</p>
-              </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">
+                Total Teachers
+              </p>
+              <p className="text-xl font-bold">{teachers.length}</p>
             </div>
-          </CardContent>
+            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+          </div>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Users className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Total Students
-                </p>
-                <p className="text-2xl font-bold">
-                  {teachers
-                    .reduce((sum, teacher) => sum + (teacher.students || 0), 0)
-                    .toLocaleString()}
-                </p>
-              </div>
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">
+                Total Students
+              </p>
+              <p className="text-xl font-bold">
+                {teachers
+                  .reduce((sum, teacher) => sum + (teacher.students || 0), 0)
+                  .toLocaleString()}
+              </p>
             </div>
-          </CardContent>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </div>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <Star className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Avg Rating
-                </p>
-                <p className="text-2xl font-bold">
-                  {teachers.length > 0
-                    ? (
-                        teachers.reduce(
-                          (sum, teacher) => sum + (teacher.rating || 0),
-                          0
-                        ) / teachers.length
-                      ).toFixed(1)
-                    : "0.0"}
-                </p>
-              </div>
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">
+                Avg Rating
+              </p>
+              <p className="text-xl font-bold">
+                {teachers.length > 0
+                  ? (
+                      teachers.reduce(
+                        (sum, teacher) => sum + (teacher.rating || 0),
+                        0
+                      ) / teachers.length
+                    ).toFixed(1)
+                  : "0.0"}
+              </p>
             </div>
-          </CardContent>
+            <Star className="h-4 w-4 text-muted-foreground" />
+          </div>
         </Card>
 
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-4">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <BookOpen className="h-6 w-6 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Active Batches
-                </p>
-                <p className="text-2xl font-bold">
-                  {teachers.reduce(
-                    (sum, teacher) => sum + (teacher.batchIds?.length || 0),
-                    0
-                  )}
-                </p>
-              </div>
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">
+                Active Batches
+              </p>
+              <p className="text-xl font-bold">
+                {teachers.reduce(
+                  (sum, teacher) => sum + (teacher.batchIds?.length || 0),
+                  0
+                )}
+              </p>
             </div>
-          </CardContent>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </div>
         </Card>
       </div>
 
       {/* Filters */}
-      <Card className="mb-6">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Search teachers, subjects..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search teachers, subjects..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
             </div>
-            <div className="flex gap-2">
-              <Select value={subjectFilter} onValueChange={setSubjectFilter}>
-                <SelectTrigger className="w-[180px]">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Filter by subject" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Subjects</SelectItem>
-                  {allSubjects.map((subject) => (
-                    <SelectItem key={subject} value={subject}>
-                      {subject}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={subjectFilter} onValueChange={setSubjectFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <Filter className="mr-2 h-4 w-4" />
+                <SelectValue placeholder="Filter by subject" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Subjects</SelectItem>
+                {allSubjects.map((subject) => (
+                  <SelectItem key={subject} value={subject}>
+                    {subject}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
 
       {/* Teachers Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredTeachers.map((teacher) => (
           <Card
             key={teacher.id}
-            className="overflow-hidden hover:shadow-lg transition-shadow"
+            className="overflow-hidden hover:shadow-md transition-shadow"
           >
-            <div className="relative p-6">
-              <div className="flex items-start space-x-4">
-                <Avatar className="h-16 w-16">
+            <div className="p-4">
+              <div className="flex items-start gap-3">
+                <Avatar className="h-12 w-12 shrink-0">
                   <AvatarImage src={teacher.imageUrl} alt={teacher.name} />
-                  <AvatarFallback className="text-lg">
+                  <AvatarFallback className="text-sm">
                     {getInitials(teacher.name)}
                   </AvatarFallback>
                 </Avatar>
 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold text-lg">{teacher.name}</h3>
-                      <div className="flex items-center space-x-2 mt-1">
-                        <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                        <span className="text-sm font-medium">
-                          {teacher.rating}
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-base truncate">
+                        {teacher.name}
+                      </h3>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <Star className="h-3.5 w-3.5 text-yellow-500 fill-current shrink-0" />
+                        <span className="text-xs font-medium">
+                          {teacher.rating || "0.0"}
                         </span>
-                        <span className="text-sm text-muted-foreground">
-                          ({teacher.students?.toLocaleString() || 0} students)
+                        <span className="text-xs text-muted-foreground">
+                          • {teacher.students?.toLocaleString() || 0} students
                         </span>
                       </div>
                     </div>
-                    <div className="flex space-x-1">
+                    <div className="flex gap-0.5 shrink-0">
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="h-7 w-7 p-0"
                         onClick={() => handleViewTeacher(teacher.id)}
                         aria-label={`View ${teacher.name}`}
                       >
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-3.5 w-3.5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="h-7 w-7 p-0"
                         onClick={() => handleEditTeacher(teacher.id)}
                         aria-label={`Edit ${teacher.name}`}
                       >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-3.5 w-3.5" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="h-7 w-7 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
                         onClick={() => handleDeleteTeacher(teacher)}
-                        className="text-red-500 hover:text-red-700"
                         aria-label={`Delete ${teacher.name}`}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
 
-                  <div className="mt-3">
+                  {teacher.subjects && teacher.subjects.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-2">
-                      {teacher.subjects?.map((subject: string) => (
+                      {teacher.subjects.slice(0, 3).map((subject: string) => (
                         <Badge
                           key={subject}
                           variant="secondary"
-                          className="text-xs"
+                          className="text-xs px-1.5 py-0.5"
                         >
                           {subject}
                         </Badge>
                       ))}
-                    </div>
-
-                    <div className="space-y-1 text-sm text-muted-foreground">
-                      {teacher.highlights?.experience && (
-                        <div className="flex items-center space-x-2">
-                          <Clock className="h-4 w-4" />
-                          <span>{teacher.highlights.experience}</span>
-                        </div>
-                      )}
-                      {teacher.highlights?.education && (
-                        <div className="flex items-center space-x-2">
-                          <GraduationCap className="h-4 w-4" />
-                          <span>{teacher.highlights.education}</span>
-                        </div>
+                      {teacher.subjects.length > 3 && (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs px-1.5 py-0.5"
+                        >
+                          +{teacher.subjects.length - 3}
+                        </Badge>
                       )}
                     </div>
+                  )}
 
-                    {teacher.batches && teacher.batches.length > 0 && (
-                      <div className="mt-3">
-                        <p className="text-sm font-medium mb-1">
-                          Assigned Batches:
-                        </p>
-                        <div className="space-y-1">
-                          {teacher.batches.map((batch) => (
-                            <div
-                              key={batch.id}
-                              className="text-sm text-muted-foreground bg-muted/50 px-2 py-1 rounded"
-                            >
-                              {batch.name}
-                            </div>
-                          ))}
+                  {(teacher.highlights?.experience ||
+                    teacher.highlights?.education) && (
+                    <div className="space-y-0.5 text-xs text-muted-foreground mb-2">
+                      {teacher.highlights.experience && (
+                        <div className="flex items-center gap-1.5">
+                          <Clock className="h-3 w-3 shrink-0" />
+                          <span className="truncate">
+                            {teacher.highlights.experience}
+                          </span>
                         </div>
+                      )}
+                      {teacher.highlights.education && (
+                        <div className="flex items-center gap-1.5">
+                          <GraduationCap className="h-3 w-3 shrink-0" />
+                          <span className="truncate">
+                            {teacher.highlights.education}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {teacher.batches && teacher.batches.length > 0 && (
+                    <div className="mt-2 pt-2 border-t">
+                      <p className="text-xs font-medium text-muted-foreground mb-1">
+                        Batches ({teacher.batches.length})
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {teacher.batches.slice(0, 2).map((batch) => (
+                          <Badge
+                            key={batch.id}
+                            variant="outline"
+                            className="text-xs px-1.5 py-0.5"
+                          >
+                            {batch.name}
+                          </Badge>
+                        ))}
+                        {teacher.batches.length > 2 && (
+                          <Badge
+                            variant="outline"
+                            className="text-xs px-1.5 py-0.5"
+                          >
+                            +{teacher.batches.length - 2}
+                          </Badge>
+                        )}
                       </div>
-                    )}
-
-                    <div className="text-xs text-muted-foreground mt-3">
-                      {teacher.createdAt && (
-                        <span>Added: {formatDate(teacher.createdAt)}</span>
-                      )}
-                      {teacher.createdAt && teacher.updatedAt && " • "}
-                      {teacher.updatedAt && (
-                        <span>Updated: {formatDate(teacher.updatedAt)}</span>
-                      )}
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
           </Card>
         ))}
       </div>
-
-      {filteredTeachers.length === 0 && (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <GraduationCap className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="font-semibold mb-2">No teachers found</h3>
-            <p className="text-muted-foreground mb-4">
-              {searchQuery || subjectFilter !== "all"
-                ? "Try adjusting your search criteria or filters"
-                : "Get started by adding your first teacher"}
-            </p>
-            {!searchQuery && subjectFilter === "all" && (
-              <Button onClick={handleCreateTeacher}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add First Teacher
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
@@ -510,6 +492,17 @@ export default function AdminTeachersPage() {
             updatedAt: selectedTeacherForEdit.updatedAt,
           }}
           onSuccess={handleTeacherUpdated}
+        />
+      )}
+
+      {/* Invite User Modal */}
+      {currentUser?.organizationId && (
+        <InviteUserModal
+          isOpen={isInviteModalOpen}
+          onClose={() => setIsInviteModalOpen(false)}
+          organizationId={currentUser.organizationId}
+          defaultRole="TEACHER"
+          allowedRoles={["TEACHER"]}
         />
       )}
     </div>

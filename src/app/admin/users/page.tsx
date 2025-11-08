@@ -134,39 +134,37 @@ export default function UsersPage() {
       />
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+      <div className="grid gap-3 md:grid-cols-3">
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Total Users</p>
+              <p className="text-xl font-bold">{users.length}</p>
+            </div>
             <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{users.length}</div>
-          </CardContent>
+          </div>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Verified Users
-            </CardTitle>
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Verified Users</p>
+              <p className="text-xl font-bold">
+                {users.filter((user) => user.isVerified).length}
+              </p>
+            </div>
             <Mail className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {users.filter((user) => user.isVerified).length}
-            </div>
-          </CardContent>
+          </div>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Admins</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {users.filter((user) => user.role === "ADMIN").length}
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Admins</p>
+              <p className="text-xl font-bold">
+                {users.filter((user) => user.role === "ADMIN").length}
+              </p>
             </div>
-          </CardContent>
+            <Shield className="h-4 w-4 text-muted-foreground" />
+          </div>
         </Card>
       </div>
 

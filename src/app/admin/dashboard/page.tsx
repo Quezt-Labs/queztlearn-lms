@@ -79,8 +79,8 @@ export default function AdminDashboard() {
         description="Welcome back! Here's what's happening with your learning platform."
         breadcrumbs={[{ label: "Admin", href: "/admin/dashboard" }]}
         actions={
-          <div className="flex space-x-2">
-            <Button asChild>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild size="sm">
               <Link href="/admin/users">
                 <UserPlus className="mr-2 h-4 w-4" />
                 Add User
@@ -88,12 +88,13 @@ export default function AdminDashboard() {
             </Button>
             <Button
               variant="secondary"
+              size="sm"
               onClick={() => setIsInviteModalOpen(true)}
             >
               <UserCheck className="mr-2 h-4 w-4" />
               Invite
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" size="sm">
               <Link href="/admin/courses">
                 <BookPlus className="mr-2 h-4 w-4" />
                 Create Course
@@ -102,12 +103,11 @@ export default function AdminDashboard() {
             {isAdmin && (
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => clearCache.mutate()}
                 disabled={clearCache.isPending}
                 title="Clear organization cache"
               >
-                <TrendingUp className="hidden" />
-                {/* Using RefreshCcw icon for clear cache */}
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
@@ -130,111 +130,67 @@ export default function AdminDashboard() {
       />
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
         {statsLoading ? (
           <StatsSkeleton />
         ) : (
           <>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Total Courses
-                  </CardTitle>
-                  <BookOpen className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {(stats?.data as { totalCourses?: number })?.totalCourses ||
-                      0}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    +2 from last month
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Total Courses</p>
+                  <p className="text-xl font-bold">
+                    {(stats?.data as { totalCourses?: number })?.totalCourses || 0}
                   </p>
-                </CardContent>
-              </Card>
-            </motion.div>
+                  <p className="text-xs text-muted-foreground mt-0.5">+2 from last month</p>
+                </div>
+                <BookOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+              </div>
+            </Card>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Total Students
-                  </CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {(stats?.data as { totalStudents?: number })
-                      ?.totalStudents || 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    +12% from last month
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Total Students</p>
+                  <p className="text-xl font-bold">
+                    {(stats?.data as { totalStudents?: number })?.totalStudents || 0}
                   </p>
-                </CardContent>
-              </Card>
-            </motion.div>
+                  <p className="text-xs text-muted-foreground mt-0.5">+12% from last month</p>
+                </div>
+                <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+              </div>
+            </Card>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Active Enrollments
-                  </CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {(stats?.data as { activeEnrollments?: number })
-                      ?.activeEnrollments || 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    +8% from last month
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Active Enrollments</p>
+                  <p className="text-xl font-bold">
+                    {(stats?.data as { activeEnrollments?: number })?.activeEnrollments || 0}
                   </p>
-                </CardContent>
-              </Card>
-            </motion.div>
+                  <p className="text-xs text-muted-foreground mt-0.5">+8% from last month</p>
+                </div>
+                <TrendingUp className="h-4 w-4 text-muted-foreground shrink-0" />
+              </div>
+            </Card>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    Teachers
-                  </CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">
-                    {(stats?.data as { totalTeachers?: number })
-                      ?.totalTeachers || 0}
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    +1 from last month
+            <Card className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Teachers</p>
+                  <p className="text-xl font-bold">
+                    {(stats?.data as { totalTeachers?: number })?.totalTeachers || 0}
                   </p>
-                </CardContent>
-              </Card>
-            </motion.div>
+                  <p className="text-xs text-muted-foreground mt-0.5">+1 from last month</p>
+                </div>
+                <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+              </div>
+            </Card>
           </>
         )}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         {/* Recent Activity */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
