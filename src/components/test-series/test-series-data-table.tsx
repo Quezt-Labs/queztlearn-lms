@@ -9,6 +9,8 @@ import {
   Eye,
   Copy,
   TrendingUp,
+  CheckCircle,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +38,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { TestSeries, useDeleteTestSeries } from "@/hooks/test-series";
+import {
+  TestSeries,
+  useDeleteTestSeries,
+  useUpdateTestSeries,
+} from "@/hooks/test-series";
 import { EditTestSeriesModal } from "./edit-test-series-modal";
 
 interface TestSeriesDataTableProps {
@@ -55,6 +61,7 @@ export function TestSeriesDataTable({
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editSeries, setEditSeries] = useState<TestSeries | null>(null);
   const deleteMutation = useDeleteTestSeries();
+  const updateMutation = useUpdateTestSeries();
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -65,6 +72,18 @@ export function TestSeriesDataTable({
       onRefetch?.();
     } catch (error) {
       console.error("Delete error:", error);
+    }
+  };
+
+  const handleToggleStatus = async (series: TestSeries) => {
+    try {
+      await updateMutation.mutateAsync({
+        id: series.id,
+        data: { isActive: !series.isActive },
+      });
+      onRefetch?.();
+    } catch (error) {
+      console.error("Toggle status error:", error);
     }
   };
 
@@ -210,6 +229,28 @@ export function TestSeriesDataTable({
                         <DropdownMenuItem onClick={() => setEditSeries(series)}>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => handleToggleStatus(series)}
+                          disabled={updateMutation.isPending}
+                          className={
+                            series.isActive
+                              ? "text-orange-600"
+                              : "text-green-600"
+                          }
+                        >
+                          {series.isActive ? (
+                            <>
+                              <XCircle className="mr-2 h-4 w-4" />
+                              Mark as Inactive
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Mark as Active
+                            </>
+                          )}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
