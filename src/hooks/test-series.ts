@@ -42,6 +42,7 @@ export interface TestSeries {
   testCount: number;
   totalQuestions: number;
   isActive: boolean;
+  isPublished?: boolean;
   publishedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -199,22 +200,6 @@ export const useDeleteTestSeries = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["test-series"] });
-    },
-  });
-};
-
-// Publish Test Series
-export const usePublishTestSeries = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const response = await apiClient.post(`/admin/test-series/${id}/publish`);
-      return response.data;
-    },
-    onSuccess: (_response, id) => {
-      queryClient.invalidateQueries({ queryKey: ["test-series"] });
-      queryClient.invalidateQueries({ queryKey: ["test-series", id] });
     },
   });
 };

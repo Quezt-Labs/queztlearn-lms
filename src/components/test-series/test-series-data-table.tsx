@@ -2,25 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  Eye,
-  Copy,
-  TrendingUp,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { TableActionsDropdown } from "@/components/common/table-actions-dropdown";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -189,7 +172,7 @@ export function TestSeriesDataTable({
                       >
                         {series.isActive ? "Active" : "Inactive"}
                       </Badge>
-                      {series.publishedAt && (
+                      {series.isPublished && (
                         <Badge variant="outline" className="text-xs">
                           Published
                         </Badge>
@@ -202,66 +185,16 @@ export function TestSeriesDataTable({
                     </span>
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem
-                          onClick={() =>
-                            navigator.clipboard.writeText(series.id)
-                          }
-                        >
-                          <Copy className="mr-2 h-4 w-4" />
-                          Copy ID
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                          <Link href={`/${basePath}/test-series/${series.id}`}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            View Details
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setEditSeries(series)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleToggleStatus(series)}
-                          disabled={updateMutation.isPending}
-                          className={
-                            series.isActive
-                              ? "text-orange-600"
-                              : "text-green-600"
-                          }
-                        >
-                          {series.isActive ? (
-                            <>
-                              <XCircle className="mr-2 h-4 w-4" />
-                              Mark as Inactive
-                            </>
-                          ) : (
-                            <>
-                              <CheckCircle className="mr-2 h-4 w-4" />
-                              Mark as Active
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={() => setDeleteId(series.id)}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <TableActionsDropdown
+                      id={series.id}
+                      viewHref={`/${basePath}/test-series/${series.id}`}
+                      onEdit={() => setEditSeries(series)}
+                      onDelete={() => setDeleteId(series.id)}
+                      onToggleStatus={() => handleToggleStatus(series)}
+                      isActive={series.isActive}
+                      isDeleting={deleteMutation.isPending}
+                      isUpdating={updateMutation.isPending}
+                    />
                   </TableCell>
                 </TableRow>
               ))

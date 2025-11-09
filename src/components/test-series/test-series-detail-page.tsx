@@ -31,7 +31,7 @@ import {
 import {
   useTestSeries,
   useDeleteTestSeries,
-  usePublishTestSeries,
+  useUpdateTestSeries,
   useTestsByTestSeries,
   TestSeries,
 } from "@/hooks/test-series";
@@ -65,7 +65,7 @@ export function TestSeriesDetailPage({
 
   // Mutations
   const deleteMutation = useDeleteTestSeries();
-  const publishMutation = usePublishTestSeries();
+  const updateMutation = useUpdateTestSeries();
 
   const testSeries = testSeriesData?.data as TestSeries | undefined;
   const tests = Array.isArray(testsData?.data) ? testsData.data : [];
@@ -85,8 +85,14 @@ export function TestSeriesDetailPage({
 
   const handlePublish = async () => {
     try {
-      await publishMutation.mutateAsync(testSeriesId);
+      await updateMutation.mutateAsync({
+        id: testSeriesId,
+        data: {
+          isPublished: true,
+        },
+      });
       setIsPublishDialogOpen(false);
+      refetchTestSeries();
     } catch (error) {
       console.error("Failed to publish test series:", error);
     }
@@ -99,14 +105,6 @@ export function TestSeriesDetailPage({
       day: "numeric",
       year: "numeric",
     });
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(price);
   };
 
   if (isLoading) {
@@ -177,7 +175,7 @@ export function TestSeriesDetailPage({
                       </>
                     )}
                   </Badge>
-                  {testSeries.publishedAt && (
+                  {testSeries.isPublished && (
                     <Badge variant="outline" className="text-xs">
                       <Rocket className="mr-1 h-3 w-3" />
                       Published
@@ -204,7 +202,7 @@ export function TestSeriesDetailPage({
                 <Calendar className="h-4 w-4" />
                 <span>Created {formatDate(testSeries.createdAt)}</span>
               </div>
-              {testSeries.publishedAt && (
+              {testSeries.isPublished && testSeries.publishedAt && (
                 <div className="flex items-center space-x-2">
                   <Globe className="h-4 w-4" />
                   <span>Published {formatDate(testSeries.publishedAt)}</span>
@@ -214,11 +212,11 @@ export function TestSeriesDetailPage({
           </div>
 
           <div className="flex space-x-2">
-            {!testSeries.publishedAt && (
+            {!testSeries.isPublished && (
               <Button
                 onClick={() => setIsPublishDialogOpen(true)}
                 className="bg-green-600 hover:bg-green-700"
-                disabled={publishMutation.isPending}
+                disabled={updateMutation.isPending}
               >
                 <Rocket className="mr-2 h-4 w-4" />
                 Publish
@@ -346,9 +344,9 @@ export function TestSeriesDetailPage({
             <Button
               onClick={handlePublish}
               className="bg-green-600 hover:bg-green-700"
-              disabled={publishMutation.isPending}
+              disabled={updateMutation.isPending}
             >
-              {publishMutation.isPending ? "Publishing..." : "Publish"}
+              {updateMutation.isPending ? "Publishing..." : "Publish"}
             </Button>
           </DialogFooter>
         </DialogContent>
