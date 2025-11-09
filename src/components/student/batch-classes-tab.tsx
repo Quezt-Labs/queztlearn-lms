@@ -1,12 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useGetClientSchedulesByBatch } from "@/hooks";
 import { type Schedule } from "@/lib/types/schedule";
 import { StudentScheduleList } from "./student-schedule-list";
 import { SectionHeader } from "@/components/common/section-header";
-import { Video } from "lucide-react";
 
 /**
  * Batch classes tab component for students
@@ -21,6 +20,7 @@ import { Video } from "lucide-react";
  */
 export function BatchClassesTab() {
   const params = useParams();
+  const router = useRouter();
   const batchId = params.id as string;
 
   const { data: schedulesResponse, isLoading } =
@@ -42,7 +42,7 @@ export function BatchClassesTab() {
 
   const handleWatch = (schedule: Schedule) => {
     if (schedule.youtubeLink) {
-      window.open(schedule.youtubeLink, "_blank");
+      router.push(`/student/batches/${batchId}/schedule/${schedule.id}`);
     }
   };
 
