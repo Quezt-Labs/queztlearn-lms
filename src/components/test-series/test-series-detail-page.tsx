@@ -31,7 +31,6 @@ import {
 import {
   useTestSeries,
   useDeleteTestSeries,
-  useUpdateTestSeries,
   useTestsByTestSeries,
   TestSeries,
 } from "@/hooks/test-series";
@@ -52,7 +51,6 @@ export function TestSeriesDetailPage({
   const [activeTab, setActiveTab] = useState("overview");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
 
   // Data fetching
   const {
@@ -65,7 +63,6 @@ export function TestSeriesDetailPage({
 
   // Mutations
   const deleteMutation = useDeleteTestSeries();
-  const updateMutation = useUpdateTestSeries();
 
   const testSeries = testSeriesData?.data as TestSeries | undefined;
   const tests = Array.isArray(testsData?.data) ? testsData.data : [];
@@ -80,21 +77,6 @@ export function TestSeriesDetailPage({
       router.push(`/${basePath}/test-series`);
     } catch (error) {
       console.error("Failed to delete test series:", error);
-    }
-  };
-
-  const handlePublish = async () => {
-    try {
-      await updateMutation.mutateAsync({
-        id: testSeriesId,
-        data: {
-          isPublished: true,
-        },
-      });
-      setIsPublishDialogOpen(false);
-      refetchTestSeries();
-    } catch (error) {
-      console.error("Failed to publish test series:", error);
     }
   };
 
@@ -212,16 +194,6 @@ export function TestSeriesDetailPage({
           </div>
 
           <div className="flex space-x-2">
-            {!testSeries.isPublished && (
-              <Button
-                onClick={() => setIsPublishDialogOpen(true)}
-                className="bg-green-600 hover:bg-green-700"
-                disabled={updateMutation.isPending}
-              >
-                <Rocket className="mr-2 h-4 w-4" />
-                Publish
-              </Button>
-            )}
             <Button variant="outline" onClick={() => setIsEditModalOpen(true)}>
               <Edit className="mr-2 h-4 w-4" />
               Edit
@@ -324,33 +296,6 @@ export function TestSeriesDetailPage({
           refetchTestSeries();
         }}
       />
-
-      <Dialog open={isPublishDialogOpen} onOpenChange={setIsPublishDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Publish Test Series</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to publish this test series? Once published,
-              it will be visible to students and ready for enrollment.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsPublishDialogOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handlePublish}
-              className="bg-green-600 hover:bg-green-700"
-              disabled={updateMutation.isPending}
-            >
-              {updateMutation.isPending ? "Publishing..." : "Publish"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <DialogContent>
