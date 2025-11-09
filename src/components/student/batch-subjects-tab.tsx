@@ -2,15 +2,13 @@
 
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   useGetClientSubjectsByBatch,
   useGetClientChaptersBySubject,
 } from "@/hooks";
 import { useParams } from "next/navigation";
-import { ChevronRight, PlayCircle, Lock, Clock } from "lucide-react";
+import { ChevronRight, PlayCircle } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 
 interface Subject {
   id: string;
@@ -18,35 +16,6 @@ interface Subject {
   thumbnailUrl?: string;
   description?: string;
 }
-
-// Subject-specific styling configuration
-const getSubjectConfig = (subjectName: string) => {
-  const name = subjectName.toLowerCase();
-
-  if (name.includes("physics")) {
-    return {
-      gradient: "from-blue-500/10 via-purple-500/10 to-indigo-500/10",
-      borderColor: "border-blue-200 dark:border-blue-800",
-    };
-  }
-  if (name.includes("chemistry")) {
-    return {
-      gradient: "from-green-500/10 via-emerald-500/10 to-teal-500/10",
-      borderColor: "border-green-200 dark:border-green-800",
-    };
-  }
-  if (name.includes("math") || name.includes("mathematics")) {
-    return {
-      gradient: "from-orange-500/10 via-red-500/10 to-pink-500/10",
-      borderColor: "border-orange-200 dark:border-orange-800",
-    };
-  }
-  // Default styling
-  return {
-    gradient: "from-gray-500/10 via-slate-500/10 to-zinc-500/10",
-    borderColor: "border-border",
-  };
-};
 
 // Component to fetch and display chapter count for a subject
 function SubjectChapterCount({ subjectId }: { subjectId: string }) {
@@ -82,7 +51,10 @@ export function BatchSubjectsTab() {
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6"
       >
         {[1, 2, 3].map((i) => (
-          <Card key={i} className="bg-card/95 rounded-xl border border-border/60 shadow-md">
+          <Card
+            key={i}
+            className="bg-card/95 rounded-xl border border-border/60 shadow-md"
+          >
             <CardContent className="p-0 px-6 py-4">
               <div className="animate-pulse flex items-center gap-4">
                 <div className="w-14 h-14 rounded-full bg-muted shrink-0" />
@@ -148,9 +120,7 @@ export function BatchSubjectsTab() {
                 href={`/student/batches/${batchId}/subjects/${subject.id}`}
                 className="block h-full"
               >
-                <Card
-                  className="group bg-card/95 text-card-foreground rounded-xl border border-border/60 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
-                >
+                <Card className="group bg-card/95 text-card-foreground rounded-xl border border-border/60 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer">
                   <CardContent className="p-0 px-6 py-4 flex items-center gap-4">
                     {/* Left: Circular Image */}
                     <div className="shrink-0">
