@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -11,23 +9,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useGetContentsByTopic } from "@/hooks";
-import { Video, FileText, Download } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-interface Content {
-  id: string;
-  name: string;
-  topicId: string;
-  type: "Lecture" | "PDF";
-  pdfUrl?: string;
-  videoUrl?: string;
-  videoType?: "YOUTUBE" | "HLS";
-  videoThumbnail?: string;
-  videoDuration?: number;
-  isCompleted?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import { FileText, Video } from "lucide-react";
+import { ContentFilterTabs } from "@/components/common/content-filter-tabs";
+import { EmptyStateCard } from "@/components/common/empty-state-card";
+import { LoadingSpinner } from "@/components/common/loading-spinner";
+import {
+  ModalContentCard,
+  type Content,
+} from "@/components/student/modal-content-card";
+import { formatDuration } from "@/lib/utils/format-duration";
 
 interface Topic {
   id: string;
@@ -100,170 +90,85 @@ export function ViewTopicModal({
         <div className="flex-1 overflow-hidden flex flex-col">
           {contentsLoading ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <span className="ml-2 text-muted-foreground">
-                Loading content...
-              </span>
+              <LoadingSpinner />
             </div>
           ) : contents.length === 0 ? (
-            <div className="text-center py-8">
-              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-semibold mb-2">No content available</h3>
-              <p className="text-muted-foreground">
-                This topic doesn&apos;t have any lectures or PDFs yet.
-              </p>
-            </div>
+            <EmptyStateCard
+              icon={FileText}
+              title="No content available"
+              description="This topic doesn't have any lectures or PDFs yet."
+            />
           ) : (
-            <Tabs
-              defaultValue="all"
-              className="w-full flex-1 flex flex-col overflow-hidden"
-            >
-              <TabsList className="grid w-full grid-cols-3 shrink-0">
-                <TabsTrigger value="all">All ({contents.length})</TabsTrigger>
-                <TabsTrigger value="lectures">
-                  Lectures ({lectures.length})
-                </TabsTrigger>
-                <TabsTrigger value="pdfs">PDFs ({pdfs.length})</TabsTrigger>
-              </TabsList>
-
-              <TabsContent
-                value="all"
-                className="mt-4 flex-1 overflow-y-auto space-y-1"
-              >
-                <div className="grid grid-cols-1 gap-1">
-                  {contents.map((content: Content) => (
-                    <ContentCard
-                      key={content.id}
-                      content={{
-                        ...content,
-                        topicId: content.topicId || currentTopic?.id || "",
-                      }}
+            <div className="flex-1 overflow-hidden flex flex-col">
+              <ContentFilterTabs
+                totalCount={contents.length}
+                lecturesCount={lectures.length}
+                pdfsCount={pdfs.length}
+                label=""
+                allContent={
+                  <div className="grid grid-cols-1 gap-1">
+                    {contents.map((content: Content) => (
+                      <ModalContentCard
+                        key={content.id}
+                        content={{
+                          ...content,
+                          topicId: content.topicId || currentTopic?.id || "",
+                        }}
+                        formatDuration={formatDuration}
+                      />
+                    ))}
+                  </div>
+                }
+                lecturesContent={
+                  lectures.length === 0 ? (
+                    <EmptyStateCard
+                      icon={Video}
+                      title="No lectures available"
+                      description=""
                     />
-                  ))}
-                </div>
-              </TabsContent>
-
-              <TabsContent
-                value="lectures"
-                className="mt-4 flex-1 overflow-y-auto space-y-1"
-              >
-                {lectures.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No lectures available
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-1">
-                    {lectures.map((content: Content) => (
-                      <ContentCard
-                        key={content.id}
-                        content={{
-                          ...content,
-                          topicId: content.topicId || currentTopic?.id || "",
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent
-                value="pdfs"
-                className="mt-4 flex-1 overflow-y-auto space-y-1"
-              >
-                {pdfs.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No PDFs available
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-1">
-                    {pdfs.map((content: Content) => (
-                      <ContentCard
-                        key={content.id}
-                        content={{
-                          ...content,
-                          topicId: content.topicId || currentTopic?.id || "",
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-1">
+                      {lectures.map((content: Content) => (
+                        <ModalContentCard
+                          key={content.id}
+                          content={{
+                            ...content,
+                            topicId: content.topicId || currentTopic?.id || "",
+                          }}
+                          formatDuration={formatDuration}
+                        />
+                      ))}
+                    </div>
+                  )
+                }
+                pdfsContent={
+                  pdfs.length === 0 ? (
+                    <EmptyStateCard
+                      icon={FileText}
+                      title="No PDFs available"
+                      description=""
+                    />
+                  ) : (
+                    <div className="grid grid-cols-1 gap-1">
+                      {pdfs.map((content: Content) => (
+                        <ModalContentCard
+                          key={content.id}
+                          content={{
+                            ...content,
+                            topicId: content.topicId || currentTopic?.id || "",
+                          }}
+                          formatDuration={formatDuration}
+                        />
+                      ))}
+                    </div>
+                  )
+                }
+                className="flex-1 flex flex-col overflow-hidden"
+              />
+            </div>
           )}
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function ContentCard({ content }: { content: Content }) {
-  const isLecture = content.type === "Lecture" && content.videoUrl;
-  const isPdf = content.type === "PDF" && content.pdfUrl;
-
-  const formatDuration = (seconds: number | undefined) => {
-    if (!seconds) return "";
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  const handleOpenPdf = (url: string) => {
-    window.open(url, "_blank");
-  };
-
-  return (
-    <div className="border rounded-md p-2 hover:bg-muted/50 transition-colors">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          {isLecture && <Video className="h-4 w-4 text-green-600 shrink-0" />}
-          {isPdf && <FileText className="h-4 w-4 text-purple-600 shrink-0" />}
-          <h4 className="font-medium text-sm truncate flex-1">
-            {content.name}
-          </h4>
-          <Badge
-            variant="secondary"
-            className={
-              content.type === "Lecture"
-                ? "bg-green-100 text-green-800 text-xs py-0 px-1.5"
-                : content.type === "PDF"
-                ? "bg-purple-100 text-purple-800 text-xs py-0 px-1.5"
-                : "bg-blue-100 text-blue-800 text-xs py-0 px-1.5"
-            }
-          >
-            {content.type}
-          </Badge>
-          {isLecture && content.videoDuration && (
-            <span className="text-xs text-muted-foreground shrink-0">
-              {formatDuration(content.videoDuration)}
-            </span>
-          )}
-          {content.videoType && (
-            <Badge variant="outline" className="text-xs py-0 px-1.5 shrink-0">
-              {content.videoType}
-            </Badge>
-          )}
-          {content.isCompleted && (
-            <Badge
-              variant="default"
-              className="bg-green-600 text-xs py-0 px-1.5 shrink-0"
-            >
-              ✓
-            </Badge>
-          )}
-        </div>
-
-        {isPdf && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="shrink-0 h-7 text-xs px-2"
-            onClick={() => content.pdfUrl && handleOpenPdf(content.pdfUrl)}
-          >
-            <Download className="h-3 w-3 mr-1" />
-            Open
-          </Button>
-        )}
-      </div>
-    </div>
   );
 }
