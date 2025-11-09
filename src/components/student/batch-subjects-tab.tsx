@@ -8,7 +8,7 @@ import {
   useGetClientChaptersBySubject,
 } from "@/hooks";
 import { useParams } from "next/navigation";
-import { ChevronRight, PlayCircle } from "lucide-react";
+import { ChevronRight, PlayCircle, Lock, Clock } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -55,13 +55,13 @@ function SubjectChapterCount({ subjectId }: { subjectId: string }) {
   const chapterCount = chaptersResponse?.data?.length || 0;
 
   if (isLoading) {
-    return <div className="h-4 w-16 bg-muted rounded animate-pulse" />;
+    return <span className="text-sm text-muted-foreground">Loading...</span>;
   }
 
   return (
-    <Badge variant="secondary" className="text-xs font-medium">
+    <span className="text-sm text-muted-foreground">
       {chapterCount} {chapterCount === 1 ? "Chapter" : "Chapters"}
-    </Badge>
+    </span>
   );
 }
 
@@ -79,18 +79,18 @@ export function BatchSubjectsTab() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6"
       >
         {[1, 2, 3].map((i) => (
-          <Card key={i} className="overflow-hidden">
-            <CardContent className="p-0">
-              <div className="animate-pulse space-y-4">
-                <div className="aspect-video bg-muted" />
-                <div className="p-6 space-y-3">
+          <Card key={i} className="bg-card/95 rounded-xl border border-border/60 shadow-md">
+            <CardContent className="p-0 px-6 py-4">
+              <div className="animate-pulse flex items-center gap-4">
+                <div className="w-14 h-14 rounded-full bg-muted shrink-0" />
+                <div className="flex-1 space-y-2">
                   <div className="h-5 bg-muted rounded w-3/4" />
                   <div className="h-4 bg-muted rounded w-1/2" />
-                  <div className="h-10 bg-muted rounded w-full" />
                 </div>
+                <div className="w-5 h-5 bg-muted rounded shrink-0" />
               </div>
             </CardContent>
           </Card>
@@ -137,8 +137,6 @@ export function BatchSubjectsTab() {
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6"
       >
         {subjects.map((subject, index) => {
-          const config = getSubjectConfig(subject.name);
-
           return (
             <motion.div
               key={subject.id}
@@ -151,64 +149,39 @@ export function BatchSubjectsTab() {
                 className="block h-full"
               >
                 <Card
-                  className={cn(
-                    "group relative overflow-hidden border-2 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer h-full flex flex-col",
-                    config.borderColor,
-                    "hover:border-primary/50"
-                  )}
+                  className="group bg-card/95 text-card-foreground rounded-xl border border-border/60 shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer"
                 >
-                  {/* Gradient Background */}
-                  <div
-                    className={cn(
-                      "absolute inset-0 bg-gradient-to-br opacity-50 group-hover:opacity-70 transition-opacity",
-                      config.gradient
-                    )}
-                  />
-
-                  <CardContent className="relative p-0 flex flex-col h-full">
-                    {/* Thumbnail Preview */}
-                    {subject.thumbnailUrl ? (
-                      <div className="relative overflow-hidden">
-                        <div className="aspect-video relative bg-muted">
+                  <CardContent className="p-0 px-6 py-4 flex items-center gap-4">
+                    {/* Left: Circular Image */}
+                    <div className="shrink-0">
+                      {subject.thumbnailUrl ? (
+                        <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-foreground/20 shrink-0">
                           <img
                             src={subject.thumbnailUrl}
                             alt={subject.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            className="w-full h-full object-cover"
                           />
                         </div>
-                      </div>
-                    ) : (
-                      <div className="aspect-video bg-muted" />
-                    )}
+                      ) : (
+                        <div className="w-14 h-14 rounded-full bg-muted border-2 border-foreground/20 flex items-center justify-center shrink-0">
+                          <PlayCircle className="h-7 w-7 text-muted-foreground" />
+                        </div>
+                      )}
+                    </div>
 
-                    <div className="p-6 flex flex-col flex-1">
-                      {/* Header with Title */}
-                      <div className="mb-3">
-                        <h3 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                          {subject.name}
-                        </h3>
+                    {/* Center: Title and Info */}
+                    <div className="flex-1 min-w-0 flex flex-col gap-1">
+                      <h3 className="font-semibold text-base leading-tight group-hover:text-primary transition-colors">
+                        {subject.name}
+                      </h3>
+                      <div className="text-sm text-muted-foreground">
                         <SubjectChapterCount subjectId={subject.id} />
                       </div>
+                    </div>
 
-                      {/* Description */}
-                      {subject.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 mb-4 flex-1">
-                          {subject.description}
-                        </p>
-                      )}
-
-                      {/* CTA Button */}
-                      <div
-                        className={cn(
-                          "w-full mt-auto flex items-center justify-center gap-2 px-4 py-2 rounded-md border-2 text-sm font-medium transition-colors",
-                          "group-hover:bg-primary group-hover:text-primary-foreground",
-                          config.borderColor
-                        )}
-                      >
-                        <PlayCircle className="h-4 w-4" />
-                        Explore Chapters
-                        <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                      </div>
+                    {/* Right: Chevron Icon */}
+                    <div className="shrink-0">
+                      <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all duration-300" />
                     </div>
                   </CardContent>
                 </Card>

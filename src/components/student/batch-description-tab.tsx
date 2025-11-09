@@ -188,18 +188,20 @@ export function BatchDescriptionTab({
       {/* 1. At-a-Glance Card (Mobile Only) */}
       <AtAGlanceCard items={atAGlanceItems} title="Batch Details" />
 
-      {/* 2. Mobile Pricing Card (Mobile Only) */}
-      <MobilePricingCard
-        originalPrice={batch.totalPrice}
-        finalPrice={finalPrice}
-        savings={savings}
-        discountPercentage={batch.discountPercentage}
-        isEnrolled={batch.isPurchased}
-        isProcessing={isLoading}
-        onEnrollClick={handleEnrollClick}
-        ctaText="Enroll Now"
-        enrolledText="You're enrolled in this batch"
-      />
+      {/* 2. Mobile Pricing Card (Mobile Only) - Hide if purchased */}
+      {!batch.isPurchased && (
+        <MobilePricingCard
+          originalPrice={batch.totalPrice}
+          finalPrice={finalPrice}
+          savings={savings}
+          discountPercentage={batch.discountPercentage}
+          isEnrolled={batch.isPurchased}
+          isProcessing={isLoading}
+          onEnrollClick={handleEnrollClick}
+          ctaText="Enroll Now"
+          enrolledText="You're enrolled in this batch"
+        />
+      )}
 
       {/* 3. Desktop Grid Layout */}
       <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
@@ -296,121 +298,118 @@ export function BatchDescriptionTab({
 
         {/* Right: Price Card & Info (Desktop Only) */}
         <div className="lg:col-span-1 space-y-4 hidden lg:block">
-          {/* Price Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Card className="shadow-xl border-2">
-              <CardContent className="p-6 space-y-6">
-                {/* Thumbnail Image */}
-                <div className="relative aspect-video rounded-xl overflow-hidden border-2">
-                  {batch.imageUrl ? (
-                    <img
-                      src={batch.imageUrl}
-                      alt={batch.name}
-                      className="object-cover w-full h-full"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full bg-linear-to-br from-blue-500/10 to-purple-500/10">
-                      <GraduationCap className="h-16 w-16 text-muted-foreground/30" />
-                    </div>
-                  )}
-
-                  {/* Badges on Image */}
-                  <div className="absolute top-2 left-2 right-2 flex items-start justify-between gap-2">
-                    {isHotDeal && (
-                      <Badge className="bg-linear-to-r from-amber-500 to-orange-500 text-white border-0 shadow-lg text-xs">
-                        <Sparkles className="h-3 w-3 mr-1" />
-                        Hot Deal
-                      </Badge>
-                    )}
-                    {batch.discountPercentage > 0 && (
-                      <Badge className="bg-red-500 text-white border-0 shadow-lg text-xs ml-auto">
-                        {batch.discountPercentage}% OFF
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-
-                {/* Pricing */}
-                <div className="space-y-3">
-                  {batch.discountPercentage > 0 && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground line-through">
-                        ₹{batch.totalPrice.toLocaleString("en-IN")}
-                      </span>
-                      <Badge
-                        variant="secondary"
-                        className="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"
-                      >
-                        Save ₹{savings.toLocaleString("en-IN")}
-                      </Badge>
-                    </div>
-                  )}
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl sm:text-4xl font-bold text-primary">
-                      ₹{finalPrice.toLocaleString("en-IN")}
-                    </span>
-                    <span className="text-sm text-muted-foreground">total</span>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Action Buttons */}
-                <div className="space-y-3">
-                  <Button
-                    className="w-full"
-                    size="lg"
-                    onClick={handleEnrollClick}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Processing...
-                      </>
-                    ) : batch.isPurchased ? (
-                      <>
-                        <BookOpen className="h-4 w-4 mr-2" />
-                        Go to My Learning
-                      </>
-                    ) : isFree ? (
-                      <>
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        Enroll for Free
-                      </>
+          {/* Price Card - Hide if purchased */}
+          {!batch.isPurchased && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <Card className="shadow-xl border-2" data-slot="card">
+                <CardContent className="p-6 space-y-6">
+                  {/* Thumbnail Image */}
+                  <div className="relative aspect-video rounded-xl overflow-hidden border-2">
+                    {batch.imageUrl ? (
+                      <img
+                        src={batch.imageUrl}
+                        alt={batch.name}
+                        className="object-cover w-full h-full"
+                      />
                     ) : (
-                      <>
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        Enroll Now
-                      </>
+                      <div className="flex items-center justify-center h-full bg-linear-to-br from-blue-500/10 to-purple-500/10">
+                        <GraduationCap className="h-16 w-16 text-muted-foreground/30" />
+                      </div>
                     )}
-                  </Button>
-                </div>
 
-                <Separator />
+                    {/* Badges on Image */}
+                    <div className="absolute top-2 left-2 right-2 flex items-start justify-between gap-2">
+                      {isHotDeal && (
+                        <Badge className="bg-linear-to-r from-amber-500 to-orange-500 text-white border-0 shadow-lg text-xs">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          Hot Deal
+                        </Badge>
+                      )}
+                      {batch.discountPercentage > 0 && (
+                        <Badge className="bg-red-500 text-white border-0 shadow-lg text-xs ml-auto">
+                          {batch.discountPercentage}% OFF
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
 
-                {/* Quick Info */}
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                    <span>Full access to all content</span>
+                  {/* Pricing */}
+                  <div className="space-y-3">
+                    {batch.discountPercentage > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground line-through">
+                          ₹{batch.totalPrice.toLocaleString("en-IN")}
+                        </span>
+                        <Badge
+                          variant="secondary"
+                          className="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"
+                        >
+                          Save ₹{savings.toLocaleString("en-IN")}
+                        </Badge>
+                      </div>
+                    )}
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl sm:text-4xl font-bold text-primary">
+                        ₹{finalPrice.toLocaleString("en-IN")}
+                      </span>
+                      <span className="text-sm text-muted-foreground">total</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                    <span>Lifetime access</span>
+
+                  <Separator />
+
+                  {/* Action Buttons */}
+                  <div className="space-y-3">
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      onClick={handleEnrollClick}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Processing...
+                        </>
+                      ) : isFree ? (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Enroll for Free
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-4 w-4 mr-2" />
+                          Enroll Now
+                        </>
+                      )}
+                    </Button>
                   </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                    <span>Certificate of completion</span>
+
+                  <Separator />
+
+                  {/* Quick Info */}
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      <span>Full access to all content</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      <span>Lifetime access</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                      <span>Certificate of completion</span>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
 
           {/* Batch Info Card */}
           <motion.div
