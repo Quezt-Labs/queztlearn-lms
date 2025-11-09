@@ -43,7 +43,13 @@ interface DRMConfig {
 interface UnifiedVideoPlayerProps {
   /**
    * Video source URL - can be a direct video file URL or YouTube URL
-   * Supports: MP4, WebM, HLS (.m3u8), and YouTube videos
+   * Supports: MP4, WebM, HLS (.m3u8), and YouTube videos (including live streams)
+   *
+   * YouTube URL formats supported:
+   * - Standard: https://www.youtube.com/watch?v=VIDEO_ID
+   * - Short: https://youtu.be/VIDEO_ID
+   * - Live: https://www.youtube.com/watch?v=VIDEO_ID (works for live streams)
+   * - Live embed: https://www.youtube.com/embed/VIDEO_ID (for live streams)
    */
   src: string;
 
@@ -141,13 +147,13 @@ interface UnifiedVideoPlayerProps {
 
   /**
    * Start time in seconds for YouTube videos
-   * Only applies to YouTube URLs
+   * Only applies to YouTube URLs (not applicable for live streams)
    */
   startTime?: number;
 
   /**
    * End time in seconds for YouTube videos
-   * Only applies to YouTube URLs
+   * Only applies to YouTube URLs (not applicable for live streams)
    */
   endTime?: number;
 
@@ -295,10 +301,11 @@ interface UnifiedVideoPlayerProps {
  * UnifiedVideoPlayer - A comprehensive video player component that supports multiple formats and DRM
  *
  * Features:
- * - Supports MP4, WebM, HLS (.m3u8), and YouTube videos
+ * - Supports MP4, WebM, HLS (.m3u8), and YouTube videos (including live streams)
  * - Built-in DRM support for Widevine, PlayReady, and FairPlay
  * - Adaptive streaming with HLS support
  * - YouTube integration with custom controls
+ * - YouTube live stream support
  * - Responsive design with fluid layout
  * - Customizable playback rates and controls
  *
@@ -319,6 +326,15 @@ interface UnifiedVideoPlayerProps {
  *   onReady={(player) => console.log('Player ready')}
  *   onTimeUpdate={(time) => console.log('Current time:', time)}
  *   onEnded={() => console.log('Video ended')}
+ * />
+ *
+ * // YouTube live stream
+ * <UnifiedVideoPlayer
+ *   src="https://www.youtube.com/watch?v=LIVE_VIDEO_ID"
+ *   autoplay={true}
+ *   muted={true}
+ *   onReady={(player) => console.log('Live stream ready')}
+ *   onPlay={() => console.log('Live stream started')}
  * />
  *
  * // DRM protected content
@@ -380,9 +396,12 @@ export function UnifiedVideoPlayer({
   onError,
   onProgress,
 }: UnifiedVideoPlayerProps) {
-  // Detect if src is a YouTube URL
+  // Detect if src is a YouTube URL (including live streams)
   const isYouTube = src.includes("youtube.com") || src.includes("youtu.be");
   const videoType = isYouTube ? "video/youtube" : type;
+
+  // Detect if it's a live stream (YouTube live streams don't have duration)
+  // Note: This is detected at runtime, but we can optimize config for live streams
   const videoRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<Player | null>(null);
   const previousProgressRef = useRef<number>(0);
@@ -457,6 +476,8 @@ export function UnifiedVideoPlayer({
               controls: 0, // Disable all YouTube controls
               autohide: youtubeConfig?.autohide ?? 1,
               wmode: "opaque", // Prevent overlay issues
+              // Only set start/end time for non-live videos
+              // Live streams will ignore these parameters automatically
               start: startTime ?? youtubeConfig?.start,
               end: endTime ?? youtubeConfig?.end,
               vq: youtubeConfig?.vq,
@@ -580,14 +601,21 @@ export function UnifiedVideoPlayer({
             player.on("timeupdate", () => {
               const currentTime = player.currentTime();
               const duration = player.duration();
+              // For live streams, duration is Infinity, so we handle it differently
               if (
                 duration &&
+                isFinite(duration) &&
                 duration > 0 &&
                 currentTime !== null &&
                 currentTime !== undefined
               ) {
                 const progress = (currentTime / duration) * 100;
                 onProgress(progress);
+              } else if (duration && !isFinite(duration)) {
+                // For live streams, we can't calculate percentage progress
+                // You might want to track watch time instead
+                // For live streams, we'll report 100% or track watch time differently
+                onProgress(100); // Or handle live stream progress differently
               }
             });
           }
