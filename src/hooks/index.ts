@@ -86,3 +86,6 @@ export * from "./tests-client";
 
 // Schedule hooks
 export * from "./schedules";
+
+// Client Schedule hooks
+export * from "./schedules-client";

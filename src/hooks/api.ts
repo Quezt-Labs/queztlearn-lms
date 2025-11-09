@@ -1019,12 +1019,13 @@ export const useGetExploreBatch = (id: string) => {
 };
 
 // Get all schedules for a purchased batch (STUDENT)
+// @deprecated Use useGetClientSchedulesByBatch from schedules-client.ts instead
 export const useGetBatchSchedules = (batchId: string) => {
   return useQuery({
     queryKey: ["batch", "schedules", batchId],
     queryFn: () =>
       apiClient
-        .get(`/api/batches/${batchId}/schedules`)
+        .get(`/api/schedules/batch/${batchId}`)
         .then((res) => res.data),
     enabled: !!batchId && tokenManager.isAuthenticated(),
   });
