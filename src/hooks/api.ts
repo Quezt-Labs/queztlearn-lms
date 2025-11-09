@@ -761,6 +761,7 @@ export const useGetChaptersBySubject = (subjectId: string) => {
       apiClient
         .get(`/admin/chapters/subject/${subjectId}`)
         .then((res) => res.data),
+    enabled: !!subjectId && subjectId.trim() !== "",
   });
 };
 
@@ -831,6 +832,7 @@ export const useGetTopicsByChapter = (chapterId: string) => {
       apiClient
         .get(`/admin/topics/chapter/${chapterId}`)
         .then((res) => res.data),
+    enabled: !!chapterId && chapterId.trim() !== "",
   });
 };
 

@@ -31,7 +31,12 @@ import {
 import { TimePicker } from "@/components/ui/time-picker";
 import { cn } from "@/lib/utils";
 import { FileUpload } from "@/components/common/file-upload";
-import { useGetSubjectsByBatch, useCreateSchedule } from "@/hooks";
+import {
+  useGetSubjectsByBatch,
+  useCreateSchedule,
+  useGetChaptersBySubject,
+  useGetTopicsByChapter,
+} from "@/hooks";
 import { type CreateScheduleData } from "@/lib/types/schedule";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -48,6 +53,16 @@ interface Subject {
   name: string;
 }
 
+interface Chapter {
+  id: string;
+  name: string;
+}
+
+interface Topic {
+  id: string;
+  name: string;
+}
+
 export function CreateScheduleModal({
   isOpen,
   onClose,
@@ -56,6 +71,7 @@ export function CreateScheduleModal({
 }: CreateScheduleModalProps) {
   const [formData, setFormData] = useState({
     topicId: "",
+    chapterId: "",
     subjectId: "",
     title: "",
     description: "",
@@ -73,11 +89,23 @@ export function CreateScheduleModal({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const { data: subjectsData } = useGetSubjectsByBatch(batchId);
+  const { data: chaptersData } = useGetChaptersBySubject(formData.subjectId);
+  const { data: topicsData } = useGetTopicsByChapter(formData.chapterId);
   const createSchedule = useCreateSchedule();
 
   const subjects = useMemo(
     () => (subjectsData?.data as Subject[]) || [],
     [subjectsData?.data]
+  );
+
+  const chapters = useMemo(
+    () => (chaptersData?.data as Chapter[]) || [],
+    [chaptersData?.data]
+  );
+
+  const topics = useMemo(
+    () => (topicsData?.data as Topic[]) || [],
+    [topicsData?.data]
   );
 
   useEffect(() => {
@@ -89,6 +117,20 @@ export function CreateScheduleModal({
       }
     }
   }, [formData.subjectId, subjects]);
+
+  useEffect(() => {
+    // Reset chapterId and topicId when subjectId changes
+    if (formData.subjectId) {
+      setFormData((prev) => ({ ...prev, chapterId: "", topicId: "" }));
+    }
+  }, [formData.subjectId]);
+
+  useEffect(() => {
+    // Reset topicId when chapterId changes
+    if (formData.chapterId) {
+      setFormData((prev) => ({ ...prev, topicId: "" }));
+    }
+  }, [formData.chapterId]);
 
   const handleInputChange = (field: string, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -170,20 +212,33 @@ export function CreateScheduleModal({
       const [hours, minutes] = formData.scheduledTime.split(":");
       scheduledDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
+      // Build schedule data object, only including fields with values
       const scheduleData: CreateScheduleData = {
-        topicId: formData.topicId || undefined,
         batchId: batchId,
         subjectId: formData.subjectId,
         title: formData.title,
-        description: formData.description || undefined,
         subjectName: formData.subjectName,
         youtubeLink: formData.youtubeLink,
         scheduledAt: scheduledDate.toISOString(),
         duration: formData.duration,
-        teacherId: formData.teacherId || undefined,
-        thumbnailUrl: formData.thumbnailUrl || undefined,
-        notifyBeforeMinutes: formData.notifyBeforeMinutes || undefined,
       };
+
+      // Add optional fields only if they have values
+      if (formData.topicId && formData.topicId.trim()) {
+        scheduleData.topicId = formData.topicId.trim();
+      }
+      if (formData.description && formData.description.trim()) {
+        scheduleData.description = formData.description.trim();
+      }
+      if (formData.teacherId && formData.teacherId.trim()) {
+        scheduleData.teacherId = formData.teacherId.trim();
+      }
+      if (formData.thumbnailUrl && formData.thumbnailUrl.trim()) {
+        scheduleData.thumbnailUrl = formData.thumbnailUrl.trim();
+      }
+      if (formData.notifyBeforeMinutes) {
+        scheduleData.notifyBeforeMinutes = formData.notifyBeforeMinutes;
+      }
 
       await createSchedule.mutateAsync(scheduleData);
       toast.success("Schedule created successfully");
@@ -211,6 +266,7 @@ export function CreateScheduleModal({
   const handleClose = () => {
     setFormData({
       topicId: "",
+      chapterId: "",
       subjectId: "",
       title: "",
       description: "",
@@ -280,6 +336,74 @@ export function CreateScheduleModal({
               </Select>
               {errors.subjectId && (
                 <p className="text-sm text-red-500 mt-1">{errors.subjectId}</p>
+              )}
+            </div>
+
+            {/* Chapter */}
+            <div className="space-y-2">
+              <Label htmlFor="chapter">Chapter</Label>
+              <Select
+                value={formData.chapterId}
+                onValueChange={(value) => handleInputChange("chapterId", value)}
+                disabled={!formData.subjectId}
+              >
+                <SelectTrigger
+                  className={errors.chapterId ? "border-red-500" : ""}
+                >
+                  <SelectValue
+                    placeholder={
+                      !formData.subjectId
+                        ? "Select subject first"
+                        : chapters.length === 0
+                        ? "No chapters available"
+                        : "Select chapter (optional)"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {chapters.map((chapter) => (
+                    <SelectItem key={chapter.id} value={chapter.id}>
+                      {chapter.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.chapterId && (
+                <p className="text-sm text-red-500 mt-1">{errors.chapterId}</p>
+              )}
+            </div>
+
+            {/* Topic */}
+            <div className="space-y-2">
+              <Label htmlFor="topic">Topic</Label>
+              <Select
+                value={formData.topicId}
+                onValueChange={(value) => handleInputChange("topicId", value)}
+                disabled={!formData.chapterId}
+              >
+                <SelectTrigger
+                  className={errors.topicId ? "border-red-500" : ""}
+                >
+                  <SelectValue
+                    placeholder={
+                      !formData.chapterId
+                        ? "Select chapter first"
+                        : topics.length === 0
+                        ? "No topics available"
+                        : "Select topic (optional)"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {topics.map((topic) => (
+                    <SelectItem key={topic.id} value={topic.id}>
+                      {topic.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.topicId && (
+                <p className="text-sm text-red-500 mt-1">{errors.topicId}</p>
               )}
             </div>
 
