@@ -183,7 +183,6 @@ export function CourseModals({
             isOpen={isEditScheduleOpen}
             onClose={onEditScheduleClose}
             schedule={selectedSchedule}
-            batchId={courseId}
             onSuccess={onScheduleCreated}
           />
         </>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,8 +31,10 @@ import {
 import { TimePicker } from "@/components/ui/time-picker";
 import { cn } from "@/lib/utils";
 import { FileUpload } from "@/components/common/file-upload";
-import { useGetSubjectsByBatch } from "@/hooks";
+import { useGetSubjectsByBatch, useCreateSchedule } from "@/hooks";
+import { type CreateScheduleData } from "@/lib/types/schedule";
 import Image from "next/image";
+import { toast } from "sonner";
 
 interface CreateScheduleModalProps {
   isOpen: boolean;
@@ -68,12 +70,15 @@ export function CreateScheduleModal({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const { data: subjectsData } = useGetSubjectsByBatch(batchId);
+  const createSchedule = useCreateSchedule();
 
-  const subjects = (subjectsData?.data as Subject[]) || [];
+  const subjects = useMemo(
+    () => (subjectsData?.data as Subject[]) || [],
+    [subjectsData?.data]
+  );
 
   useEffect(() => {
     // Auto-fill subject name when subject is selected
@@ -159,16 +164,13 @@ export function CreateScheduleModal({
       return;
     }
 
-    setIsSubmitting(true);
-
     try {
       // Combine date and time
       const scheduledDate = new Date(formData.scheduledAt);
       const [hours, minutes] = formData.scheduledTime.split(":");
       scheduledDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-      const scheduleData = {
-        organizationId: "", // This should come from context/auth
+      const scheduleData: CreateScheduleData = {
         topicId: formData.topicId || undefined,
         batchId: batchId,
         subjectId: formData.subjectId,
@@ -183,15 +185,26 @@ export function CreateScheduleModal({
         notifyBeforeMinutes: formData.notifyBeforeMinutes || undefined,
       };
 
-      // TODO: Call API to create schedule
-      console.log("Creating schedule:", scheduleData);
-
+      await createSchedule.mutateAsync(scheduleData);
+      toast.success("Schedule created successfully");
       onSuccess();
       handleClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to create schedule:", error);
-    } finally {
-      setIsSubmitting(false);
+      const errorMessage =
+        error &&
+        typeof error === "object" &&
+        "response" in error &&
+        error.response &&
+        typeof error.response === "object" &&
+        "data" in error.response &&
+        error.response.data &&
+        typeof error.response.data === "object" &&
+        "message" in error.response.data &&
+        typeof error.response.data.message === "string"
+          ? error.response.data.message
+          : "Failed to create schedule";
+      toast.error(errorMessage);
     }
   };
 
@@ -211,13 +224,12 @@ export function CreateScheduleModal({
       notifyBeforeMinutes: 30,
     });
     setErrors({});
-    setIsSubmitting(false);
     onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[calc(100%-2rem)] sm:w-full">
         <DialogHeader>
           <DialogTitle>Create Schedule</DialogTitle>
           <DialogDescription>
@@ -225,8 +237,8 @@ export function CreateScheduleModal({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {/* Title */}
             <div className="md:col-span-2 space-y-2">
               <Label htmlFor="title">
@@ -439,12 +451,15 @@ export function CreateScheduleModal({
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={isSubmitting}
+              disabled={createSchedule.isPending}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || isUploadingImage}>
-              {isSubmitting ? "Creating..." : "Create Schedule"}
+            <Button
+              type="submit"
+              disabled={createSchedule.isPending || isUploadingImage}
+            >
+              {createSchedule.isPending ? "Creating..." : "Create Schedule"}
             </Button>
           </DialogFooter>
         </form>

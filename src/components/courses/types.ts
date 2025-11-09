@@ -52,15 +52,20 @@ export interface Subject {
 
 export interface Schedule {
   id: string;
-  title: string;
+  topicId?: string;
+  batchId: string;
   subjectId: string;
+  title: string;
+  description?: string;
   subjectName: string;
+  youtubeLink: string;
   scheduledAt: string;
   duration: number;
-  youtubeLink: string;
-  description?: string;
+  teacherId?: string;
   thumbnailUrl?: string;
   notifyBeforeMinutes?: number;
+  tags?: string[];
+  status?: "SCHEDULED" | "LIVE" | "COMPLETED" | "CANCELLED";
   createdAt?: string;
   updatedAt?: string;
 }

@@ -233,8 +233,8 @@ export function CourseDetailPage({
         {showSchedulesTab && (
           <TabsContent value="schedules" className="space-y-6">
             <CourseSchedulesTab
+              batchId={courseId}
               canManageCourse={canManageCourse}
-              onCreateSchedule={handleCreateSchedule}
             />
           </TabsContent>
         )}

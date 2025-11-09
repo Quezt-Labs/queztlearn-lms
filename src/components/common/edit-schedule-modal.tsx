@@ -13,13 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Calendar as CalendarIcon, Youtube } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -31,47 +24,25 @@ import {
 import { TimePicker } from "@/components/ui/time-picker";
 import { cn } from "@/lib/utils";
 import { FileUpload } from "@/components/common/file-upload";
-import { useGetSubjectsByBatch } from "@/hooks";
+import { useUpdateSchedule } from "@/hooks";
+import { type Schedule, type UpdateScheduleData } from "@/lib/types/schedule";
 import Image from "next/image";
+import { toast } from "sonner";
 
-interface Schedule {
-  id: string;
-  topicId?: string;
-  subjectId: string;
-  title: string;
-  description?: string;
-  subjectName: string;
-  youtubeLink: string;
-  scheduledAt: Date | string;
-  duration: number;
-  teacherId?: string;
-  thumbnailUrl?: string;
-  notifyBeforeMinutes?: number;
-}
-
-interface EditScheduleModalProps {
+export interface EditScheduleModalProps {
   isOpen: boolean;
   onClose: () => void;
   schedule: Schedule | null;
-  batchId: string;
   onSuccess: () => void;
-}
-
-interface Subject {
-  id: string;
-  name: string;
 }
 
 export function EditScheduleModal({
   isOpen,
   onClose,
   schedule,
-  batchId,
   onSuccess,
 }: EditScheduleModalProps) {
   const [formData, setFormData] = useState({
-    topicId: "",
-    subjectId: "",
     title: "",
     description: "",
     subjectName: "",
@@ -85,27 +56,21 @@ export function EditScheduleModal({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
 
-  const { data: subjectsData } = useGetSubjectsByBatch(batchId);
+  const updateSchedule = useUpdateSchedule();
 
-  const subjects = (subjectsData?.data as Subject[]) || [];
-
+  // Initialize form data when schedule changes
   useEffect(() => {
     if (schedule) {
       const scheduledDate = new Date(schedule.scheduledAt);
-      const timeString = format(scheduledDate, "HH:mm");
-
       setFormData({
-        topicId: schedule.topicId || "",
-        subjectId: schedule.subjectId,
         title: schedule.title,
         description: schedule.description || "",
         subjectName: schedule.subjectName,
-        youtubeLink: schedule.youtubeLink || "",
+        youtubeLink: schedule.youtubeLink,
         scheduledAt: scheduledDate.toISOString(),
-        scheduledTime: timeString,
+        scheduledTime: format(scheduledDate, "HH:mm"),
         duration: schedule.duration,
         teacherId: schedule.teacherId || "",
         thumbnailUrl: schedule.thumbnailUrl || "",
@@ -113,16 +78,6 @@ export function EditScheduleModal({
       });
     }
   }, [schedule]);
-
-  useEffect(() => {
-    // Auto-fill subject name when subject is selected
-    if (formData.subjectId) {
-      const selectedSubject = subjects.find((s) => s.id === formData.subjectId);
-      if (selectedSubject) {
-        setFormData((prev) => ({ ...prev, subjectName: selectedSubject.name }));
-      }
-    }
-  }, [formData.subjectId, subjects]);
 
   const handleInputChange = (field: string, value: string | number) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -164,9 +119,6 @@ export function EditScheduleModal({
     if (!formData.title.trim()) {
       newErrors.title = "Title is required";
     }
-    if (!formData.subjectId) {
-      newErrors.subjectId = "Subject is required";
-    }
     if (!formData.scheduledAt) {
       newErrors.scheduledAt = "Schedule date is required";
     }
@@ -179,18 +131,11 @@ export function EditScheduleModal({
     if (!formData.youtubeLink.trim()) {
       newErrors.youtubeLink = "YouTube link is required";
     } else {
-      // YouTube embed link regex: https://www.youtube.com/embed/VIDEO_ID or https://youtu.be/VIDEO_ID
       const youtubeEmbedRegex =
         /^(https?:\/\/)?(www\.)?(youtube\.com\/embed\/|youtu\.be\/)[\w-]{11}(\?.*)?$/;
-      const youtubeWatchRegex =
-        /^(https?:\/\/)?(www\.)?youtube\.com\/watch\?v=[\w-]{11}(&.*)?$/;
 
-      if (
-        !youtubeEmbedRegex.test(formData.youtubeLink) &&
-        !youtubeWatchRegex.test(formData.youtubeLink)
-      ) {
-        newErrors.youtubeLink =
-          "Please enter a valid YouTube link (embed or watch URL)";
+      if (!youtubeEmbedRegex.test(formData.youtubeLink)) {
+        newErrors.youtubeLink = "Please enter a valid YouTube link (embed URL)";
       }
     }
 
@@ -201,11 +146,9 @@ export function EditScheduleModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm() || !schedule) {
+    if (!schedule || !validateForm()) {
       return;
     }
-
-    setIsSubmitting(true);
 
     try {
       // Combine date and time
@@ -213,10 +156,7 @@ export function EditScheduleModal({
       const [hours, minutes] = formData.scheduledTime.split(":");
       scheduledDate.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
-      const scheduleData = {
-        id: schedule.id,
-        topicId: formData.topicId || undefined,
-        subjectId: formData.subjectId,
+      const updateData: UpdateScheduleData = {
         title: formData.title,
         description: formData.description || undefined,
         subjectName: formData.subjectName,
@@ -228,22 +168,34 @@ export function EditScheduleModal({
         notifyBeforeMinutes: formData.notifyBeforeMinutes || undefined,
       };
 
-      // TODO: Call API to update schedule
-      console.log("Updating schedule:", scheduleData);
-
+      await updateSchedule.mutateAsync({
+        id: schedule.id,
+        data: updateData,
+      });
+      toast.success("Schedule updated successfully");
       onSuccess();
       handleClose();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to update schedule:", error);
-    } finally {
-      setIsSubmitting(false);
+      const errorMessage =
+        error &&
+        typeof error === "object" &&
+        "response" in error &&
+        error.response &&
+        typeof error.response === "object" &&
+        "data" in error.response &&
+        error.response.data &&
+        typeof error.response.data === "object" &&
+        "message" in error.response.data &&
+        typeof error.response.data.message === "string"
+          ? error.response.data.message
+          : "Failed to update schedule";
+      toast.error(errorMessage);
     }
   };
 
   const handleClose = () => {
     setFormData({
-      topicId: "",
-      subjectId: "",
       title: "",
       description: "",
       subjectName: "",
@@ -256,26 +208,23 @@ export function EditScheduleModal({
       notifyBeforeMinutes: 30,
     });
     setErrors({});
-    setIsSubmitting(false);
     onClose();
   };
 
-  if (!schedule) {
-    return null;
-  }
+  if (!schedule) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto w-[calc(100%-2rem)] sm:w-full">
         <DialogHeader>
           <DialogTitle>Edit Schedule</DialogTitle>
           <DialogDescription>
-            Update the schedule details for this class or session
+            Update the schedule details for this class
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {/* Title */}
             <div className="md:col-span-2 space-y-2">
               <Label htmlFor="title">
@@ -290,33 +239,6 @@ export function EditScheduleModal({
               />
               {errors.title && (
                 <p className="text-sm text-red-500 mt-1">{errors.title}</p>
-              )}
-            </div>
-
-            {/* Subject */}
-            <div className="space-y-2">
-              <Label htmlFor="subject">
-                Subject <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={formData.subjectId}
-                onValueChange={(value) => handleInputChange("subjectId", value)}
-              >
-                <SelectTrigger
-                  className={errors.subjectId ? "border-red-500" : ""}
-                >
-                  <SelectValue placeholder="Select subject" />
-                </SelectTrigger>
-                <SelectContent>
-                  {subjects.map((subject) => (
-                    <SelectItem key={subject.id} value={subject.id}>
-                      {subject.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.subjectId && (
-                <p className="text-sm text-red-500 mt-1">{errors.subjectId}</p>
               )}
             </div>
 
@@ -433,7 +355,7 @@ export function EditScheduleModal({
                   onChange={(e) =>
                     handleInputChange("youtubeLink", e.target.value)
                   }
-                  placeholder="https://www.youtube.com/embed/... or https://www.youtube.com/watch?v=..."
+                  placeholder="https://www.youtube.com/embed/..."
                   className={cn(
                     "pl-10",
                     errors.youtubeLink && "border-red-500"
@@ -464,79 +386,22 @@ export function EditScheduleModal({
             {/* Thumbnail Upload */}
             <div className="md:col-span-2 space-y-2">
               <Label>Thumbnail Image (Optional)</Label>
-
-              {/* Duration */}
-              <div>
-                <Label htmlFor="duration">
-                  Duration (minutes) <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="duration"
-                  type="number"
-                  min="1"
-                  value={formData.duration}
-                  onChange={(e) =>
-                    handleInputChange("duration", parseInt(e.target.value))
-                  }
-                  placeholder="60"
-                  className={errors.duration ? "border-red-500" : ""}
-                />
-                {errors.duration && (
-                  <p className="text-sm text-red-500 mt-1">{errors.duration}</p>
-                )}
-              </div>
-
-              {/* Notify Before */}
-              <div>
-                <Label htmlFor="notify">Notify Before (minutes)</Label>
-                <Input
-                  id="notify"
-                  type="number"
-                  min="0"
-                  value={formData.notifyBeforeMinutes}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "notifyBeforeMinutes",
-                      parseInt(e.target.value)
-                    )
-                  }
-                  placeholder="30"
-                />
-              </div>
-
-              {/* Description */}
-              <div className="md:col-span-2">
-                <Label htmlFor="description">Description (Optional)</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    handleInputChange("description", e.target.value)
-                  }
-                  placeholder="Add any additional details about this session..."
-                  rows={4}
-                />
-              </div>
-
-              {/* Thumbnail Upload */}
-              <div className="md:col-span-2 space-y-2">
-                <Label>Thumbnail Image (Optional)</Label>
-                <FileUpload
-                  onUploadComplete={(fileData) =>
-                    handleInputChange("thumbnailUrl", fileData.url)
-                  }
-                  accept="image/*"
-                  maxSize={5}
-                />
-                {formData.thumbnailUrl && (
-                  <p className="text-sm text-muted-foreground">
-                    Current thumbnail: {formData.thumbnailUrl}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Recommended: 16:9 aspect ratio, max 5MB
-                </p>
-              </div>
+              <FileUpload
+                accept="image/*"
+                onUploadComplete={handleImageUpload}
+                maxSize={5 * 1024 * 1024}
+                className="mt-2"
+              />
+              {formData.thumbnailUrl && (
+                <div className="mt-4 relative w-full aspect-video rounded-lg overflow-hidden border">
+                  <Image
+                    src={formData.thumbnailUrl}
+                    alt="Schedule thumbnail"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -545,12 +410,15 @@ export function EditScheduleModal({
               type="button"
               variant="outline"
               onClick={handleClose}
-              disabled={isSubmitting}
+              disabled={updateSchedule.isPending}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || isUploadingImage}>
-              {isSubmitting ? "Updating..." : "Update Schedule"}
+            <Button
+              type="submit"
+              disabled={updateSchedule.isPending || isUploadingImage}
+            >
+              {updateSchedule.isPending ? "Updating..." : "Update Schedule"}
             </Button>
           </DialogFooter>
         </form>
