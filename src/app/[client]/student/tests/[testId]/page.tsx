@@ -25,17 +25,53 @@ export default function TestPreviewPage() {
   const testId = params.testId;
 
   // Try preview first (for enrolled users), fallback to published details
-  const { data: previewData, isLoading: isLoadingPreview } =
-    useClientTestPreview(testId);
+  // Hooks must be called unconditionally - use enabled option to conditionally fetch
+  const {
+    data: previewData,
+    isLoading: isLoadingPreview,
+    error: previewError,
+  } = useClientTestPreview(testId);
 
-  const { data: publishedData, isLoading: isLoadingPublished } =
-    useClientPublishedTestDetails(testId);
+  const {
+    data: publishedData,
+    isLoading: isLoadingPublished,
+    error: publishedError,
+  } = useClientPublishedTestDetails(testId);
 
   const { data: attemptsData } = useMyAttemptsByTest(testId);
 
   const isLoading = isLoadingPreview || isLoadingPublished;
   const testData = previewData?.data || publishedData?.data;
   const attempts = attemptsData?.data || [];
+  const hasError = previewError || publishedError;
+
+  // Validate testId after hooks are called
+  if (!testId) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Test Details"
+          description="View test information and instructions"
+          breadcrumbs={[
+            { label: "Student", href: "/student/my-learning" },
+            { label: "Tests", href: "/student/tests" },
+            { label: "Test Details" },
+          ]}
+        />
+        <Card>
+          <CardContent className="py-12 text-center">
+            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground mb-4">
+              Invalid test ID. Please select a test to view.
+            </p>
+            <Button asChild>
+              <Link href="/student/tests">Go to Tests</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -60,7 +96,7 @@ export default function TestPreviewPage() {
     );
   }
 
-  if (!testData) {
+  if (hasError || !testData) {
     return (
       <div className="space-y-6">
         <PageHeader
@@ -76,7 +112,9 @@ export default function TestPreviewPage() {
           <CardContent className="py-12 text-center">
             <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <p className="text-muted-foreground mb-4">
-              Test not found or not available.
+              {hasError
+                ? "Failed to load test details. Please try again."
+                : "Test not found or not available."}
             </p>
             <Button asChild>
               <Link href="/student/tests">Go to Tests</Link>

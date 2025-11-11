@@ -14,11 +14,40 @@ export default function TestSolutionsPage() {
   const attemptId = searchParams.get("attemptId") || undefined;
   const testId = params.testId;
 
+  // Hooks must be called unconditionally - use enabled option to conditionally fetch
   const {
     data: solutionsData,
     isLoading,
     error,
   } = useAttemptSolutions(attemptId);
+
+  // Validate testId after hooks are called
+  if (!testId) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Test Solutions"
+          description="View solutions and explanations for all questions"
+          breadcrumbs={[
+            { label: "Student", href: "/student/my-learning" },
+            { label: "Tests", href: "/student/tests" },
+            { label: "Solutions" },
+          ]}
+        />
+        <Card>
+          <CardContent className="py-12 text-center">
+            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground mb-4">
+              Invalid test ID. Please select a test to view solutions.
+            </p>
+            <Button asChild>
+              <Link href="/student/tests">Go to Tests</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (!attemptId) {
     return (

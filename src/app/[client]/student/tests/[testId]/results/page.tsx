@@ -21,11 +21,40 @@ export default function TestResultsPage() {
   const attemptId = searchParams.get("attemptId") || undefined;
   const testId = params.testId;
 
+  // Hooks must be called unconditionally - use enabled option to conditionally fetch
   const {
     data: resultsData,
     isLoading: isLoadingResults,
     error: resultsError,
   } = useAttemptResults(attemptId);
+
+  // Validate testId after hooks are called
+  if (!testId) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Test Results"
+          description="View your test results and performance"
+          breadcrumbs={[
+            { label: "Student", href: "/student/my-learning" },
+            { label: "Tests", href: "/student/tests" },
+            { label: "Results" },
+          ]}
+        />
+        <Card>
+          <CardContent className="py-12 text-center">
+            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground mb-4">
+              Invalid test ID. Please select a test to view results.
+            </p>
+            <Button asChild>
+              <Link href="/student/tests">Go to Tests</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const results = resultsData?.data;
   const hasResults = Boolean(results);

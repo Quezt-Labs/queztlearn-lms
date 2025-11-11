@@ -16,11 +16,39 @@ export default function TestLeaderboardPage() {
   const [page, setPage] = useState(1);
   const limit = 20;
 
+  // Hooks must be called unconditionally - use enabled option to conditionally fetch
   const {
     data: leaderboardData,
     isLoading,
     error,
   } = useLeaderboard(testId, page, limit);
+
+  // Validate testId after hooks are called
+  if (!testId) {
+    return (
+      <div className="space-y-6">
+        <PageHeader
+          title="Test Leaderboard"
+          description="View rankings and your performance"
+          breadcrumbs={[
+            { label: "Student", href: "/student/my-learning" },
+            { label: "Tests", href: "/student/tests" },
+            { label: "Leaderboard" },
+          ]}
+        />
+        <Card>
+          <CardContent className="py-12 text-center">
+            <p className="text-muted-foreground mb-4">
+              Invalid test ID. Please select a test to view leaderboard.
+            </p>
+            <Button asChild>
+              <Link href="/student/tests">Go to Tests</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const leaderboard = leaderboardData?.data?.leaderboard || [];
   const userRank = leaderboardData?.data?.userRank;

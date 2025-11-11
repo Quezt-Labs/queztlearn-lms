@@ -1,14 +1,7 @@
 "use client";
 
 import { useSearchParams, useParams, useRouter } from "next/navigation";
-import { PageHeader } from "@/components/common/page-header";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -47,6 +40,27 @@ export default function TestInstructionsPage() {
 
   const mock = searchParams.get("mock") === "1";
   const testId = params.testId;
+
+  // Validate testId
+  if (!testId) {
+    return (
+      <div className="min-h-screen bg-background pb-6">
+        <div className="container max-w-5xl mx-auto px-4 py-6">
+          <Card>
+            <CardContent className="py-12 text-center">
+              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground mb-4">
+                Invalid test ID. Please select a test to view instructions.
+              </p>
+              <Button asChild>
+                <Link href="/student/tests">Go to Tests</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   const handleStartTest = async () => {
     setErrorMessage(null);
