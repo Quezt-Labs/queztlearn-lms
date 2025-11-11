@@ -62,7 +62,7 @@ export function TestSeriesDataTable({
     try {
       await updateMutation.mutateAsync({
         id: series.id,
-        data: { isActive: !series.isActive },
+        data: { isPublished: !series.isPublished },
       });
       onRefetch?.();
     } catch (error) {
