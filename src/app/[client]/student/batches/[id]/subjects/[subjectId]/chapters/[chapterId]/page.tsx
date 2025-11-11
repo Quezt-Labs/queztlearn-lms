@@ -4,7 +4,6 @@ import { useParams, useRouter } from "next/navigation";
 import { FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useGetClientChapter, useGetClientTopicsByChapter } from "@/hooks";
 import { PageHeaderWithBack } from "@/components/common/page-header-with-back";
 import { SectionHeader } from "@/components/common/section-header";
