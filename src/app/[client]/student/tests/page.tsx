@@ -62,7 +62,7 @@ export default function StudentTestsListPage() {
     }> = [];
 
     testQueries.forEach((query) => {
-      if (query.data) {
+      if (query.data && Array.isArray(query.data.tests)) {
         query.data.tests.forEach((test) => {
           tests.push({
             id: test.id,

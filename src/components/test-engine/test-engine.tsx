@@ -200,9 +200,11 @@ export function TestEngine({
 
   const flatQuestions = useMemo(
     () =>
-      (data?.sections.flatMap(
-        (s: { questions: EngineQuestion[] }) => s.questions
-      ) || []) as EngineQuestion[],
+      (data?.sections && Array.isArray(data.sections)
+        ? data.sections.flatMap(
+            (s: { questions: EngineQuestion[] }) => s.questions || []
+          )
+        : []) as EngineQuestion[],
     [data?.sections]
   );
   const [currentIndex, setCurrentIndex] = useState(0);
