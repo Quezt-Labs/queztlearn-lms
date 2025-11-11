@@ -20,7 +20,6 @@ import {
   useSaveAnswer,
   useSubmitAttempt,
   useAttemptResults,
-  AttemptDetails,
 } from "@/hooks/test-attempts-client";
 import { LoadingSkeleton } from "@/components/common/loading-skeleton";
 import { ErrorMessage } from "@/components/common/error-message";
@@ -74,42 +73,136 @@ export function TestEngine({
     if (enableMock) return generateMockTest();
     if (!attemptData?.data) return null;
 
-    const attempt = attemptData.data as AttemptDetails;
-    // Transform backend data to match expected format
-    return {
-      durationMinutes: attempt.durationMinutes || 60,
-      sections: attempt.questions.reduce((acc, q) => {
-        const sectionId = q.sectionId || "default";
-        let section = acc.find((s) => s.id === sectionId);
-        if (!section) {
-          section = { id: sectionId, name: "Questions", questions: [] };
-          acc.push(section);
-        }
-        section.questions.push({
-          id: q.id,
-          text: q.text,
-          imageUrl: q.imageUrl,
-          type: q.type as EngineQuestion["type"],
-          options: (q.options || []).map((opt) => ({
-            id: opt.id,
-            text: opt.text,
-            imageUrl:
-              "imageUrl" in opt && typeof opt.imageUrl === "string"
-                ? opt.imageUrl
-                : undefined,
-            isCorrect: opt.isCorrect,
-          })),
-          marks: q.marks || 1,
-          negativeMarks: q.negativeMarks || 0,
-        });
-        return acc;
-      }, [] as Array<{ id: string; name: string; questions: EngineQuestion[] }>),
+    // Define types for API response structure
+    type ApiQuestion = {
+      id: string;
+      text: string;
+      imageUrl?: string | null;
+      type: string;
+      options?: Array<{
+        id: string;
+        text: string;
+        imageUrl?: string | null;
+        isCorrect?: boolean;
+      }>;
+      marks?: number;
+      negativeMarks?: number;
+      sectionId?: string;
     };
+
+    type ApiSection = {
+      id: string;
+      name: string;
+      questions?: ApiQuestion[];
+    };
+
+    type ApiTest = {
+      durationMinutes?: number;
+      sections?: ApiSection[];
+    };
+
+    type ApiAttempt = {
+      durationMinutes?: number;
+      questions?: ApiQuestion[];
+      test?: ApiTest;
+    };
+
+    const attempt = attemptData.data as ApiAttempt;
+    const test = attempt.test;
+
+    // Check if we have test.sections structure (new API format)
+    if (test?.sections && Array.isArray(test.sections)) {
+      return {
+        durationMinutes: test.durationMinutes || attempt.durationMinutes || 60,
+        sections: test.sections.map((section: ApiSection) => ({
+          id: section.id,
+          name: section.name || "Questions",
+          questions: (section.questions || []).map((q: ApiQuestion) => ({
+            id: q.id,
+            text: q.text,
+            imageUrl: q.imageUrl || undefined,
+            type: q.type as EngineQuestion["type"],
+            options: (q.options || []).map(
+              (opt: {
+                id: string;
+                text: string;
+                imageUrl?: string | null;
+                isCorrect?: boolean;
+              }) => ({
+                id: opt.id,
+                text: opt.text,
+                imageUrl:
+                  opt.imageUrl && typeof opt.imageUrl === "string"
+                    ? opt.imageUrl
+                    : undefined,
+                isCorrect: opt.isCorrect,
+              })
+            ),
+            marks: q.marks || 1,
+            negativeMarks: q.negativeMarks || 0,
+          })),
+        })),
+      };
+    }
+
+    // Fallback to old format (attempt.questions) if sections structure doesn't exist
+    if (attempt.questions && Array.isArray(attempt.questions)) {
+      type SectionAccumulator = Array<{
+        id: string;
+        name: string;
+        questions: EngineQuestion[];
+      }>;
+
+      return {
+        durationMinutes: attempt.durationMinutes || 60,
+        sections: attempt.questions.reduce(
+          (acc: SectionAccumulator, q: ApiQuestion) => {
+            const sectionId = q.sectionId || "default";
+            let section = acc.find((s) => s.id === sectionId);
+            if (!section) {
+              section = { id: sectionId, name: "Questions", questions: [] };
+              acc.push(section);
+            }
+            section.questions.push({
+              id: q.id,
+              text: q.text,
+              imageUrl: q.imageUrl || undefined,
+              type: q.type as EngineQuestion["type"],
+              options: (q.options || []).map(
+                (opt: {
+                  id: string;
+                  text: string;
+                  imageUrl?: string | null;
+                  isCorrect?: boolean;
+                }) => ({
+                  id: opt.id,
+                  text: opt.text,
+                  imageUrl:
+                    opt.imageUrl && typeof opt.imageUrl === "string"
+                      ? opt.imageUrl
+                      : undefined,
+                  isCorrect: opt.isCorrect,
+                })
+              ),
+              marks: q.marks || 1,
+              negativeMarks: q.negativeMarks || 0,
+            });
+            return acc;
+          },
+          [] as SectionAccumulator
+        ),
+      };
+    }
+
+    // If neither structure exists, return null
+    return null;
   }, [enableMock, attemptData]);
 
   const flatQuestions = useMemo(
     () =>
-      (data?.sections.flatMap((s) => s.questions) || []) as EngineQuestion[],
+      (data?.sections.flatMap(
+        (s: { questions: EngineQuestion[] }) => s.questions
+      ) || []) as EngineQuestion[],
     [data?.sections]
   );
   const [currentIndex, setCurrentIndex] = useState(0);
