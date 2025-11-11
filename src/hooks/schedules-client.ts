@@ -74,7 +74,7 @@ export const useGetClientSchedulesByBatch = (batchId: string) => {
     queryKey: clientScheduleQueryKeys.byBatch(batchId),
     queryFn: async () => {
       const response = await apiClient.get<ScheduleListResponse>(
-        `/api/schedules/batch/${batchId}`
+        `/api/batches/${batchId}/schedules`
       );
       return response.data;
     },
