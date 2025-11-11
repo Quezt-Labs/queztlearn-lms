@@ -27,7 +27,7 @@ import {
   useGetClientSubjectsByBatch,
   useGetClientTopicsByChapter,
   useGetClientChaptersBySubject,
-  useGetContentsByTopic,
+  useGetClientContentsByTopic,
 } from "@/hooks";
 import { UnifiedVideoPlayer } from "@/components/common/unified-video-player";
 import Link from "next/link";
@@ -87,7 +87,7 @@ export default function ContentPlayerPage() {
 
   // Fetch current content
   const { data: topicResponse } = useGetClientTopic(topicId);
-  const { data: contentsResponse } = useGetContentsByTopic(topicId);
+  const { data: contentsResponse } = useGetClientContentsByTopic(topicId);
   const { data: chapterResponse } = useGetClientChapter(chapterId);
   const { data: subjectsResponse } = useGetClientSubjectsByBatch(batchId);
   const { data: topicsResponse } = useGetClientTopicsByChapter(chapterId);

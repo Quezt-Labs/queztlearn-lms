@@ -1026,9 +1026,7 @@ export const useGetBatchSchedules = (batchId: string) => {
   return useQuery({
     queryKey: ["batch", "schedules", batchId],
     queryFn: () =>
-      apiClient
-        .get(`/api/schedules/batch/${batchId}`)
-        .then((res) => res.data),
+      apiClient.get(`/api/schedules/batch/${batchId}`).then((res) => res.data),
     enabled: !!batchId && tokenManager.isAuthenticated(),
   });
 };
@@ -1168,5 +1166,19 @@ export const useGetClientTopic = (id: string) => {
     queryKey: ["client", "topics", id],
     queryFn: () => apiClient.get(`/api/topics/${id}`).then((res) => res.data),
     enabled: !!id && tokenManager.isAuthenticated(),
+  });
+};
+
+// ==========================================
+// Client Contents API Hooks (for purchased batches)
+// ==========================================
+
+// Get all contents for a topic (CLIENT)
+export const useGetClientContentsByTopic = (topicId: string) => {
+  return useQuery({
+    queryKey: ["client", "contents", "topic", topicId],
+    queryFn: () =>
+      apiClient.get(`/api/contents/topic/${topicId}`).then((res) => res.data),
+    enabled: !!topicId && tokenManager.isAuthenticated(),
   });
 };

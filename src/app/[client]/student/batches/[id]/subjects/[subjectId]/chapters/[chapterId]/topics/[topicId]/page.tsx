@@ -4,7 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { FileText, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { useGetClientTopic, useGetContentsByTopic } from "@/hooks";
+import { useGetClientTopic, useGetClientContentsByTopic } from "@/hooks";
 import { PageHeaderWithBack } from "@/components/common/page-header-with-back";
 import { SectionHeader } from "@/components/common/section-header";
 import { EmptyStateCard } from "@/components/common/empty-state-card";
@@ -25,7 +25,7 @@ export default function TopicDetailPage() {
   const { data: topicResponse, isLoading: topicLoading } =
     useGetClientTopic(topicId);
   const { data: contentsResponse, isLoading: contentsLoading } =
-    useGetContentsByTopic(topicId);
+    useGetClientContentsByTopic(topicId);
 
   const topic = topicResponse?.data || topicResponse;
   const contents: Content[] = contentsResponse?.data || [];

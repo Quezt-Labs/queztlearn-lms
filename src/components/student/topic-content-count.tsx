@@ -1,7 +1,7 @@
 "use client";
 
 import { Video, BookOpen } from "lucide-react";
-import { useGetContentsByTopic } from "@/hooks";
+import { useGetClientContentsByTopic } from "@/hooks";
 
 export interface TopicContentCountProps {
   /** Topic ID to fetch contents for */
@@ -16,16 +16,17 @@ interface TopicContent {
 
 /**
  * Component to fetch and display content count for a topic
- * 
+ *
  * Shows the number of videos and PDFs available for a topic
- * 
+ *
  * @example
  * ```tsx
  * <TopicContentCount topicId="topic-123" />
  * ```
  */
 export function TopicContentCount({ topicId }: TopicContentCountProps) {
-  const { data: contentsResponse, isLoading } = useGetContentsByTopic(topicId);
+  const { data: contentsResponse, isLoading } =
+    useGetClientContentsByTopic(topicId);
   const contents: TopicContent[] = contentsResponse?.data || [];
 
   const lectures = contents.filter(
@@ -66,4 +67,3 @@ export function TopicContentCount({ topicId }: TopicContentCountProps) {
     </div>
   );
 }
-
