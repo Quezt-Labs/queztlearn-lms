@@ -17,6 +17,7 @@ import {
   ModalContentCard,
   type Content,
 } from "@/components/student/modal-content-card";
+import { ContentCardShimmerGrid } from "@/components/student/content-card-shimmer";
 import { formatDuration } from "@/lib/utils/format-duration";
 
 interface Topic {
@@ -93,11 +94,7 @@ export function ViewTopicModal({
               <LoadingSpinner />
             </div>
           ) : contents.length === 0 ? (
-            <EmptyStateCard
-              icon={FileText}
-              title="No content available"
-              description="This topic doesn't have any lectures or PDFs yet."
-            />
+            <ContentCardShimmerGrid count={3} />
           ) : (
             <div className="flex-1 overflow-hidden flex flex-col">
               <ContentFilterTabs

@@ -12,6 +12,7 @@ import { LoadingSpinner } from "@/components/common/loading-spinner";
 import { ContentFilterTabs } from "@/components/common/content-filter-tabs";
 import { ContentGrid } from "@/components/common/content-grid";
 import { ContentCard, type Content } from "@/components/student/content-card";
+import { ContentCardShimmerGrid } from "@/components/student/content-card-shimmer";
 import { formatDuration } from "@/lib/utils/format-duration";
 
 export default function TopicDetailPage() {
@@ -91,11 +92,7 @@ export default function TopicDetailPage() {
         />
 
         {contents.length === 0 ? (
-          <EmptyStateCard
-            icon={FileText}
-            title="No content available"
-            description="This topic doesn't have any lectures or PDFs yet."
-          />
+          <ContentCardShimmerGrid count={3} />
         ) : (
           <ContentFilterTabs
             totalCount={contents.length}

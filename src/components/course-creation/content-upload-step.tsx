@@ -33,6 +33,7 @@ import {
   Play,
   Clock,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Content {
   id: string;
@@ -447,19 +448,27 @@ export function ContentUploadStep({
         ))}
 
         {content.length === 0 && (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <Video className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-semibold mb-2">No content added yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Start by adding lectures and materials to your course
-              </p>
-              <Button onClick={() => setShowAddForm(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add First Content
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Card key={index}>
+                <CardContent className="p-6">
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    {/* Thumbnail Skeleton */}
+                    <Skeleton className="w-full sm:w-48 h-32 shrink-0" />
+                    {/* Content Skeleton */}
+                    <div className="flex-1 space-y-3">
+                      <Skeleton className="h-6 w-3/4" />
+                      <Skeleton className="h-4 w-1/2" />
+                      <div className="flex gap-2">
+                        <Skeleton className="h-8 w-24" />
+                        <Skeleton className="h-8 w-24" />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         )}
       </div>
 
