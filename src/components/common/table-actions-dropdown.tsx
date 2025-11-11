@@ -28,6 +28,7 @@ interface TableActionsDropdownProps {
   onDelete?: () => void;
   onToggleStatus?: () => void;
   isActive?: boolean;
+  isPublished?: boolean;
   isDeleting?: boolean;
   isUpdating?: boolean;
   showCopyId?: boolean;
@@ -45,6 +46,7 @@ export function TableActionsDropdown({
   onDelete,
   onToggleStatus,
   isActive,
+  isPublished,
   isDeleting = false,
   isUpdating = false,
   showCopyId = true,
@@ -109,10 +111,28 @@ export function TableActionsDropdown({
               onClick={onToggleStatus}
               disabled={isUpdating}
               className={
-                isActive ? "text-orange-600" : "text-green-600"
+                isPublished !== undefined
+                  ? isPublished
+                    ? "text-orange-600"
+                    : "text-green-600"
+                  : isActive
+                  ? "text-orange-600"
+                  : "text-green-600"
               }
             >
-              {isActive ? (
+              {isPublished !== undefined ? (
+                isPublished ? (
+                  <>
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Unpublish
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Publish
+                  </>
+                )
+              ) : isActive ? (
                 <>
                   <XCircle className="mr-2 h-4 w-4" />
                   Mark as Inactive
@@ -143,4 +163,3 @@ export function TableActionsDropdown({
     </DropdownMenu>
   );
 }
-

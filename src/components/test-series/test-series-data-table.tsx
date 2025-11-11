@@ -191,7 +191,7 @@ export function TestSeriesDataTable({
                       onEdit={() => setEditSeries(series)}
                       onDelete={() => setDeleteId(series.id)}
                       onToggleStatus={() => handleToggleStatus(series)}
-                      isActive={series.isActive}
+                      isPublished={series.isPublished}
                       isDeleting={deleteMutation.isPending}
                       isUpdating={updateMutation.isPending}
                     />
