@@ -27,7 +27,7 @@ export const clientScheduleQueryKeys = {
 
 /**
  * Get all schedules for purchased batches (STUDENT)
- * 
+ *
  * @example
  * ```tsx
  * const { data, isLoading } = useGetClientSchedules({
@@ -43,7 +43,7 @@ export const useGetClientSchedules = (filters?: ScheduleFilters) => {
     queryKey: clientScheduleQueryKeys.list(filters),
     queryFn: async () => {
       const params = new URLSearchParams();
-      
+
       if (filters?.page) params.append("page", filters.page.toString());
       if (filters?.limit) params.append("limit", filters.limit.toString());
       if (filters?.status) params.append("status", filters.status);
@@ -63,7 +63,7 @@ export const useGetClientSchedules = (filters?: ScheduleFilters) => {
 /**
  * Get all schedules for a specific batch (STUDENT)
  * Only accessible if user has purchased the batch
- * 
+ *
  * @example
  * ```tsx
  * const { data, isLoading } = useGetClientSchedulesByBatch(batchId);
@@ -74,7 +74,7 @@ export const useGetClientSchedulesByBatch = (batchId: string) => {
     queryKey: clientScheduleQueryKeys.byBatch(batchId),
     queryFn: async () => {
       const response = await apiClient.get<ScheduleListResponse>(
-        `/api/batches/${batchId}/schedules`
+        `/api/schedules/batch/${batchId}`
       );
       return response.data;
     },
@@ -85,7 +85,7 @@ export const useGetClientSchedulesByBatch = (batchId: string) => {
 /**
  * Get all schedules for a specific topic (STUDENT)
  * Only accessible if user has purchased the batch
- * 
+ *
  * @example
  * ```tsx
  * const { data, isLoading } = useGetClientSchedulesByTopic(topicId);
@@ -107,7 +107,7 @@ export const useGetClientSchedulesByTopic = (topicId: string) => {
 /**
  * Get a single schedule by ID (STUDENT)
  * Only accessible if user has purchased the batch
- * 
+ *
  * @example
  * ```tsx
  * const { data, isLoading } = useGetClientSchedule(scheduleId);
@@ -125,4 +125,3 @@ export const useGetClientSchedule = (id: string) => {
     enabled: !!id && tokenManager.isAuthenticated(),
   });
 };
-

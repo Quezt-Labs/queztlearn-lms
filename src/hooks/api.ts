@@ -1182,3 +1182,12 @@ export const useGetClientContentsByTopic = (topicId: string) => {
     enabled: !!topicId && tokenManager.isAuthenticated(),
   });
 };
+
+// Get content by ID (CLIENT)
+export const useGetClientContent = (id: string) => {
+  return useQuery({
+    queryKey: ["client", "contents", id],
+    queryFn: () => apiClient.get(`/api/contents/${id}`).then((res) => res.data),
+    enabled: !!id && tokenManager.isAuthenticated(),
+  });
+};
