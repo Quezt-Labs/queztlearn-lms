@@ -22,6 +22,7 @@ import {
 import { useCreateContent } from "@/hooks";
 import { Video, FileText, BookOpen } from "lucide-react";
 import { FileUpload } from "@/components/common/file-upload";
+import { ChunkedVideoUpload } from "@/components/common/chunked-video-upload";
 
 interface CreateContentModalProps {
   isOpen: boolean;
@@ -59,11 +60,22 @@ export function CreateContentModal({
       return;
     }
 
-    // Validate videoDuration for Lecture type
+    // Validate videoDuration for Lecture type (except HLS which auto-detects)
     if (
       formData.type === "Lecture" &&
+      formData.videoType !== "HLS" &&
       (!formData.videoDuration || formData.videoDuration <= 0)
     ) {
+      return;
+    }
+
+    // For HLS, ensure video has been uploaded
+    if (
+      formData.type === "Lecture" &&
+      formData.videoType === "HLS" &&
+      !videoFile
+    ) {
+      alert("Please upload a video first");
       return;
     }
 
@@ -81,7 +93,7 @@ export function CreateContentModal({
             : videoFile || formData.videoUrl || undefined,
         videoType: formData.videoType,
         videoThumbnail: thumbnailFile || formData.videoThumbnail || undefined,
-        videoDuration: formData.videoDuration,
+        videoDuration: formData.videoDuration || undefined,
       };
 
       await createContentMutation.mutateAsync(contentData);
@@ -224,62 +236,91 @@ export function CreateContentModal({
               {formData.videoType === "HLS" && (
                 <div className="space-y-2">
                   <Label htmlFor="videoUpload">Upload Video *</Label>
-                  <FileUpload
-                    accept="video/*"
-                    maxSize={500}
-                    onUploadComplete={(fileData) => {
-                      setVideoFile(fileData.url);
-                    }}
-                  />
-                  <div className="space-y-2">
-                    <Label htmlFor="videoUrl">Or Enter Video URL</Label>
-                    <Input
-                      id="videoUrl"
-                      placeholder="Enter video URL (optional)"
-                      value={formData.videoUrl}
-                      onChange={(e) =>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Video will be automatically transcoded to 1080p, 720p, and
+                    480p for adaptive streaming
+                  </p>
+                  <ChunkedVideoUpload
+                    onUploadComplete={(result) => {
+                      setVideoFile(result.masterUrl);
+                      if (result.thumbnail) {
+                        setThumbnailFile(result.thumbnail);
                         setFormData((prev) => ({
                           ...prev,
-                          videoUrl: e.target.value,
-                        }))
+                          videoThumbnail: result.thumbnail || "",
+                        }));
                       }
-                    />
-                  </div>
+                      if (result.duration) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          videoDuration: result.duration || 0,
+                        }));
+                      }
+                    }}
+                    maxSizeMB={500}
+                  />
                 </div>
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="videoThumbnail">Video Thumbnail</Label>
-                <FileUpload
-                  accept="image/*"
-                  maxSize={10}
-                  onUploadComplete={(fileData) => {
-                    setThumbnailFile(fileData.url);
-                  }}
-                />
-                <div className="space-y-2">
-                  <Label htmlFor="videoThumbnailUrl">
-                    Or Enter Thumbnail URL
-                  </Label>
-                  <Input
-                    id="videoThumbnailUrl"
-                    placeholder="Enter thumbnail URL (optional)"
-                    value={formData.videoThumbnail}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        videoThumbnail: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
+                <Label htmlFor="videoThumbnail">
+                  Video Thumbnail
+                  {formData.videoType === "HLS" && " (Auto-generated)"}
+                </Label>
+                {formData.videoType === "HLS" && formData.videoThumbnail ? (
+                  <div className="border rounded-lg p-4">
+                    <img
+                      src={formData.videoThumbnail}
+                      alt="Thumbnail"
+                      className="max-h-40 rounded mx-auto"
+                    />
+                    <p className="text-xs text-center text-muted-foreground mt-2">
+                      Auto-generated from video
+                    </p>
+                  </div>
+                ) : formData.videoType !== "HLS" ? (
+                  <>
+                    <FileUpload
+                      accept="image/*"
+                      maxSize={10}
+                      onUploadComplete={(fileData) => {
+                        setThumbnailFile(fileData.url);
+                      }}
+                    />
+                    <div className="space-y-2">
+                      <Label htmlFor="videoThumbnailUrl">
+                        Or Enter Thumbnail URL
+                      </Label>
+                      <Input
+                        id="videoThumbnailUrl"
+                        placeholder="Enter thumbnail URL (optional)"
+                        value={formData.videoThumbnail}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            videoThumbnail: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Thumbnail will be automatically generated during video
+                    upload
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="videoDuration">Duration (seconds) *</Label>
                 <Input
                   id="videoDuration"
                   type="number"
-                  placeholder="Enter duration in seconds"
+                  placeholder={
+                    formData.videoType === "HLS"
+                      ? "Auto-detected after upload"
+                      : "Enter duration in seconds"
+                  }
                   value={formData.videoDuration || ""}
                   onChange={(e) =>
                     setFormData((prev) => ({
@@ -287,9 +328,17 @@ export function CreateContentModal({
                       videoDuration: Number(e.target.value) || 0,
                     }))
                   }
-                  required
+                  required={formData.videoType !== "HLS"}
                   min="1"
+                  readOnly={formData.videoType === "HLS"}
+                  disabled={formData.videoType === "HLS"}
                 />
+                {formData.videoType === "HLS" && (
+                  <p className="text-xs text-muted-foreground">
+                    Video duration will be automatically detected during
+                    transcoding
+                  </p>
+                )}
               </div>
             </>
           )}
@@ -329,6 +378,10 @@ export function CreateContentModal({
                 isSubmitting ||
                 !formData.name.trim() ||
                 (formData.type === "Lecture" &&
+                  formData.videoType === "HLS" &&
+                  !videoFile) ||
+                (formData.type === "Lecture" &&
+                  formData.videoType !== "HLS" &&
                   (!formData.videoDuration || formData.videoDuration <= 0))
               }
             >
