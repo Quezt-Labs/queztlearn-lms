@@ -42,9 +42,6 @@ interface TestSeriesDescriptionTabProps {
   isEnrolled: boolean;
   onEnroll: () => void;
   isProcessing: boolean;
-  enrollmentCount?: number;
-  averageScore?: number;
-  totalAttempts?: number;
 }
 
 export function TestSeriesDescriptionTab({
@@ -57,9 +54,6 @@ export function TestSeriesDescriptionTab({
   isEnrolled,
   onEnroll,
   isProcessing,
-  enrollmentCount,
-  averageScore,
-  totalAttempts,
 }: TestSeriesDescriptionTabProps) {
   const [showAllTests, setShowAllTests] = useState(false);
   const formatPrice = (price: number) => {
@@ -90,21 +84,22 @@ export function TestSeriesDescriptionTab({
           },
         ]
       : []),
-    ...(enrollmentCount !== undefined && enrollmentCount > 0
+    ...(testSeries.enrollmentCount !== undefined &&
+    testSeries.enrollmentCount > 0
       ? [
           {
             icon: Users,
             label: "Enrolled",
-            value: enrollmentCount.toLocaleString(),
+            value: testSeries.enrollmentCount.toLocaleString(),
           },
         ]
       : []),
-    ...(averageScore !== undefined
+    ...(testSeries.averageScore !== undefined
       ? [
           {
             icon: TrendingUp,
             label: "Avg Score",
-            value: `${averageScore}%`,
+            value: `${testSeries.averageScore}%`,
           },
         ]
       : []),
@@ -157,7 +152,9 @@ export function TestSeriesDescriptionTab({
           )}
 
           {/* Social Proof & Engagement Metrics */}
-          {(enrollmentCount || averageScore || totalAttempts) && (
+          {(testSeries.enrollmentCount ||
+            testSeries.averageScore ||
+            testSeries.totalAttempts) && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -166,14 +163,14 @@ export function TestSeriesDescriptionTab({
               <Card className="bg-linear-to-br from-primary/5 to-primary/10 border-primary/20">
                 <CardContent className="p-4">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {enrollmentCount !== undefined && (
+                    {testSeries.enrollmentCount !== undefined && (
                       <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-primary/10 text-primary">
                           <Users className="h-5 w-5" />
                         </div>
                         <div>
                           <div className="text-lg font-bold text-foreground">
-                            {enrollmentCount.toLocaleString()}
+                            {testSeries.enrollmentCount.toLocaleString()}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             Students Enrolled
@@ -181,14 +178,14 @@ export function TestSeriesDescriptionTab({
                         </div>
                       </div>
                     )}
-                    {averageScore !== undefined && (
+                    {testSeries.averageScore !== undefined && (
                       <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-primary/10 text-primary">
                           <BarChart3 className="h-5 w-5" />
                         </div>
                         <div>
                           <div className="text-lg font-bold text-foreground">
-                            {averageScore}%
+                            {testSeries.averageScore}%
                           </div>
                           <div className="text-xs text-muted-foreground">
                             Average Score
@@ -196,14 +193,14 @@ export function TestSeriesDescriptionTab({
                         </div>
                       </div>
                     )}
-                    {totalAttempts !== undefined && (
+                    {testSeries.totalAttempts !== undefined && (
                       <div className="flex items-center gap-3">
                         <div className="p-2 rounded-lg bg-primary/10 text-primary">
                           <Zap className="h-5 w-5" />
                         </div>
                         <div>
                           <div className="text-lg font-bold text-foreground">
-                            {totalAttempts.toLocaleString()}
+                            {testSeries.totalAttempts.toLocaleString()}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             Total Attempts
@@ -331,14 +328,16 @@ Each test includes detailed explanations, performance analytics, and personalize
             <Card className="shadow-xl border-2 bg-background relative p-0">
               <CardContent className="p-6 space-y-6">
                 {/* Social Proof Badge */}
-                {enrollmentCount !== undefined && enrollmentCount > 0 && (
-                  <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/5 border border-primary/20">
-                    <Users className="h-4 w-4 text-primary" />
-                    <span className="text-xs font-medium text-foreground">
-                      Join {enrollmentCount.toLocaleString()}+ students
-                    </span>
-                  </div>
-                )}
+                {testSeries.enrollmentCount !== undefined &&
+                  testSeries.enrollmentCount > 0 && (
+                    <div className="flex items-center gap-2 p-2 rounded-lg bg-primary/5 border border-primary/20">
+                      <Users className="h-4 w-4 text-primary" />
+                      <span className="text-xs font-medium text-foreground">
+                        Join {testSeries.enrollmentCount.toLocaleString()}+
+                        students
+                      </span>
+                    </div>
+                  )}
 
                 {/* Thumbnail Image */}
                 <div className="relative aspect-video rounded-xl overflow-hidden border-2">

@@ -21,7 +21,6 @@ import {
   useClientTestSeriesDetail,
   useClientTestsInSeries,
   useClientEnrollFreeTestSeries,
-  useClientTestSeriesStats,
 } from "@/hooks/test-series-client";
 import { useTestSeriesRazorpayPayment } from "@/hooks/use-test-series-payment";
 import {
@@ -65,9 +64,6 @@ export default function StudentTestSeriesDetailPage() {
 
   const { data: testsData, isLoading: isLoadingTests } =
     useClientTestsInSeries(identifier);
-
-  // Stats for social proof
-  const { data: statsData } = useClientTestSeriesStats(identifier);
 
   // Mutations and hooks
   const enrollFreeMutation = useClientEnrollFreeTestSeries();
@@ -281,9 +277,6 @@ export default function StudentTestSeriesDetailPage() {
                 isEnrolled={isEnrolled}
                 onEnroll={handleEnrollClick}
                 isProcessing={isProcessing}
-                enrollmentCount={statsData?.data?.enrollmentCount}
-                averageScore={statsData?.data?.averageScore}
-                totalAttempts={statsData?.data?.totalAttempts}
               />
             ) : (
               <TestSeriesTestsTab

@@ -226,28 +226,4 @@ export const useClientVerifyPayment = () => {
   });
 };
 
-export const useClientTestSeriesStats = (seriesId?: string) => {
-  return useQuery({
-    queryKey: clientTsKeys.stats(seriesId ?? ""),
-    queryFn: async () => {
-      // Try client endpoint first, fallback to mock if not available
-      try {
-        const { data } = await apiClient.get<
-          ClientApiResponse<{
-            enrollmentCount?: number;
-            averageScore?: number;
-            totalAttempts?: number;
-          }>
-        >(`/api/test-series/${seriesId}/stats`);
-        return data;
-      } catch (error) {
-        // If endpoint doesn't exist, return null (will use fallback UI)
-        return null;
-      }
-    },
-    enabled: Boolean(seriesId),
-    retry: false,
-  });
-};
-
 export const clientTestSeriesKeys = clientTsKeys;
