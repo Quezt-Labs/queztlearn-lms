@@ -13,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { useTheme } from "@/components/providers/theme-provider";
 import { useOrgLogo, useOrgName } from "@/lib/store/organization-config";
@@ -31,7 +30,7 @@ export function StudentHeader() {
     <header className="md:mx-6 sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container flex h-16 items-center px-4 gap-4">
         {/* Logo and Organization Name */}
-        <Link href="/student/dashboard" className="flex items-center gap-3">
+        <Link href="/student/my-learning" className="flex items-center gap-3">
           {orgLogo && (
             <div className="relative h-10 w-10 rounded-lg overflow-hidden bg-primary/10">
               <Image
@@ -68,41 +67,14 @@ export function StudentHeader() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
-              <Badge
-                variant="destructive"
-                className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-              >
-                3
-              </Badge>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">New assignment posted</p>
-                <p className="text-xs text-muted-foreground">
-                  Physics Chapter 5 - Due in 3 days
-                </p>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">Test reminder</p>
-                <p className="text-xs text-muted-foreground">
-                  Chemistry mock test tomorrow at 10 AM
-                </p>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium">New video uploaded</p>
-                <p className="text-xs text-muted-foreground">
-                  Advanced Mathematics - Calculus Part 2
-                </p>
-              </div>
-            </DropdownMenuItem>
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              No notifications
+            </div>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -127,9 +99,11 @@ export function StudentHeader() {
                 <p className="text-sm font-medium leading-none">
                   {user?.username || "Student"}
                 </p>
-                <p className="text-xs leading-none text-muted-foreground">
-                  {user?.email || "student@example.com"}
-                </p>
+                {user?.email && (
+                  <p className="text-xs leading-none text-muted-foreground">
+                    {user.email}
+                  </p>
+                )}
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

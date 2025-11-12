@@ -197,9 +197,7 @@ export function MyLearningMobile() {
             <SectionHeader
               title="Recent Test Attempts"
               icon={FileText}
-              viewAllHref={
-                recentTests.length >= 4 ? "/student/tests" : undefined
-              }
+              viewAllHref={undefined}
             />
           </div>
           <div className="flex gap-4 overflow-x-auto px-4 mt-4 pb-2 scrollbar-hide snap-x snap-mandatory">

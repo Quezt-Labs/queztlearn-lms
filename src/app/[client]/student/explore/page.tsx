@@ -3,6 +3,7 @@
 import { Suspense, useState, lazy, useEffect } from "react";
 import { BookOpen, FileText } from "lucide-react";
 import { StudentHeader } from "@/components/student/student-header";
+import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { useGetExploreBatches, useGetExploreTestSeries } from "@/hooks";
 import { ExploreCardsGridShimmer } from "@/components/common/explore-card-shimmer";
@@ -184,21 +185,22 @@ export default function ExplorePage() {
       </div>
 
       {/* Desktop View */}
-      <div className="hidden md:block min-h-screen bg-background">
+      <div className="hidden md:block w-full min-h-[calc(100vh-4rem)] bg-linear-to-br from-background via-background to-muted/20">
         <StudentHeader />
 
-        <div className="container mx-auto px-4 sm:px-6 py-6 max-w-7xl">
-          {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">Explore Courses</h1>
-            <p className="text-muted-foreground">
-              Find the perfect batch or test series to accelerate your learning
-            </p>
-          </div>
+        <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 space-y-6 md:space-y-8 max-w-7xl w-full">
+          <PageHeader
+            title="Explore Courses"
+            description="Find the perfect batch or test series to accelerate your learning"
+            breadcrumbs={[
+              { label: "Student", href: "/student/my-learning" },
+              { label: "Explore" },
+            ]}
+          />
 
           {/* Filters & Search */}
           {showTabs && (
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            <div className="flex flex-col sm:flex-row gap-4">
               {/* <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input

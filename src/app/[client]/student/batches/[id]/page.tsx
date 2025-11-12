@@ -5,6 +5,8 @@ import { Suspense, lazy, useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGetExploreBatch } from "@/hooks";
+import { StudentHeader } from "@/components/student/student-header";
+import { PageHeader } from "@/components/common/page-header";
 import { BatchDetailHeader } from "@/components/student/batch-detail-header";
 import { MobileBatchHero } from "@/components/student/mobile-batch-hero";
 import { MobileBatchTabs } from "@/components/student/mobile-batch-tabs";
@@ -117,16 +119,20 @@ export default function BatchDetailPage() {
 
   return (
     <div className="h-full bg-background">
-      <div className="hidden lg:block sticky top-0 z-50">
-        <BatchDetailHeader
-          batch={batch}
-          isLive={isLive}
-          isUpcoming={isUpcoming}
-          isEnded={isEnded}
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          onBack={() => router.push("/student/explore")}
-        />
+      {/* Desktop Header */}
+      <div className="hidden lg:block">
+        <StudentHeader />
+        <div className="sticky top-0 z-50">
+          <BatchDetailHeader
+            batch={batch}
+            isLive={isLive}
+            isUpcoming={isUpcoming}
+            isEnded={isEnded}
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            onBack={() => router.push("/student/explore")}
+          />
+        </div>
       </div>
 
       {/* Mobile Hero - Sticky on Scroll */}
@@ -146,6 +152,18 @@ export default function BatchDetailPage() {
       {/* Main Content - Optimized spacing for mobile */}
       <div className="px-3 py-4 lg:px-10 lg:py-8 bg-background">
         <div className="container max-w-7xl mx-auto">
+          {/* Desktop Page Header */}
+          <div className="hidden lg:block mb-6">
+            <PageHeader
+              title={batch.name}
+              description={batch.description || undefined}
+              breadcrumbs={[
+                { label: "Student", href: "/student/my-learning" },
+                { label: "Explore", href: "/student/explore" },
+                { label: batch.name },
+              ]}
+            />
+          </div>
           <Suspense fallback={<DescriptionPageShimmer />}>
             {activeTab === "description" ? (
               <BatchDescriptionTab

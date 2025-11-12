@@ -32,7 +32,6 @@ export default function TestLeaderboardPage() {
           description="View rankings and your performance"
           breadcrumbs={[
             { label: "Student", href: "/student/my-learning" },
-            { label: "Tests", href: "/student/tests" },
             { label: "Leaderboard" },
           ]}
         />
@@ -42,7 +41,7 @@ export default function TestLeaderboardPage() {
               Invalid test ID. Please select a test to view leaderboard.
             </p>
             <Button asChild>
-              <Link href="/student/tests">Go to Tests</Link>
+              <Link href="/student/my-learning">Go to My Learning</Link>
             </Button>
           </CardContent>
         </Card>
@@ -61,7 +60,6 @@ export default function TestLeaderboardPage() {
           description="View rankings and your performance"
           breadcrumbs={[
             { label: "Student", href: "/student/my-learning" },
-            { label: "Tests", href: "/student/tests" },
             { label: "Leaderboard" },
           ]}
         />
@@ -84,7 +82,6 @@ export default function TestLeaderboardPage() {
           description="View rankings and your performance"
           breadcrumbs={[
             { label: "Student", href: "/student/my-learning" },
-            { label: "Tests", href: "/student/tests" },
             { label: "Leaderboard" },
           ]}
         />
@@ -94,7 +91,7 @@ export default function TestLeaderboardPage() {
               Failed to load leaderboard. Please try again.
             </p>
             <Button asChild>
-              <Link href="/student/tests">Go to Tests</Link>
+              <Link href="/student/my-learning">Go to My Learning</Link>
             </Button>
           </CardContent>
         </Card>
@@ -114,11 +111,10 @@ export default function TestLeaderboardPage() {
       <PageHeader
         title="Test Leaderboard"
         description="View rankings and your performance"
-        breadcrumbs={[
-          { label: "Student", href: "/student/my-learning" },
-          { label: "Tests", href: "/student/tests" },
-          { label: "Leaderboard" },
-        ]}
+            breadcrumbs={[
+              { label: "Student", href: "/student/my-learning" },
+              { label: "Leaderboard" },
+            ]}
       />
 
       {/* User Rank Card */}
@@ -216,7 +212,7 @@ export default function TestLeaderboardPage() {
       </Card>
 
       <Button variant="outline" asChild className="w-full">
-        <Link href="/student/tests">Back to Tests</Link>
+        <Link href="/student/my-learning">Back to My Learning</Link>
       </Button>
     </div>
   );

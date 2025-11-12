@@ -495,8 +495,8 @@ export function TestEngine({
           }
         />
         <div className="mt-4 flex justify-center">
-          <Button onClick={() => router.push("/student/tests")}>
-            Back to Tests
+          <Button onClick={() => router.push("/student/my-learning")}>
+            Back to My Learning
           </Button>
         </div>
       </Card>
@@ -508,8 +508,8 @@ export function TestEngine({
     return (
       <Card className="mx-auto my-10 max-w-3xl p-8 text-center">
         <div className="text-lg font-semibold mb-2">No questions available</div>
-        <Button onClick={() => router.push("/student/tests")}>
-          Back to Tests
+        <Button onClick={() => router.push("/student/my-learning")}>
+          Back to My Learning
         </Button>
       </Card>
     );
@@ -570,8 +570,8 @@ export function TestEngine({
           </>
         )}
         <div className="flex items-center justify-center gap-2 pt-4">
-          <Button onClick={() => router.push("/student/tests")}>
-            Back to tests
+          <Button onClick={() => router.push("/student/my-learning")}>
+            Back to My Learning
           </Button>
           {results && attemptId && (
             <Button

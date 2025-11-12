@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { StudentHeader } from "@/components/student/student-header";
 import {
   TestSeriesDetailHeader,
   TestSeriesStickyTabs,
@@ -218,8 +219,9 @@ export default function StudentTestSeriesDetailPage() {
 
   return (
     <div className="relative bg-background">
-      {/* Desktop Header - Scrollable */}
+      {/* Desktop Header */}
       <div className="hidden lg:block">
+        <StudentHeader />
         <TestSeriesDetailHeader
           testSeries={testSeries}
           activeTab={activeTab}

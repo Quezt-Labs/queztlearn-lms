@@ -25,7 +25,7 @@ export default function TestAttemptPage() {
               Invalid test ID. Please select a test to attempt.
             </p>
             <Button asChild>
-              <Link href="/student/tests">Go to Tests</Link>
+              <Link href="/student/my-learning">Go to My Learning</Link>
             </Button>
           </CardContent>
         </Card>

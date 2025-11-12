@@ -30,7 +30,6 @@ export default function TestSolutionsPage() {
           description="View solutions and explanations for all questions"
           breadcrumbs={[
             { label: "Student", href: "/student/my-learning" },
-            { label: "Tests", href: "/student/tests" },
             { label: "Solutions" },
           ]}
         />
@@ -41,7 +40,7 @@ export default function TestSolutionsPage() {
               Invalid test ID. Please select a test to view solutions.
             </p>
             <Button asChild>
-              <Link href="/student/tests">Go to Tests</Link>
+              <Link href="/student/my-learning">Go to My Learning</Link>
             </Button>
           </CardContent>
         </Card>
@@ -57,7 +56,6 @@ export default function TestSolutionsPage() {
           description="View solutions and explanations for all questions"
           breadcrumbs={[
             { label: "Student", href: "/student/my-learning" },
-            { label: "Tests", href: "/student/tests" },
             { label: "Solutions" },
           ]}
         />
@@ -68,7 +66,7 @@ export default function TestSolutionsPage() {
               test.
             </p>
             <Button asChild>
-              <Link href="/student/tests">Go to Tests</Link>
+              <Link href="/student/my-learning">Go to My Learning</Link>
             </Button>
           </CardContent>
         </Card>
@@ -84,7 +82,6 @@ export default function TestSolutionsPage() {
           description="View solutions and explanations for all questions"
           breadcrumbs={[
             { label: "Student", href: "/student/my-learning" },
-            { label: "Tests", href: "/student/tests" },
             { label: "Solutions" },
           ]}
         />
@@ -107,7 +104,6 @@ export default function TestSolutionsPage() {
           description="View solutions and explanations for all questions"
           breadcrumbs={[
             { label: "Student", href: "/student/my-learning" },
-            { label: "Tests", href: "/student/tests" },
             { label: "Solutions" },
           ]}
         />
@@ -120,7 +116,7 @@ export default function TestSolutionsPage() {
                 : "Solutions not available yet. They will be available after the test submission period."}
             </p>
             <Button asChild>
-              <Link href="/student/tests">Go to Tests</Link>
+              <Link href="/student/my-learning">Go to My Learning</Link>
             </Button>
           </CardContent>
         </Card>
@@ -145,11 +141,10 @@ export default function TestSolutionsPage() {
       <PageHeader
         title="Test Solutions"
         description="View solutions and explanations for all questions"
-        breadcrumbs={[
-          { label: "Student", href: "/student/my-learning" },
-          { label: "Tests", href: "/student/tests" },
-          { label: "Solutions" },
-        ]}
+            breadcrumbs={[
+              { label: "Student", href: "/student/my-learning" },
+              { label: "Solutions" },
+            ]}
       />
 
       <Card>
@@ -222,7 +217,7 @@ export default function TestSolutionsPage() {
           </Link>
         </Button>
         <Button variant="outline" asChild className="flex-1">
-          <Link href="/student/tests">Back to Tests</Link>
+          <Link href="/student/my-learning">Back to My Learning</Link>
         </Button>
       </div>
     </div>

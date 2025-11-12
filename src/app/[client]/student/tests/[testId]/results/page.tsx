@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams, useParams } from "next/navigation";
+import { StudentHeader } from "@/components/student/student-header";
 import { PageHeader } from "@/components/common/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,27 +32,29 @@ export default function TestResultsPage() {
   // Validate testId after hooks are called
   if (!testId) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Test Results"
-          description="View your test results and performance"
-          breadcrumbs={[
-            { label: "Student", href: "/student/my-learning" },
-            { label: "Tests", href: "/student/tests" },
-            { label: "Results" },
-          ]}
-        />
-        <Card>
-          <CardContent className="py-12 text-center">
-            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground mb-4">
-              Invalid test ID. Please select a test to view results.
-            </p>
-            <Button asChild>
-              <Link href="/student/tests">Go to Tests</Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="w-full min-h-[calc(100vh-4rem)] bg-linear-to-br from-background via-background to-muted/20">
+        <StudentHeader />
+        <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 space-y-6 md:space-y-8 max-w-7xl w-full">
+          <PageHeader
+            title="Test Results"
+            description="View your test results and performance"
+            breadcrumbs={[
+              { label: "Student", href: "/student/my-learning" },
+              { label: "Results" },
+            ]}
+          />
+          <Card>
+            <CardContent className="py-12 text-center">
+              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground mb-4">
+                Invalid test ID. Please select a test to view results.
+              </p>
+              <Button asChild>
+                <Link href="/student/my-learning">Go to My Learning</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -61,94 +64,101 @@ export default function TestResultsPage() {
 
   if (!attemptId) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Test Results"
-          description="View your test results and performance"
-          breadcrumbs={[
-            { label: "Student", href: "/student/my-learning" },
-            { label: "Tests", href: "/student/tests" },
-            { label: "Results" },
-          ]}
-        />
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground mb-4">
-              No attempt ID provided. Please access this page from a completed
-              test.
-            </p>
-            <Button asChild>
-              <Link href="/student/tests">Go to Tests</Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="w-full min-h-[calc(100vh-4rem)] bg-linear-to-br from-background via-background to-muted/20">
+        <StudentHeader />
+        <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 space-y-6 md:space-y-8 max-w-7xl w-full">
+          <PageHeader
+            title="Test Results"
+            description="View your test results and performance"
+            breadcrumbs={[
+              { label: "Student", href: "/student/my-learning" },
+              { label: "Results" },
+            ]}
+          />
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground mb-4">
+                No attempt ID provided. Please access this page from a completed
+                test.
+              </p>
+              <Button asChild>
+                <Link href="/student/my-learning">Go to My Learning</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   if (isLoadingResults) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Test Results"
-          description="View your test results and performance"
-          breadcrumbs={[
-            { label: "Student", href: "/student/my-learning" },
-            { label: "Tests", href: "/student/tests" },
-            { label: "Results" },
-          ]}
-        />
-        <Card>
-          <CardContent className="py-12">
-            <div className="flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="w-full min-h-[calc(100vh-4rem)] bg-linear-to-br from-background via-background to-muted/20">
+        <StudentHeader />
+        <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 space-y-6 md:space-y-8 max-w-7xl w-full">
+          <PageHeader
+            title="Test Results"
+            description="View your test results and performance"
+            breadcrumbs={[
+              { label: "Student", href: "/student/my-learning" },
+              { label: "Results" },
+            ]}
+          />
+          <Card>
+            <CardContent className="py-12">
+              <div className="flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   if (resultsError || !hasResults) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Test Results"
-          description="View your test results and performance"
-          breadcrumbs={[
-            { label: "Student", href: "/student/my-learning" },
-            { label: "Tests", href: "/student/tests" },
-            { label: "Results" },
-          ]}
-        />
-        <Card>
-          <CardContent className="py-12 text-center">
-            <XCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
-            <p className="text-muted-foreground mb-4">
-              {resultsError
-                ? "Failed to load results. Please try again."
-                : "Test not yet submitted or results not available."}
-            </p>
-            <Button asChild>
-              <Link href="/student/tests">Go to Tests</Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="w-full min-h-[calc(100vh-4rem)] bg-linear-to-br from-background via-background to-muted/20">
+        <StudentHeader />
+        <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 space-y-6 md:space-y-8 max-w-7xl w-full">
+          <PageHeader
+            title="Test Results"
+            description="View your test results and performance"
+            breadcrumbs={[
+              { label: "Student", href: "/student/my-learning" },
+              { label: "Results" },
+            ]}
+          />
+          <Card>
+            <CardContent className="py-12 text-center">
+              <XCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
+              <p className="text-muted-foreground mb-4">
+                {resultsError
+                  ? "Failed to load results. Please try again."
+                  : "Test not yet submitted or results not available."}
+              </p>
+              <Button asChild>
+                <Link href="/student/my-learning">Go to My Learning</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Test Results"
-        description="View your test results and performance"
-        breadcrumbs={[
-          { label: "Student", href: "/student/my-learning" },
-          { label: "Tests", href: "/student/tests" },
-          { label: "Results" },
-        ]}
-      />
+    <div className="w-full min-h-[calc(100vh-4rem)] bg-linear-to-br from-background via-background to-muted/20">
+      <StudentHeader />
+      <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 space-y-6 md:space-y-8 max-w-7xl w-full">
+        <PageHeader
+          title="Test Results"
+          description="View your test results and performance"
+          breadcrumbs={[
+            { label: "Student", href: "/student/my-learning" },
+            { label: "Results" },
+          ]}
+        />
 
       {/* Score Summary */}
       <Card>
@@ -211,8 +221,9 @@ export default function TestResultsPage() {
           </Link>
         </Button>
         <Button variant="outline" asChild className="flex-1">
-          <Link href="/student/tests">Back to Tests</Link>
+          <Link href="/student/my-learning">Back to My Learning</Link>
         </Button>
+      </div>
       </div>
     </div>
   );

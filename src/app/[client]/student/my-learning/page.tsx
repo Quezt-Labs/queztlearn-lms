@@ -222,9 +222,7 @@ export default function MyLearningPage() {
               <SectionHeader
                 title="Recent Test Attempts"
                 icon={FileText}
-                viewAllHref={
-                  recentTests.length >= 4 ? "/student/tests" : undefined
-                }
+                viewAllHref={undefined}
               />
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
