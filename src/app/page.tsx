@@ -11,14 +11,18 @@ import {
   FileText,
 } from "lucide-react";
 import { cookieStorage } from "@/lib/utils/storage";
-import { HeroSection } from "@/components/ui/3d-hero-section-boxes";
 import { FeatureSection } from "@/components/ui/feature-section";
 import { HowItWorks } from "@/components/ui/how-it-works";
-import CTAWithVerticalMarquee from "@/components/ui/cta-with-vertical-marquee";
-import HoverFooter from "@/components/ui/hover-footer";
-import { AnimatedTestimonials } from "@/components/ui/animated-testimonials";
 import ResizableNavbarContainer from "@/components/common/resizable-navbar-container";
 import { PricingSection } from "@/components/ui/pricing";
+
+// Lazy load heavy components to reduce initial bundle size
+import {
+  HeroSection,
+  AnimatedTestimonials,
+  CTAWithVerticalMarquee,
+  HoverFooter,
+} from "@/lib/utils/dynamic-imports";
 
 export default function Home() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);

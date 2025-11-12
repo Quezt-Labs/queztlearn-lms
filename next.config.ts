@@ -1,5 +1,9 @@
 import type { NextConfig } from "next";
 
+const withBundleAnalyzer = require("@next/bundle-analyzer")({
+  enabled: process.env.ANALYZE === "true",
+});
+
 const nextConfig: NextConfig = {
   // Explicitly set the tracing root to this workspace to avoid
   // lockfile root detection warnings when multiple lockfiles exist
@@ -41,4 +45,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);
