@@ -161,23 +161,16 @@ export function TestSeriesDataTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="flex flex-col gap-1">
-                      <Badge
-                        variant={series.isActive ? "default" : "secondary"}
-                        className={
-                          series.isActive
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
-                            : ""
-                        }
-                      >
-                        {series.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                      {series.isPublished && (
-                        <Badge variant="outline" className="text-xs">
-                          Published
-                        </Badge>
-                      )}
-                    </div>
+                    <Badge
+                      variant={series.isPublished ? "default" : "secondary"}
+                      className={
+                        series.isPublished
+                          ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                          : ""
+                      }
+                    >
+                      {series.isPublished ? "Published" : "Draft"}
+                    </Badge>
                   </TableCell>
                   <TableCell>
                     <span className="text-sm text-muted-foreground">

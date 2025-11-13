@@ -138,31 +138,25 @@ export function TestSeriesDetailPage({
                     {testSeries.exam}
                   </Badge>
                   <Badge
-                    variant={testSeries.isActive ? "default" : "secondary"}
+                    variant={testSeries.isPublished ? "default" : "secondary"}
                     className={
-                      testSeries.isActive
+                      testSeries.isPublished
                         ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
                         : ""
                     }
                   >
-                    {testSeries.isActive ? (
+                    {testSeries.isPublished ? (
                       <>
                         <CheckCircle className="mr-1 h-3 w-3" />
-                        Active
+                        Published
                       </>
                     ) : (
                       <>
                         <XCircle className="mr-1 h-3 w-3" />
-                        Inactive
+                        Draft
                       </>
                     )}
                   </Badge>
-                  {testSeries.isPublished && (
-                    <Badge variant="outline" className="text-xs">
-                      <Rocket className="mr-1 h-3 w-3" />
-                      Published
-                    </Badge>
-                  )}
                 </div>
               </div>
             </div>

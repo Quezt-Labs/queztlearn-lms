@@ -48,7 +48,7 @@ export function EditTestSeriesModal({
     discountPercentage: testSeries.discountPercentage,
     isFree: testSeries.isFree,
     durationDays: testSeries.durationDays,
-    isActive: testSeries.isActive,
+    isPublished: testSeries.isPublished,
   });
 
   const updateMutation = useUpdateTestSeries();
@@ -75,7 +75,7 @@ export function EditTestSeriesModal({
         discountPercentage: testSeries.discountPercentage,
         isFree: testSeries.isFree,
         durationDays: testSeries.durationDays,
-        isActive: testSeries.isActive,
+        isPublished: testSeries.isPublished,
       });
       // Initialize FAQs from testSeries
       setFaqs(
@@ -107,6 +107,7 @@ export function EditTestSeriesModal({
           })),
           totalPrice: formData.isFree ? 0 : formData.totalPrice,
           discountPercentage: formData.isFree ? 0 : formData.discountPercentage,
+          isPublished: formData.isPublished,
         },
       });
       onOpenChange(false);
@@ -328,16 +329,16 @@ export function EditTestSeriesModal({
             />
           </div>
 
-          {/* Active Status */}
+          {/* Published Status */}
           <div className="flex items-center space-x-2">
             <Switch
-              id="isActive"
-              checked={formData.isActive}
+              id="isPublished"
+              checked={formData.isPublished}
               onCheckedChange={(checked) =>
-                setFormData({ ...formData, isActive: checked })
+                setFormData({ ...formData, isPublished: checked })
               }
             />
-            <Label htmlFor="isActive">Active (visible to students)</Label>
+            <Label htmlFor="isPublished">Published (visible to students)</Label>
           </div>
 
           {/* FAQ Section */}
