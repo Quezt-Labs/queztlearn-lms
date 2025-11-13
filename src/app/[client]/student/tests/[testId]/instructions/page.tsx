@@ -30,6 +30,7 @@ import {
   ErrorMessage,
   SuccessMessage,
 } from "@/components/common/error-message";
+import { useClientTestSeriesDetail } from "@/hooks/test-series-client";
 
 export default function TestInstructionsPage() {
   const params = useParams<{ testId: string }>();
@@ -42,6 +43,13 @@ export default function TestInstructionsPage() {
 
   const mock = searchParams.get("mock") === "1";
   const testId = params.testId;
+  const testSeriesId = searchParams.get("testSeriesId");
+  
+  // Fetch test series details if testSeriesId is provided
+  const { data: testSeriesData } = useClientTestSeriesDetail(
+    testSeriesId || ""
+  );
+  const testSeries = testSeriesData?.data;
 
   // Validate testId
   if (!testId) {
@@ -75,15 +83,6 @@ export default function TestInstructionsPage() {
 
   const handleStartTest = async () => {
     setErrorMessage(null);
-
-    // Request fullscreen as part of user gesture (button click)
-    try {
-      if (typeof document !== "undefined" && !document.fullscreenElement) {
-        await document.documentElement.requestFullscreen();
-      }
-    } catch (e) {
-      console.warn("Fullscreen request failed:", e);
-    }
 
     // For mock tests, skip API call and go directly to attempt
     if (mock) {
@@ -126,10 +125,22 @@ export default function TestInstructionsPage() {
         <PageHeader
           title="Test Instructions"
           description="Please read the following instructions carefully before starting your test"
-          breadcrumbs={[
-            { label: "Student", href: "/student/my-learning" },
-            { label: "Instructions" },
-          ]}
+          breadcrumbs={
+            testSeries
+              ? [
+                  { label: "Student", href: "/student/my-learning" },
+                  {
+                    label: "Test Series",
+                    href: `/student/test-series/${testSeriesId}`,
+                  },
+                  { label: testSeries.title || "Test Series" },
+                  { label: "Instructions" },
+                ]
+              : [
+                  { label: "Student", href: "/student/my-learning" },
+                  { label: "Instructions" },
+                ]
+          }
         />
 
         <div className="space-y-6">
@@ -331,7 +342,13 @@ export default function TestInstructionsPage() {
               className="flex-1 sm:flex-initial"
               asChild
             >
-              <Link href="/student/my-learning">
+              <Link
+                href={
+                  testSeriesId
+                    ? `/student/test-series/${testSeriesId}?tab=tests`
+                    : "/student/my-learning"
+                }
+              >
                 <X className="mr-2 h-4 w-4" />
                 Cancel
               </Link>

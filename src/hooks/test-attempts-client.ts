@@ -114,10 +114,10 @@ export const useSaveAnswer = () => {
       attemptId: string;
       payload: AnswerPayload;
     }) => {
-      const { data } = await apiClient.post<
+      const response = await apiClient.post<
         AttemptApiResponse<{ saved: boolean }>
       >(`/api/attempts/${attemptId}/answer`, payload);
-      return data;
+      return response.data;
     },
     onSuccess: (_res, { attemptId }) => {
       qc.invalidateQueries({ queryKey: attemptKeys.detail(attemptId) });

@@ -1,7 +1,7 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { Suspense, lazy, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, lazy, useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,10 +47,26 @@ const TestSeriesTestsTab = lazy(() =>
 export default function StudentTestSeriesDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const identifier = params.id as string;
+  
+  // Check if tab is specified in query params
+  const tabFromQuery = searchParams.get("tab");
+  const initialTab: "description" | "tests" =
+    tabFromQuery === "tests" ? "tests" : "description";
+  
   const [activeTab, setActiveTab] = useState<"description" | "tests">(
-    "description"
+    initialTab
   );
+  
+  // Update tab if query param changes
+  useEffect(() => {
+    if (tabFromQuery === "tests") {
+      setActiveTab("tests");
+    } else if (tabFromQuery === "description") {
+      setActiveTab("description");
+    }
+  }, [tabFromQuery]);
   const [isEnrollDialogOpen, setIsEnrollDialogOpen] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -264,30 +280,33 @@ export default function StudentTestSeriesDetailPage() {
         />
       )}
 
-      {/* Main Content - Optimized spacing for mobile */}
-      <div className="px-3 py-4 lg:px-10 lg:py-8 bg-background">
-        <div className="container max-w-7xl mx-auto relative">
-          <Suspense fallback={<DescriptionPageShimmer />}>
-            {activeTab === "description" ? (
-              <TestSeriesDescriptionTab
-                testSeries={testSeries}
-                testCount={testCount}
-                tests={tests}
-                finalPrice={finalPrice}
-                savings={savings}
-                isHotDeal={isHotDeal}
-                isEnrolled={isEnrolled}
-                onEnroll={handleEnrollClick}
-                isProcessing={isProcessing}
-              />
-            ) : (
+      {/* Main Content - Premium spacing and layout */}
+      <div className="min-h-screen bg-background">
+        <div className="px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
+          <div className="container max-w-7xl mx-auto relative">
+            <Suspense fallback={<DescriptionPageShimmer />}>
+              {activeTab === "description" ? (
+                <TestSeriesDescriptionTab
+                  testSeries={testSeries}
+                  testCount={testCount}
+                  tests={tests}
+                  finalPrice={finalPrice}
+                  savings={savings}
+                  isHotDeal={isHotDeal}
+                  isEnrolled={isEnrolled}
+                  onEnroll={handleEnrollClick}
+                  isProcessing={isProcessing}
+                />
+              ) : (
               <TestSeriesTestsTab
                 tests={tests}
                 isEnrolled={isEnrolled}
                 isLoading={isLoadingTests}
+                testSeriesId={identifier}
               />
-            )}
-          </Suspense>
+              )}
+            </Suspense>
+          </div>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, CheckCircle2, Play, Lock } from "lucide-react";
+import { Clock, CheckCircle2, Play, Lock, FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -121,83 +121,107 @@ export function TestCard({
   const cardContent = (
     <Card
       className={cn(
-        "bg-card/95 text-card-foreground flex flex-col gap-6 rounded-xl border border-border/60 py-6 shadow-md hover:shadow-md transition-shadow",
+        "group relative overflow-hidden bg-card border shadow-sm hover:shadow-md hover:border-primary/50 transition-all duration-300",
         className
       )}
     >
-      <CardContent className="p-0 px-6 flex flex-col gap-6">
-        {/* Title and Info in one line */}
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <h4 className="font-semibold text-lg leading-tight">{title}</h4>
-            {!isPurchased && (
-              <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
-            )}
-          </div>
-          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <span>{durationMinutes} min</span>
-            <span>{totalMarks} marks</span>
-            {isFree && (
-              <Badge variant="secondary" className="text-xs">
-                Free
+      {/* Subtle gradient overlay on hover */}
+      <div className="absolute inset-0 bg-linear-to-br from-primary/0 via-primary/0 to-primary/0 group-hover:from-primary/5 group-hover:via-primary/0 group-hover:to-primary/0 transition-all duration-300 pointer-events-none" />
+      
+      <CardContent className="relative p-6">
+        <div className="flex flex-col gap-4">
+          {/* Header Section */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-2">
+                <h4 className="font-bold text-lg leading-tight text-foreground group-hover:text-primary transition-colors">
+                  {title}
+                </h4>
+                {!isPurchased && (
+                  <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
+                )}
+              </div>
+              
+              {/* Metadata Row */}
+              <div className="flex flex-wrap items-center gap-3 text-sm">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <Clock className="h-4 w-4 shrink-0" />
+                  <span className="font-medium">{durationMinutes} min</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <FileText className="h-4 w-4 shrink-0" />
+                  <span className="font-medium">{totalMarks} marks</span>
+                </div>
+                {isFree && (
+                  <Badge 
+                    variant="secondary" 
+                    className="text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                  >
+                    Free
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Attempt Status Badge */}
+            {attemptStatus && (
+              <Badge
+                variant={
+                  attemptStatus === "COMPLETED"
+                    ? "default"
+                    : attemptStatus === "IN_PROGRESS"
+                    ? "secondary"
+                    : "outline"
+                }
+                className={cn(
+                  "shrink-0",
+                  attemptStatus === "COMPLETED" &&
+                    "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                )}
+              >
+                {attemptStatus === "COMPLETED" ? (
+                  <span className="flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Completed
+                  </span>
+                ) : attemptStatus === "IN_PROGRESS" ? (
+                  "In Progress"
+                ) : (
+                  "Not Started"
+                )}
               </Badge>
             )}
           </div>
-        </div>
 
-        {/* Attempt Status */}
-        {attemptStatus && (
-          <Badge
-            variant={
-              attemptStatus === "COMPLETED"
-                ? "default"
-                : attemptStatus === "IN_PROGRESS"
-                ? "secondary"
-                : "outline"
-            }
-            className="w-fit"
-          >
-            {attemptStatus === "COMPLETED" ? (
-              <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="h-3 w-3" />
-                Completed
-              </span>
-            ) : attemptStatus === "IN_PROGRESS" ? (
-              "In Progress"
-            ) : (
-              "Not Started"
-            )}
-          </Badge>
-        )}
-
-        {/* Action Button */}
-        {showAction && (isEnrolled || testLink) && (
-          <div className="pt-2">
-            {testLink ? (
-              <Button
-                asChild
-                size="sm"
-                variant={getActionVariant()}
-                className="w-full sm:w-auto"
-              >
-                <Link href={testLink}>
+          {/* Action Button */}
+          {showAction && (isEnrolled || testLink) && (
+            <div className="flex items-center justify-end pt-2 border-t">
+              {testLink ? (
+                <Button
+                  asChild
+                  size="sm"
+                  variant={getActionVariant()}
+                  className="w-full sm:w-auto font-semibold"
+                >
+                  <Link href={testLink}>
+                    <Play className="mr-2 h-4 w-4" />
+                    {getActionText()}
+                  </Link>
+                </Button>
+              ) : onActionClick ? (
+                <Button
+                  size="sm"
+                  variant={getActionVariant()}
+                  onClick={onActionClick}
+                  className="w-full sm:w-auto font-semibold"
+                >
                   <Play className="mr-2 h-4 w-4" />
                   {getActionText()}
-                </Link>
-              </Button>
-            ) : onActionClick ? (
-              <Button
-                size="sm"
-                variant={getActionVariant()}
-                onClick={onActionClick}
-                className="w-full sm:w-auto"
-              >
-                <Play className="mr-2 h-4 w-4" />
-                {getActionText()}
-              </Button>
-            ) : null}
-          </div>
-        )}
+                </Button>
+              ) : null}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

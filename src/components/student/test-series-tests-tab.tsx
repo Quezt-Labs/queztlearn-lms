@@ -9,12 +9,14 @@ interface TestSeriesTestsTabProps {
   tests: ClientTestInSeries[];
   isEnrolled: boolean;
   isLoading: boolean;
+  testSeriesId?: string;
 }
 
 export function TestSeriesTestsTab({
   tests,
   isEnrolled,
   isLoading,
+  testSeriesId,
 }: TestSeriesTestsTabProps) {
   if (isLoading) {
     return (
@@ -55,7 +57,18 @@ export function TestSeriesTestsTab({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 lg:space-y-6">
+      {/* Header */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-foreground mb-2">
+          All Tests ({tests.length})
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Complete all tests to master this series
+        </p>
+      </div>
+
+      {/* Tests Grid */}
       <motion.div
         initial="hidden"
         animate="visible"
@@ -64,11 +77,11 @@ export function TestSeriesTestsTab({
           visible: {
             opacity: 1,
             transition: {
-              staggerChildren: 0.1,
+              staggerChildren: 0.08,
             },
           },
         }}
-        className="space-y-3"
+        className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6"
       >
         {tests?.map((test, index) => (
           <motion.div
@@ -77,7 +90,7 @@ export function TestSeriesTestsTab({
               hidden: { opacity: 0, y: 20 },
               visible: { opacity: 1, y: 0 },
             }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
           >
             <TestCard
               id={test.id}
@@ -90,10 +103,12 @@ export function TestSeriesTestsTab({
               isPurchased={isEnrolled}
               testLink={
                 isEnrolled
-                  ? `/student/tests/${test.id}/instructions`
+                  ? `/student/tests/${test.id}/instructions${
+                      testSeriesId ? `?testSeriesId=${testSeriesId}` : ""
+                    }`
                   : undefined
               }
-              index={0}
+              index={index}
               showAnimation={false}
             />
           </motion.div>

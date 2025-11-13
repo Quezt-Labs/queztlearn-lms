@@ -6,15 +6,23 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { QuestionRenderer } from "./question-renderer";
-import { useExamSecurity } from "@/hooks/use-exam-security";
 import { useRouter } from "next/navigation";
 import { useAttemptTimer } from "@/hooks/use-attempt-timer";
-import { useProctoringOnAttempt } from "@/hooks/use-proctoring-on-attempt";
 import { generateMockTest } from "@/lib/utils/test-mock";
 import { getAnsweredCount } from "@/lib/utils/test-engine";
-import { TestHeaderBar } from "@/components/test-engine/test-header-bar";
-import { QuestionPalette } from "@/components/test-engine/question-palette";
-import { ProctoringPanel } from "@/components/test-engine/proctoring-panel";
+import { PremiumTestHeader } from "@/components/test-engine/premium-test-header";
+import { PremiumQuestionPalette } from "@/components/test-engine/premium-question-palette";
+import { PremiumStatsSidebar } from "@/components/test-engine/premium-stats-sidebar";
+import {
+  Save,
+  CheckCircle2,
+  Trophy,
+  TrendingUp,
+  Clock,
+  FileText,
+  Award,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   useAttemptDetails,
   useSaveAnswer,
@@ -56,17 +64,11 @@ export function TestEngine({
     attemptId && !enableMock && submitMutation.isSuccess ? attemptId : undefined
   );
 
-  const security = useExamSecurity({
-    maxViolations: 3, // Enable violations for both mock and real tests
-    requireFullscreen:
-      typeof document !== "undefined" && document.fullscreenEnabled,
-    requireWebcamMic: true, // Require camera for both mock and real tests
-    onViolation: (_reason, count) => {
-      if (count >= 3 && attemptId) {
-        handleSubmit();
-      }
-    },
-  });
+  // Proctoring removed - using minimal security object
+  const security = {
+    violations: 0,
+    maxViolations: 3,
+  };
 
   // Use mock or real data
   const data = useMemo(() => {
@@ -207,6 +209,30 @@ export function TestEngine({
         : []) as EngineQuestion[],
     [data?.sections]
   );
+
+  // Create question to section mapping for section indicator
+  const questionSectionMap = useMemo(() => {
+    const map = new Map<number, { name: string; index: number }>();
+    if (data?.sections) {
+      let globalIndex = 0;
+      data.sections.forEach(
+        (
+          section: { name: string; questions: EngineQuestion[] },
+          sectionIdx: number
+        ) => {
+          (section.questions || []).forEach(() => {
+            map.set(globalIndex, {
+              name: section.name || "Questions",
+              index: sectionIdx + 1,
+            });
+            globalIndex++;
+          });
+        }
+      );
+    }
+    return map;
+  }, [data?.sections]);
+
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const currentQuestion = flatQuestions[currentIndex];
@@ -250,8 +276,37 @@ export function TestEngine({
 
   // Initialize answers from backend if available
   useEffect(() => {
-    if (attemptData?.data?.answers) {
-      setLocalAnswers(attemptData.data.answers as Record<string, unknown>);
+    if (attemptData?.data?.answers && Array.isArray(attemptData.data.answers)) {
+      // Convert answers array to Record format
+      const answersMap: Record<string, unknown> = {};
+      const reviewMap: Record<string, boolean> = {};
+
+      attemptData.data.answers.forEach(
+        (answer: {
+          questionId: string;
+          selectedOptionId?: string | null;
+          textAnswer?: string | null;
+          isMarkedForReview?: boolean;
+        }) => {
+          // Store the actual answer value (selectedOptionId for MCQ/TRUE_FALSE, textAnswer for NUMERICAL/FILL_BLANK)
+          if (answer.selectedOptionId) {
+            answersMap[answer.questionId] = answer.selectedOptionId;
+          } else if (
+            answer.textAnswer !== null &&
+            answer.textAnswer !== undefined
+          ) {
+            answersMap[answer.questionId] = answer.textAnswer;
+          }
+
+          // Store review status
+          if (answer.isMarkedForReview) {
+            reviewMap[answer.questionId] = true;
+          }
+        }
+      );
+
+      setLocalAnswers(answersMap);
+      setMarkedForReview(reviewMap);
     }
   }, [attemptData]);
 
@@ -271,13 +326,6 @@ export function TestEngine({
     return () => clearInterval(interval);
   }, [isActive, currentIndex, flatQuestions]);
 
-  useProctoringOnAttempt(
-    security.enterFullscreen,
-    security.startMedia,
-    security.stopMedia,
-    security.exitFullscreen
-  );
-
   // Drive countdown from a small timer hook
   const tickCallback = useCallback(() => {
     // Touch function - can be empty for backend-driven
@@ -296,23 +344,9 @@ export function TestEngine({
   // Auto-submit on timer expiry once
   useEffect(() => {
     if (isActive && remainingMs <= 0 && attemptId && !enableMock) {
-      security.stopMedia();
-      security.exitFullscreen();
       handleSubmit();
     }
-  }, [remainingMs, isActive, attemptId, enableMock, security]);
-
-  // Note: Camera start/stop is handled by useProctoringOnAttempt hook based on route
-  // Only stop if attempt is explicitly submitted/ended
-  const { stopMedia, exitFullscreen } = security;
-  useEffect(() => {
-    // Only stop if attempt is explicitly ended (submitted)
-    // Route-based cleanup is handled by useProctoringOnAttempt
-    if (submitMutation.isSuccess) {
-      stopMedia();
-      exitFullscreen();
-    }
-  }, [submitMutation.isSuccess, stopMedia, exitFullscreen]);
+  }, [remainingMs, isActive, attemptId, enableMock]);
 
   // Save answer to backend (with debouncing could be added)
   const handleAnswer = useCallback(
@@ -389,6 +423,7 @@ export function TestEngine({
   );
 
   const toggleReview = useCallback(() => {
+    if (!currentQuestion) return;
     const newMarked = !markedForReview[currentQuestion.id];
     setMarkedForReview((m) => ({
       ...m,
@@ -437,6 +472,66 @@ export function TestEngine({
     saveAnswerMutation,
   ]);
 
+  // Clear current answer
+  const clearAnswer = useCallback(() => {
+    if (!currentQuestion) return;
+    setLocalAnswers((prev) => {
+      const updated = { ...prev };
+      delete updated[currentQuestion.id];
+      return updated;
+    });
+
+    // If backend-driven, save empty answer
+    if (attemptId && !enableMock) {
+      const timeSpent = answerTimeSpent[currentQuestion.id] || 0;
+      const payload: {
+        questionId: string;
+        selectedOptionId?: string;
+        textAnswer?: string;
+        timeSpentSeconds: number;
+        isMarkedForReview?: boolean;
+      } = {
+        questionId: currentQuestion.id,
+        timeSpentSeconds: timeSpent,
+        isMarkedForReview: markedForReview[currentQuestion.id] || false,
+      };
+
+      if (
+        currentQuestion.type === "MCQ" ||
+        currentQuestion.type === "TRUE_FALSE"
+      ) {
+        // For clearing, don't include selectedOptionId
+        delete payload.selectedOptionId;
+      } else {
+        payload.textAnswer = "";
+      }
+
+      saveAnswerMutation.mutate({ attemptId, payload });
+    }
+  }, [
+    currentQuestion,
+    attemptId,
+    enableMock,
+    answerTimeSpent,
+    markedForReview,
+    saveAnswerMutation,
+  ]);
+
+  // Jump to next unanswered question
+  const jumpToNextUnanswered = useCallback(() => {
+    const unansweredIndex = flatQuestions.findIndex(
+      (q, idx) =>
+        q &&
+        idx > currentIndex &&
+        (localAnswers[q.id] === undefined ||
+          localAnswers[q.id] === null ||
+          localAnswers[q.id] === "")
+    );
+    if (unansweredIndex !== -1) {
+      setCurrentIndex(unansweredIndex);
+    }
+  }, [flatQuestions, currentIndex, localAnswers]);
+
   const handleSubmit = useCallback(async () => {
     if (enableMock) {
       // Mock submission
@@ -446,8 +541,6 @@ export function TestEngine({
           "Submit your test? You cannot change answers after submit."
         )
       ) {
-        security.stopMedia();
-        security.exitFullscreen();
         // For mock, just update local state
         return;
       }
@@ -467,17 +560,106 @@ export function TestEngine({
         : true;
     if (!ok) return;
 
-    // Stop proctoring immediately when ending attempt
-    security.stopMedia();
-    security.exitFullscreen();
-
     try {
       await submitMutation.mutateAsync(attemptId);
     } catch (error) {
       console.error("Failed to submit attempt:", error);
       // Show error message
     }
-  }, [attemptId, enableMock, submitMutation, security]);
+  }, [attemptId, enableMock, submitMutation]);
+
+  // Calculate time per question estimate (must be before conditional returns)
+  const avgTimePerQuestion = useMemo(() => {
+    if (flatQuestions.length === 0 || durationMinutes === 0) return 0;
+    return Math.floor((durationMinutes * 60) / flatQuestions.length);
+  }, [flatQuestions.length, durationMinutes]);
+
+  // Get current section info (must be before conditional returns)
+  const currentSection = useMemo(() => {
+    return questionSectionMap.get(currentIndex);
+  }, [questionSectionMap, currentIndex]);
+
+  // Check if answer is being saved (must be before conditional returns)
+  const isSaving = saveAnswerMutation.isPending;
+
+  // Calculate progress and counts (must be before conditional returns)
+  const progressPercentage = useMemo(
+    () =>
+      flatQuestions.length > 0
+        ? ((currentIndex + 1) / flatQuestions.length) * 100
+        : 0,
+    [flatQuestions.length, currentIndex]
+  );
+
+  const answeredCount = useMemo(
+    () =>
+      flatQuestions.filter(
+        (q) =>
+          q &&
+          localAnswers[q.id] !== undefined &&
+          localAnswers[q.id] !== null &&
+          localAnswers[q.id] !== ""
+      ).length,
+    [flatQuestions, localAnswers]
+  );
+
+  const reviewCount = useMemo(
+    () => Object.values(markedForReview).filter(Boolean).length,
+    [markedForReview]
+  );
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input/textarea
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target instanceof HTMLElement && e.target.isContentEditable)
+      ) {
+        return;
+      }
+
+      // Arrow keys for navigation
+      if (e.key === "ArrowLeft" && !isFirst) {
+        e.preventDefault();
+        setCurrentIndex((i) => Math.max(0, i - 1));
+      } else if (e.key === "ArrowRight" && !isLast) {
+        e.preventDefault();
+        setCurrentIndex((i) => Math.min(flatQuestions.length - 1, i + 1));
+      }
+      // Enter to submit (only if on last question)
+      else if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && isLast) {
+        e.preventDefault();
+        handleSubmit();
+      }
+      // 'C' to clear answer
+      else if (e.key === "c" || e.key === "C") {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          clearAnswer();
+        }
+      }
+      // 'J' to jump to next unanswered
+      else if (e.key === "j" || e.key === "J") {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          jumpToNextUnanswered();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [
+    isFirst,
+    isLast,
+    flatQuestions.length,
+    currentIndex,
+    handleSubmit,
+    clearAnswer,
+    jumpToNextUnanswered,
+  ]);
 
   // Loading state
   if (!enableMock && attemptId && isLoadingAttempt) {
@@ -520,135 +702,355 @@ export function TestEngine({
     const submittedDate = new Date(attemptSubmittedAt).toLocaleString();
     const answeredCount = getAnsweredCount(localAnswers);
     const results = resultsData?.data;
+    const totalMarks = flatQuestions.reduce(
+      (sum, q) => sum + (q?.marks || 1),
+      0
+    );
+    const percentage = results?.percentage || 0;
+    const extendedResults = resultsData?.data as
+      | (typeof results & {
+          isPassed?: boolean;
+          correctCount?: number;
+          wrongCount?: number;
+          skippedCount?: number;
+        })
+      | undefined;
+    const isPassing = extendedResults?.isPassed ?? false;
 
     return (
-      <Card className="mx-auto my-10 max-w-3xl p-8 text-center space-y-4">
-        {isLoadingResults ? (
-          <>
-            <div className="text-2xl font-semibold">Submitting...</div>
-            <div className="text-muted-foreground">
-              Please wait while we evaluate your test
-            </div>
-          </>
-        ) : results ? (
-          <>
-            <div className="text-2xl font-semibold">
-              Test Submitted Successfully!
-            </div>
-            <div className="text-muted-foreground">
-              Submitted on {submittedDate}
-            </div>
-            <div className="space-y-2 pt-4">
-              <div className="text-lg">
-                <span className="font-semibold">Score: </span>
-                {results.totalScore} /{" "}
-                {flatQuestions.reduce((sum, q) => sum + (q?.marks || 1), 0)}
+      <div className="min-h-screen bg-linear-to-br from-background via-background to-muted/20 flex items-center justify-center p-4">
+        <Card className="max-w-4xl w-full border shadow-lg overflow-hidden">
+          {isLoadingResults ? (
+            <CardContent className="p-12 text-center space-y-6">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", duration: 0.5 }}
+                className="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center"
+              >
+                <Clock className="h-10 w-10 text-primary animate-spin" />
+              </motion.div>
+              <div>
+                <h2 className="text-3xl font-bold mb-2">Submitting...</h2>
+                <p className="text-muted-foreground">
+                  Please wait while we evaluate your test
+                </p>
               </div>
-              <div className="text-lg">
-                <span className="font-semibold">Percentage: </span>
-                {results.percentage.toFixed(2)}%
+            </CardContent>
+          ) : results ? (
+            <>
+              {/* Success Header */}
+              <div className="bg-linear-to-r from-primary/10 via-primary/5 to-transparent p-8 text-center border-b">
+                <motion.div
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ type: "spring", duration: 0.6 }}
+                  className="mx-auto w-24 h-24 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-4"
+                >
+                  <CheckCircle2 className="h-12 w-12 text-green-600 dark:text-green-400" />
+                </motion.div>
+                <motion.h1
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-4xl font-bold mb-2"
+                >
+                  Test Submitted Successfully!
+                </motion.h1>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-muted-foreground"
+                >
+                  Submitted on {submittedDate}
+                </motion.p>
               </div>
-              {results.rank && (
-                <div className="text-lg">
-                  <span className="font-semibold">Rank: </span>#{results.rank}
-                  {results.percentile &&
-                    ` (${results.percentile.toFixed(1)} percentile)`}
+
+              <CardContent className="p-8">
+                {/* Main Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                  {/* Score Card */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="p-6 rounded-xl border bg-card shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                        <Trophy className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="text-sm font-medium text-muted-foreground">
+                        Score
+                      </div>
+                    </div>
+                    <div className="text-3xl font-bold mb-1">
+                      {results.totalScore}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      out of {totalMarks} marks
+                    </div>
+                  </motion.div>
+
+                  {/* Percentage Card */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="p-6 rounded-xl border bg-card shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
+                        <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <div className="text-sm font-medium text-muted-foreground">
+                        Percentage
+                      </div>
+                    </div>
+                    <div className="text-3xl font-bold mb-1">
+                      {percentage.toFixed(1)}%
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {isPassing ? (
+                        <span className="text-green-600 dark:text-green-400 font-semibold">
+                          Passed ✓
+                        </span>
+                      ) : (
+                        <span className="text-red-600 dark:text-red-400 font-semibold">
+                          Not Passed
+                        </span>
+                      )}
+                    </div>
+                  </motion.div>
+
+                  {/* Rank Card */}
+                  {results.rank && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.6 }}
+                      className="p-6 rounded-xl border bg-card shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
+                          <Award className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <div className="text-sm font-medium text-muted-foreground">
+                          Rank
+                        </div>
+                      </div>
+                      <div className="text-3xl font-bold mb-1">
+                        #{results.rank}
+                      </div>
+                      {results.percentile && (
+                        <div className="text-xs text-muted-foreground">
+                          {results.percentile.toFixed(1)} percentile
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {/* Questions Answered Card */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7 }}
+                    className="p-6 rounded-xl border bg-card shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/30">
+                        <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div className="text-sm font-medium text-muted-foreground">
+                        Answered
+                      </div>
+                    </div>
+                    <div className="text-3xl font-bold mb-1">
+                      {answeredCount}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      out of {flatQuestions.length} questions
+                    </div>
+                  </motion.div>
                 </div>
-              )}
-              <div className="text-sm text-muted-foreground pt-2">
-                Answered {answeredCount} out of {flatQuestions.length} questions
+
+                {/* Additional Stats */}
+                {extendedResults?.correctCount !== undefined && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.8 }}
+                    className="grid grid-cols-3 gap-4 mb-8 p-6 rounded-xl bg-muted/50 border"
+                  >
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                        {extendedResults.correctCount || 0}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Correct
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                        {extendedResults.wrongCount || 0}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Wrong</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-muted-foreground">
+                        {extendedResults.skippedCount || 0}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Skipped
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Action Buttons */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.9 }}
+                  className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4"
+                >
+                  <Button
+                    size="lg"
+                    onClick={() => router.push("/student/my-learning")}
+                    className="min-w-[200px]"
+                  >
+                    Back to My Learning
+                  </Button>
+                  {attemptId && (
+                    <Button
+                      size="lg"
+                      variant="outline"
+                      onClick={() =>
+                        router.push(
+                          `/student/tests/${testId}/results?attemptId=${attemptId}`
+                        )
+                      }
+                      className="min-w-[200px]"
+                    >
+                      View Detailed Results
+                    </Button>
+                  )}
+                </motion.div>
+              </CardContent>
+            </>
+          ) : (
+            <CardContent className="p-12 text-center space-y-6">
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", duration: 0.5 }}
+                className="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center"
+              >
+                <CheckCircle2 className="h-10 w-10 text-primary" />
+              </motion.div>
+              <div>
+                <h2 className="text-3xl font-bold mb-2">Submission Complete</h2>
+                <p className="text-muted-foreground mb-4">
+                  Submitted on {submittedDate}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Answered {answeredCount} out of {flatQuestions.length}{" "}
+                  questions
+                </p>
               </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="text-2xl font-semibold">Submission complete</div>
-            <div className="text-muted-foreground">
-              Submitted on {submittedDate}
-            </div>
-            <div className="text-sm">Answered {answeredCount} questions</div>
-          </>
-        )}
-        <div className="flex items-center justify-center gap-2 pt-4">
-          <Button onClick={() => router.push("/student/my-learning")}>
-            Back to My Learning
-          </Button>
-          {results && attemptId && (
-            <Button
-              variant="outline"
-              onClick={() =>
-                router.push(
-                  `/student/tests/${testId}/results?attemptId=${attemptId}`
-                )
-              }
-            >
-              View Detailed Results
-            </Button>
+              <Button
+                size="lg"
+                onClick={() => router.push("/student/my-learning")}
+                className="mt-4"
+              >
+                Back to My Learning
+              </Button>
+            </CardContent>
           )}
-        </div>
-      </Card>
+        </Card>
+      </div>
     );
   }
 
-  const progressPercentage =
-    flatQuestions.length > 0
-      ? ((currentIndex + 1) / flatQuestions.length) * 100
-      : 0;
-
-  const answeredCount = flatQuestions.filter(
-    (q) =>
-      q &&
-      localAnswers[q.id] !== undefined &&
-      localAnswers[q.id] !== null &&
-      localAnswers[q.id] !== ""
-  ).length;
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-      <Card className="p-0 overflow-hidden shadow-2xl border-2">
-        <TestHeaderBar
-          remainingMinutes={remainingMinutes}
-          remainingSeconds={remainingSeconds}
-          currentIndex={currentIndex}
-          totalQuestions={flatQuestions.length}
-          violations={security.violations}
-          maxViolations={security.maxViolations}
-          markedForReview={
-            currentQuestion
-              ? Boolean(markedForReview[currentQuestion.id])
-              : false
-          }
-          onToggleReview={toggleReview}
-          onSubmit={handleSubmit}
-        />
+    <div className="min-h-screen bg-background">
+      {/* Premium Header */}
+      <PremiumTestHeader
+        remainingMinutes={remainingMinutes}
+        remainingSeconds={remainingSeconds}
+        currentIndex={currentIndex}
+        totalQuestions={flatQuestions.length}
+        violations={security.violations}
+        maxViolations={security.maxViolations}
+        markedForReview={
+          currentQuestion ? Boolean(markedForReview[currentQuestion.id]) : false
+        }
+        onToggleReview={toggleReview}
+        onSubmit={handleSubmit}
+      />
 
-        {/* Progress Bar */}
-        <div className="px-4 pt-3 pb-2 bg-muted/30">
-          <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-            <span>
-              Progress: {answeredCount}/{flatQuestions.length} answered
-            </span>
-            <span>{Math.round(progressPercentage)}%</span>
-          </div>
-          <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-            <motion.div
-              className="h-full bg-primary rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPercentage}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-        </div>
+      {/* Main Content */}
+      <div className="container mx-auto px-4 sm:px-6 py-6 max-w-7xl">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+          {/* Question Area */}
+          <div className="space-y-6">
+            {/* Progress Indicator */}
+            <Card className="border shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm font-semibold text-foreground">
+                        Test Progress
+                      </p>
+                      {currentSection && (
+                        <Badge variant="outline" className="text-xs">
+                          {currentSection.name}
+                        </Badge>
+                      )}
+                      {isSaving && (
+                        <Badge variant="secondary" className="text-xs gap-1">
+                          <Save className="h-3 w-3 animate-spin" />
+                          Saving...
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {answeredCount} of {flatQuestions.length} questions
+                      answered
+                      {avgTimePerQuestion > 0 && (
+                        <span className="ml-2">
+                          • ~{avgTimePerQuestion}s per question
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-primary">
+                      {Math.round(progressPercentage)}%
+                    </p>
+                  </div>
+                </div>
+                <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+                  <motion.div
+                    className="h-full bg-linear-to-r from-primary to-primary/80 rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progressPercentage}%` }}
+                    transition={{ duration: 0.5, ease: "easeOut" }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3 sm:gap-4 p-3 sm:p-4 pb-[max(theme(spacing.4),env(safe-area-inset-bottom))]">
-          <div className="min-h-[50vh] sm:min-h-[60vh]">
+            {/* Question Card */}
             {currentQuestion && (
               <motion.div
                 key={currentQuestion.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.3 }}
               >
                 <QuestionRenderer
                   question={currentQuestion}
@@ -658,44 +1060,53 @@ export function TestEngine({
               </motion.div>
             )}
 
-            <div className="mt-6 flex items-center justify-between gap-2">
-              <Button
-                variant="outline"
-                disabled={isFirst}
-                onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
-                className="min-w-[100px]"
-              >
-                ← Previous
-              </Button>
+            {/* Navigation Controls */}
+            <Card className="border shadow-sm">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    disabled={isFirst}
+                    onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+                    className="gap-2 min-w-[120px]"
+                  >
+                    <span>←</span>
+                    Previous
+                  </Button>
 
-              <div className="flex-1 flex items-center justify-center gap-2">
-                <Badge variant="outline" className="text-xs">
-                  {answeredCount} answered
-                </Badge>
-                {Object.values(markedForReview).filter(Boolean).length > 0 && (
-                  <Badge variant="secondary" className="text-xs">
-                    {Object.values(markedForReview).filter(Boolean).length}{" "}
-                    marked
-                  </Badge>
-                )}
-              </div>
+                  <div className="flex items-center gap-3 flex-1 justify-center">
+                    <Badge variant="outline" className="text-sm px-3 py-1">
+                      {answeredCount} answered
+                    </Badge>
+                    {reviewCount > 0 && (
+                      <Badge variant="secondary" className="text-sm px-3 py-1">
+                        {reviewCount} marked
+                      </Badge>
+                    )}
+                  </div>
 
-              <Button
-                disabled={isLast}
-                onClick={() =>
-                  setCurrentIndex((i) =>
-                    Math.min(flatQuestions.length - 1, i + 1)
-                  )
-                }
-                className="min-w-[100px]"
-              >
-                Next →
-              </Button>
-            </div>
+                  <Button
+                    size="lg"
+                    disabled={isLast}
+                    onClick={() =>
+                      setCurrentIndex((i) =>
+                        Math.min(flatQuestions.length - 1, i + 1)
+                      )
+                    }
+                    className="gap-2 min-w-[120px]"
+                  >
+                    Next
+                    <span>→</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="space-y-3">
-            <QuestionPalette
+          {/* Sidebar */}
+          <div className="space-y-4">
+            <PremiumQuestionPalette
               total={flatQuestions.length}
               currentIndex={currentIndex}
               answeredMap={flatQuestions.reduce<Record<number, boolean>>(
@@ -720,50 +1131,17 @@ export function TestEngine({
               onSelect={(idx) => setCurrentIndex(idx)}
             />
 
-            {/* Always show proctoring panel - camera required for both mock and real tests */}
-            <ProctoringPanel
-              mediaStream={security.mediaStream}
-              isRequestingMedia={security.isRequestingMedia}
-              startMedia={security.startMedia}
-              mediaError={security.mediaError}
-              videoRef={security.videoRef}
-              isFullscreen={security.isFullscreen}
-              enterFullscreen={security.enterFullscreen}
-              autoStart={true} // Auto-start camera for both mock and real tests
+            <PremiumStatsSidebar
+              answeredCount={answeredCount}
+              totalQuestions={flatQuestions.length}
+              reviewCount={reviewCount}
+              remainingMinutes={remainingMinutes}
+              remainingSeconds={remainingSeconds}
+              progressPercentage={progressPercentage}
             />
-
-            {/* Summary Card */}
-            <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-              <CardContent className="p-4">
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Answered:</span>
-                    <span className="font-semibold text-primary">
-                      {answeredCount}/{flatQuestions.length}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Remaining:</span>
-                    <span className="font-semibold">
-                      {flatQuestions.length - answeredCount}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Time Left:</span>
-                    <span
-                      className={`font-semibold ${
-                        remainingMinutes < 5 ? "text-destructive" : ""
-                      }`}
-                    >
-                      {remainingMinutes}m {remainingSeconds}s
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
