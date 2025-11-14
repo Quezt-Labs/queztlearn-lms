@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,18 +53,16 @@ export function EditTestSeriesModal({
 
   const updateMutation = useUpdateTestSeries();
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [faqs, setFaqs] = useState<FAQ[]>(
-    (testSeries.faq || []).map((faq, index) => ({
-      id: `faq-${index}-${Date.now()}`,
-      title: faq.title,
-      description: faq.description,
-    }))
-  );
+  const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [newFaq, setNewFaq] = useState({ title: "", description: "" });
   const [isAddingFaq, setIsAddingFaq] = useState(false);
+  const initializedRef = useRef<string | null>(null);
 
+  // Only initialize when modal opens or testSeries.id changes
   useEffect(() => {
-    if (testSeries) {
+    if (open && testSeries && initializedRef.current !== testSeries.id) {
+      initializedRef.current = testSeries.id;
+
       setFormData({
         exam: testSeries.exam,
         title: testSeries.title,
@@ -77,6 +75,7 @@ export function EditTestSeriesModal({
         durationDays: testSeries.durationDays,
         isPublished: testSeries.isPublished,
       });
+
       // Initialize FAQs from testSeries
       setFaqs(
         (testSeries.faq || []).map((faq, index) => ({
@@ -86,10 +85,15 @@ export function EditTestSeriesModal({
         }))
       );
     }
-  }, [testSeries]);
+  }, [open, testSeries?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Prevent duplicate submissions
+    if (updateMutation.isPending) {
+      return;
+    }
 
     try {
       await updateMutation.mutateAsync({
@@ -98,7 +102,6 @@ export function EditTestSeriesModal({
           title: formData.title,
           description: {
             html: formData.description,
-            features: testSeries.description?.features || [],
           },
           imageUrl: formData.imageUrl || undefined,
           faq: faqs.map((faq) => ({
@@ -110,6 +113,9 @@ export function EditTestSeriesModal({
           isPublished: formData.isPublished,
         },
       });
+
+      // Reset initialization ref when modal closes
+      initializedRef.current = null;
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
@@ -155,6 +161,13 @@ export function EditTestSeriesModal({
   const handleRemoveFaq = (id: string) => {
     setFaqs((prev) => prev.filter((faq) => faq.id !== id));
   };
+
+  // Reset when modal closes
+  useEffect(() => {
+    if (!open) {
+      initializedRef.current = null;
+    }
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

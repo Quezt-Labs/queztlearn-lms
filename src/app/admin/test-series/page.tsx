@@ -103,7 +103,12 @@ export default function TestSeriesPage() {
               </CardDescription>
             </div>
             {hasActiveFilters && (
-              <Button variant="outline" size="sm" onClick={handleClearFilters} className="shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClearFilters}
+                className="shrink-0"
+              >
                 <X className="mr-2 h-4 w-4" />
                 Clear Filters
               </Button>

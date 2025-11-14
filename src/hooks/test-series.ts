@@ -30,6 +30,9 @@ export interface TestSeries {
     html?: string;
     features?: string[];
   };
+  instructions?: {
+    html?: string;
+  };
   slug: string;
   imageUrl?: string;
   faq?: TestSeriesFAQ[];
@@ -280,6 +283,9 @@ export const useUpdateTest = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["tests"] });
       queryClient.invalidateQueries({ queryKey: ["test", variables.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["test-details", variables.id],
+      });
       // Invalidate tests by test series if testSeriesId is provided
       if (variables.data.testSeriesId) {
         queryClient.invalidateQueries({

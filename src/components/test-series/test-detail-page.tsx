@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -52,6 +52,9 @@ import {
   List,
   HelpCircle,
   Settings,
+  Edit,
+  Save,
+  X,
 } from "lucide-react";
 import {
   useTest,
@@ -65,6 +68,7 @@ import { LoadingSkeleton } from "@/components/common/loading-skeleton";
 import { CreateSectionModal } from "./create-section-modal";
 import { CreateQuestionModal } from "./create-question-modal";
 import { useTestDetails } from "@/hooks/test-series";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 interface TestDetailPageProps {
   basePath?: "admin" | "teacher";
@@ -86,10 +90,13 @@ export function TestDetailPage({ basePath = "admin" }: TestDetailPageProps) {
   const [csvMode, setCsvMode] = useState<
     "AUTO" | "QUESTIONS_ONLY" | "SECTIONS_AND_QUESTIONS"
   >("AUTO");
+  const [isEditingInstructions, setIsEditingInstructions] = useState(false);
+  const [instructionsContent, setInstructionsContent] = useState("");
 
   // Data fetching
   const { data: testData, isLoading, refetch: refetchTest } = useTest(testId);
-  const { data: detailsData } = useTestDetails(testId);
+  const { data: detailsData, refetch: refetchTestDetails } =
+    useTestDetails(testId);
   const { data: sectionsData, refetch: refetchSections } =
     useTestSections(testId);
 
@@ -103,6 +110,13 @@ export function TestDetailPage({ basePath = "admin" }: TestDetailPageProps) {
   const test = (details as Test) || (testData?.data as Test | undefined);
   const sections =
     (details?.sections as Section[]) || (sectionsData?.data as Section[]) || [];
+
+  // Initialize instructions content when test loads or when not editing
+  useEffect(() => {
+    if (!isEditingInstructions && test) {
+      setInstructionsContent(test.instructions?.html || "");
+    }
+  }, [test?.instructions?.html, isEditingInstructions]);
 
   const handleGoBack = () => {
     router.push(`/${basePath}/test-series/${testSeriesId}`);
@@ -134,6 +148,47 @@ export function TestDetailPage({ basePath = "admin" }: TestDetailPageProps) {
       day: "numeric",
       year: "numeric",
     });
+  };
+
+  const handleStartEditInstructions = () => {
+    setInstructionsContent(test?.instructions?.html || "");
+    setIsEditingInstructions(true);
+  };
+
+  const handleCancelEditInstructions = () => {
+    setInstructionsContent(test?.instructions?.html || "");
+    setIsEditingInstructions(false);
+  };
+
+  const handleSaveInstructions = async () => {
+    if (!test) return;
+
+    try {
+      const result = await updateMutation.mutateAsync({
+        id: testId,
+        data: {
+          instructions: instructionsContent
+            ? {
+                html: instructionsContent,
+              }
+            : {},
+        },
+      });
+
+      // Update local state immediately from response
+      if (result?.data?.instructions?.html) {
+        setInstructionsContent(result.data.instructions.html);
+      } else {
+        setInstructionsContent("");
+      }
+
+      setIsEditingInstructions(false);
+
+      // Refetch both queries to ensure we have the latest data
+      await Promise.all([refetchTest(), refetchTestDetails()]);
+    } catch (error) {
+      console.error("Failed to update instructions:", error);
+    }
   };
 
   if (isLoading) {
@@ -355,6 +410,76 @@ export function TestDetailPage({ basePath = "admin" }: TestDetailPageProps) {
 
         {/* Settings Tab */}
         <TabsContent value="settings" className="space-y-6">
+          {/* Instructions Card */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Instructions</CardTitle>
+                {!isEditingInstructions && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleStartEditInstructions}
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit Instructions
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isEditingInstructions ? (
+                <div className="space-y-4">
+                  <RichTextEditor
+                    content={instructionsContent}
+                    onChange={setInstructionsContent}
+                    placeholder="Enter test instructions for students..."
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancelEditInstructions}
+                      disabled={updateMutation.isPending}
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleSaveInstructions}
+                      disabled={updateMutation.isPending}
+                    >
+                      <Save className="mr-2 h-4 w-4" />
+                      {updateMutation.isPending ? "Saving..." : "Save"}
+                    </Button>
+                  </div>
+                </div>
+              ) : test.instructions?.html ? (
+                <div
+                  className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground test-instructions"
+                  dangerouslySetInnerHTML={{
+                    __html: test.instructions.html,
+                  }}
+                />
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>No instructions provided</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-4"
+                    onClick={handleStartEditInstructions}
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    Add Instructions
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle>Test Settings</CardTitle>

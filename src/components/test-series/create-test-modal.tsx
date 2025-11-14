@@ -33,7 +33,6 @@ export function CreateTestModal({
     title: "",
     slug: "",
     description: "",
-    instructions: "",
     durationMinutes: 60,
     totalMarks: 100,
     passingMarks: 33,
@@ -59,11 +58,7 @@ export function CreateTestModal({
               topics: [],
             }
           : undefined,
-        instructions: formData.instructions
-          ? {
-              html: formData.instructions,
-            }
-          : {},
+        instructions: {},
         durationMinutes: formData.durationMinutes,
         totalMarks: formData.totalMarks,
         passingMarks: formData.passingMarks,
@@ -78,7 +73,6 @@ export function CreateTestModal({
         title: "",
         slug: "",
         description: "",
-        instructions: "",
         durationMinutes: 60,
         totalMarks: 100,
         passingMarks: 33,
@@ -161,22 +155,6 @@ export function CreateTestModal({
               }
               placeholder="Test description covering topics..."
             />
-          </div>
-
-          {/* Instructions */}
-          <div className="space-y-2">
-            <Label htmlFor="instructions">Instructions</Label>
-            <RichTextEditor
-              content={formData.instructions}
-              onChange={(content) =>
-                setFormData({ ...formData, instructions: content })
-              }
-              placeholder="Enter test instructions for students..."
-            />
-            <p className="text-xs text-muted-foreground">
-              Detailed instructions that will be shown to students before
-              starting the test
-            </p>
           </div>
 
           {/* Duration and Marks */}
