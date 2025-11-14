@@ -5,6 +5,16 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { QuestionRenderer } from "./question-renderer";
 import { useRouter } from "next/navigation";
 import { useAttemptTimer } from "@/hooks/use-attempt-timer";
@@ -49,6 +59,7 @@ export function TestEngine({
   const [answerTimeSpent, setAnswerTimeSpent] = useState<
     Record<string, number>
   >({});
+  const [showSubmitDialog, setShowSubmitDialog] = useState(false);
   const router = useRouter();
 
   // Backend API hooks
@@ -532,18 +543,15 @@ export function TestEngine({
     }
   }, [flatQuestions, currentIndex, localAnswers]);
 
-  const handleSubmit = useCallback(async () => {
+  const handleSubmit = useCallback(() => {
+    setShowSubmitDialog(true);
+  }, []);
+
+  const confirmSubmit = useCallback(async () => {
+    setShowSubmitDialog(false);
+
     if (enableMock) {
-      // Mock submission
-      if (
-        typeof window !== "undefined" &&
-        window.confirm(
-          "Submit your test? You cannot change answers after submit."
-        )
-      ) {
-        // For mock, just update local state
-        return;
-      }
+      // For mock, just update local state
       return;
     }
 
@@ -551,14 +559,6 @@ export function TestEngine({
       console.error("No attemptId available");
       return;
     }
-
-    const ok =
-      typeof window !== "undefined"
-        ? window.confirm(
-            "Submit your test? You cannot change answers after submit."
-          )
-        : true;
-    if (!ok) return;
 
     try {
       await submitMutation.mutateAsync(attemptId);
@@ -974,174 +974,200 @@ export function TestEngine({
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Premium Header */}
-      <PremiumTestHeader
-        remainingMinutes={remainingMinutes}
-        remainingSeconds={remainingSeconds}
-        currentIndex={currentIndex}
-        totalQuestions={flatQuestions.length}
-        violations={security.violations}
-        maxViolations={security.maxViolations}
-        markedForReview={
-          currentQuestion ? Boolean(markedForReview[currentQuestion.id]) : false
-        }
-        onToggleReview={toggleReview}
-        onSubmit={handleSubmit}
-      />
+    <>
+      {/* Submit Confirmation Dialog */}
+      <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Submit Test</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to submit your test? You cannot change
+              answers after submission. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSubmit}>
+              Submit Test
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 sm:px-6 py-6 max-w-7xl">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
-          {/* Question Area */}
-          <div className="space-y-6">
-            {/* Progress Indicator */}
-            <Card className="border shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="text-sm font-semibold text-foreground">
-                        Test Progress
+      <div className="min-h-screen bg-background">
+        {/* Premium Header */}
+        <PremiumTestHeader
+          remainingMinutes={remainingMinutes}
+          remainingSeconds={remainingSeconds}
+          currentIndex={currentIndex}
+          totalQuestions={flatQuestions.length}
+          violations={security.violations}
+          maxViolations={security.maxViolations}
+          markedForReview={
+            currentQuestion
+              ? Boolean(markedForReview[currentQuestion.id])
+              : false
+          }
+          onToggleReview={toggleReview}
+          onSubmit={handleSubmit}
+        />
+
+        {/* Main Content */}
+        <div className="container mx-auto px-4 sm:px-6 py-6 max-w-7xl">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+            {/* Question Area */}
+            <div className="space-y-6">
+              {/* Progress Indicator */}
+              <Card className="border shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="text-sm font-semibold text-foreground">
+                          Test Progress
+                        </p>
+                        {currentSection && (
+                          <Badge variant="outline" className="text-xs">
+                            {currentSection.name}
+                          </Badge>
+                        )}
+                        {isSaving && (
+                          <Badge variant="secondary" className="text-xs gap-1">
+                            <Save className="h-3 w-3 animate-spin" />
+                            Saving...
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {answeredCount} of {flatQuestions.length} questions
+                        answered
+                        {avgTimePerQuestion > 0 && (
+                          <span className="ml-2">
+                            • ~{avgTimePerQuestion}s per question
+                          </span>
+                        )}
                       </p>
-                      {currentSection && (
-                        <Badge variant="outline" className="text-xs">
-                          {currentSection.name}
-                        </Badge>
-                      )}
-                      {isSaving && (
-                        <Badge variant="secondary" className="text-xs gap-1">
-                          <Save className="h-3 w-3 animate-spin" />
-                          Saving...
+                    </div>
+                    <div className="text-right">
+                      <p className="text-2xl font-bold text-primary">
+                        {Math.round(progressPercentage)}%
+                      </p>
+                    </div>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+                    <motion.div
+                      className="h-full bg-linear-to-r from-primary to-primary/80 rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progressPercentage}%` }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Question Card */}
+              {currentQuestion && (
+                <motion.div
+                  key={currentQuestion.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <QuestionRenderer
+                    question={currentQuestion}
+                    value={localAnswers[currentQuestion.id]}
+                    onChange={handleAnswer}
+                  />
+                </motion.div>
+              )}
+
+              {/* Navigation Controls */}
+              <Card className="border shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      disabled={isFirst}
+                      onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
+                      className="gap-2 min-w-[120px]"
+                    >
+                      <span>←</span>
+                      Previous
+                    </Button>
+
+                    <div className="flex items-center gap-3 flex-1 justify-center">
+                      <Badge variant="outline" className="text-sm px-3 py-1">
+                        {answeredCount} answered
+                      </Badge>
+                      {reviewCount > 0 && (
+                        <Badge
+                          variant="secondary"
+                          className="text-sm px-3 py-1"
+                        >
+                          {reviewCount} marked
                         </Badge>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {answeredCount} of {flatQuestions.length} questions
-                      answered
-                      {avgTimePerQuestion > 0 && (
-                        <span className="ml-2">
-                          • ~{avgTimePerQuestion}s per question
-                        </span>
-                      )}
-                    </p>
+
+                    <Button
+                      size="lg"
+                      disabled={isLast}
+                      onClick={() =>
+                        setCurrentIndex((i) =>
+                          Math.min(flatQuestions.length - 1, i + 1)
+                        )
+                      }
+                      className="gap-2 min-w-[120px]"
+                    >
+                      Next
+                      <span>→</span>
+                    </Button>
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold text-primary">
-                      {Math.round(progressPercentage)}%
-                    </p>
-                  </div>
-                </div>
-                <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
-                  <motion.div
-                    className="h-full bg-linear-to-r from-primary to-primary/80 rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progressPercentage}%` }}
-                    transition={{ duration: 0.5, ease: "easeOut" }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
 
-            {/* Question Card */}
-            {currentQuestion && (
-              <motion.div
-                key={currentQuestion.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                <QuestionRenderer
-                  question={currentQuestion}
-                  value={localAnswers[currentQuestion.id]}
-                  onChange={handleAnswer}
-                />
-              </motion.div>
-            )}
+            {/* Sidebar */}
+            <div className="space-y-4">
+              <PremiumQuestionPalette
+                total={flatQuestions.length}
+                currentIndex={currentIndex}
+                answeredMap={flatQuestions.reduce<Record<number, boolean>>(
+                  (acc, q, idx) => {
+                    if (!q) return acc;
+                    acc[idx] =
+                      localAnswers[q.id] !== undefined &&
+                      localAnswers[q.id] !== null &&
+                      localAnswers[q.id] !== "";
+                    return acc;
+                  },
+                  {}
+                )}
+                reviewMap={flatQuestions.reduce<Record<number, boolean>>(
+                  (acc, q, idx) => {
+                    if (!q) return acc;
+                    acc[idx] = Boolean(markedForReview[q.id]);
+                    return acc;
+                  },
+                  {}
+                )}
+                onSelect={(idx) => setCurrentIndex(idx)}
+              />
 
-            {/* Navigation Controls */}
-            <Card className="border shadow-sm">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    disabled={isFirst}
-                    onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
-                    className="gap-2 min-w-[120px]"
-                  >
-                    <span>←</span>
-                    Previous
-                  </Button>
-
-                  <div className="flex items-center gap-3 flex-1 justify-center">
-                    <Badge variant="outline" className="text-sm px-3 py-1">
-                      {answeredCount} answered
-                    </Badge>
-                    {reviewCount > 0 && (
-                      <Badge variant="secondary" className="text-sm px-3 py-1">
-                        {reviewCount} marked
-                      </Badge>
-                    )}
-                  </div>
-
-                  <Button
-                    size="lg"
-                    disabled={isLast}
-                    onClick={() =>
-                      setCurrentIndex((i) =>
-                        Math.min(flatQuestions.length - 1, i + 1)
-                      )
-                    }
-                    className="gap-2 min-w-[120px]"
-                  >
-                    Next
-                    <span>→</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-4">
-            <PremiumQuestionPalette
-              total={flatQuestions.length}
-              currentIndex={currentIndex}
-              answeredMap={flatQuestions.reduce<Record<number, boolean>>(
-                (acc, q, idx) => {
-                  if (!q) return acc;
-                  acc[idx] =
-                    localAnswers[q.id] !== undefined &&
-                    localAnswers[q.id] !== null &&
-                    localAnswers[q.id] !== "";
-                  return acc;
-                },
-                {}
-              )}
-              reviewMap={flatQuestions.reduce<Record<number, boolean>>(
-                (acc, q, idx) => {
-                  if (!q) return acc;
-                  acc[idx] = Boolean(markedForReview[q.id]);
-                  return acc;
-                },
-                {}
-              )}
-              onSelect={(idx) => setCurrentIndex(idx)}
-            />
-
-            <PremiumStatsSidebar
-              answeredCount={answeredCount}
-              totalQuestions={flatQuestions.length}
-              reviewCount={reviewCount}
-              remainingMinutes={remainingMinutes}
-              remainingSeconds={remainingSeconds}
-              progressPercentage={progressPercentage}
-            />
+              <PremiumStatsSidebar
+                answeredCount={answeredCount}
+                totalQuestions={flatQuestions.length}
+                reviewCount={reviewCount}
+                remainingMinutes={remainingMinutes}
+                remainingSeconds={remainingSeconds}
+                progressPercentage={progressPercentage}
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

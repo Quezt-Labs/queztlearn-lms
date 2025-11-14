@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams, useParams } from "next/navigation";
+import { StudentHeader } from "@/components/student/student-header";
 import { PageHeader } from "@/components/common/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,102 +25,114 @@ export default function TestSolutionsPage() {
   // Validate testId after hooks are called
   if (!testId) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Test Solutions"
-          description="View solutions and explanations for all questions"
-          breadcrumbs={[
-            { label: "Student", href: "/student/my-learning" },
-            { label: "Solutions" },
-          ]}
-        />
-        <Card>
-          <CardContent className="py-12 text-center">
-            <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground mb-4">
-              Invalid test ID. Please select a test to view solutions.
-            </p>
-            <Button asChild>
-              <Link href="/student/my-learning">Go to My Learning</Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="w-full min-h-[calc(100vh-4rem)] bg-linear-to-br from-background via-background to-muted/20">
+        <StudentHeader />
+        <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 space-y-6 md:space-y-8 max-w-7xl w-full">
+          <PageHeader
+            title="Test Solutions"
+            description="View solutions and explanations for all questions"
+            breadcrumbs={[
+              { label: "Student", href: "/student/my-learning" },
+              { label: "Solutions" },
+            ]}
+          />
+          <Card>
+            <CardContent className="py-12 text-center">
+              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <p className="text-muted-foreground mb-4">
+                Invalid test ID. Please select a test to view solutions.
+              </p>
+              <Button asChild>
+                <Link href="/student/my-learning">Go to My Learning</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   if (!attemptId) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Test Solutions"
-          description="View solutions and explanations for all questions"
-          breadcrumbs={[
-            { label: "Student", href: "/student/my-learning" },
-            { label: "Solutions" },
-          ]}
-        />
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground mb-4">
-              No attempt ID provided. Please access this page from a completed
-              test.
-            </p>
-            <Button asChild>
-              <Link href="/student/my-learning">Go to My Learning</Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="w-full min-h-[calc(100vh-4rem)] bg-linear-to-br from-background via-background to-muted/20">
+        <StudentHeader />
+        <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 space-y-6 md:space-y-8 max-w-7xl w-full">
+          <PageHeader
+            title="Test Solutions"
+            description="View solutions and explanations for all questions"
+            breadcrumbs={[
+              { label: "Student", href: "/student/my-learning" },
+              { label: "Solutions" },
+            ]}
+          />
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground mb-4">
+                No attempt ID provided. Please access this page from a completed
+                test.
+              </p>
+              <Button asChild>
+                <Link href="/student/my-learning">Go to My Learning</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Test Solutions"
-          description="View solutions and explanations for all questions"
-          breadcrumbs={[
-            { label: "Student", href: "/student/my-learning" },
-            { label: "Solutions" },
-          ]}
-        />
-        <Card>
-          <CardContent className="py-12">
-            <div className="flex items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="w-full min-h-[calc(100vh-4rem)] bg-linear-to-br from-background via-background to-muted/20">
+        <StudentHeader />
+        <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 space-y-6 md:space-y-8 max-w-7xl w-full">
+          <PageHeader
+            title="Test Solutions"
+            description="View solutions and explanations for all questions"
+            breadcrumbs={[
+              { label: "Student", href: "/student/my-learning" },
+              { label: "Solutions" },
+            ]}
+          />
+          <Card>
+            <CardContent className="py-12">
+              <div className="flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   if (error || !solutionsData?.data) {
     return (
-      <div className="space-y-6">
-        <PageHeader
-          title="Test Solutions"
-          description="View solutions and explanations for all questions"
-          breadcrumbs={[
-            { label: "Student", href: "/student/my-learning" },
-            { label: "Solutions" },
-          ]}
-        />
-        <Card>
-          <CardContent className="py-12 text-center">
-            <XCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
-            <p className="text-muted-foreground mb-4">
-              {error
-                ? "Failed to load solutions. Please try again."
-                : "Solutions not available yet. They will be available after the test submission period."}
-            </p>
-            <Button asChild>
-              <Link href="/student/my-learning">Go to My Learning</Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="w-full min-h-[calc(100vh-4rem)] bg-linear-to-br from-background via-background to-muted/20">
+        <StudentHeader />
+        <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 space-y-6 md:space-y-8 max-w-7xl w-full">
+          <PageHeader
+            title="Test Solutions"
+            description="View solutions and explanations for all questions"
+            breadcrumbs={[
+              { label: "Student", href: "/student/my-learning" },
+              { label: "Solutions" },
+            ]}
+          />
+          <Card>
+            <CardContent className="py-12 text-center">
+              <XCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
+              <p className="text-muted-foreground mb-4">
+                {error
+                  ? "Failed to load solutions. Please try again."
+                  : "Solutions not available yet. They will be available after the test submission period."}
+              </p>
+              <Button asChild>
+                <Link href="/student/my-learning">Go to My Learning</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -137,15 +150,17 @@ export default function TestSolutionsPage() {
   const solutions = (solutionsData?.data as SolutionQuestion[]) || [];
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Test Solutions"
-        description="View solutions and explanations for all questions"
-            breadcrumbs={[
-              { label: "Student", href: "/student/my-learning" },
-              { label: "Solutions" },
-            ]}
-      />
+    <div className="w-full min-h-[calc(100vh-4rem)] bg-linear-to-br from-background via-background to-muted/20">
+      <StudentHeader />
+      <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 space-y-6 md:space-y-8 max-w-7xl w-full">
+        <PageHeader
+          title="Test Solutions"
+          description="View solutions and explanations for all questions"
+          breadcrumbs={[
+            { label: "Student", href: "/student/my-learning" },
+            { label: "Solutions" },
+          ]}
+        />
 
       <Card>
         <CardHeader>
@@ -208,17 +223,18 @@ export default function TestSolutionsPage() {
         </CardContent>
       </Card>
 
-      <div className="flex gap-4">
-        <Button variant="outline" asChild className="flex-1">
-          <Link
-            href={`/student/tests/${testId}/results?attemptId=${attemptId}`}
-          >
-            View Results
-          </Link>
-        </Button>
-        <Button variant="outline" asChild className="flex-1">
-          <Link href="/student/my-learning">Back to My Learning</Link>
-        </Button>
+        <div className="flex gap-4">
+          <Button variant="outline" asChild className="flex-1">
+            <Link
+              href={`/student/tests/${testId}/results?attemptId=${attemptId}`}
+            >
+              View Results
+            </Link>
+          </Button>
+          <Button variant="outline" asChild className="flex-1">
+            <Link href="/student/my-learning">Back to My Learning</Link>
+          </Button>
+        </div>
       </div>
     </div>
   );
