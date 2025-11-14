@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConfirmationDialog } from "@/components/common/confirmation-dialog";
 import {
   useGetBatch,
   useDeleteBatch,
@@ -61,6 +62,10 @@ export function CourseDetailPage({
     null
   );
   const [activeTab, setActiveTab] = useState("overview");
+  const [deleteTeacherDialog, setDeleteTeacherDialog] =
+    useState<Teacher | null>(null);
+  const [deleteSubjectDialog, setDeleteSubjectDialog] =
+    useState<Subject | null>(null);
 
   const { data: batch, isLoading } = useGetBatch(courseId);
   const { data: teachers, isLoading: teachersLoading } =
@@ -103,13 +108,19 @@ export function CourseDetailPage({
     queryClient.invalidateQueries({
       queryKey: ["teachers", "batch", courseId],
     });
-  const handleDeleteTeacher = async (teacher: Teacher) => {
-    if (window.confirm(`Are you sure you want to remove ${teacher.name}?`)) {
-      deleteTeacherMutation.mutate(teacher.id, {
-        onSuccess: () =>
+  const handleDeleteTeacher = (teacher: Teacher) => {
+    setDeleteTeacherDialog(teacher);
+  };
+
+  const confirmDeleteTeacher = () => {
+    if (deleteTeacherDialog) {
+      deleteTeacherMutation.mutate(deleteTeacherDialog.id, {
+        onSuccess: () => {
           queryClient.invalidateQueries({
             queryKey: ["teachers", "batch", courseId],
-          }),
+          });
+          setDeleteTeacherDialog(null);
+        },
       });
     }
   };
@@ -130,13 +141,19 @@ export function CourseDetailPage({
     queryClient.invalidateQueries({
       queryKey: ["subjects", "batch", courseId],
     });
-  const handleDeleteSubject = async (subject: Subject) => {
-    if (window.confirm(`Are you sure you want to delete ${subject.name}?`)) {
-      deleteSubjectMutation.mutate(subject.id, {
-        onSuccess: () =>
+  const handleDeleteSubject = (subject: Subject) => {
+    setDeleteSubjectDialog(subject);
+  };
+
+  const confirmDeleteSubject = () => {
+    if (deleteSubjectDialog) {
+      deleteSubjectMutation.mutate(deleteSubjectDialog.id, {
+        onSuccess: () => {
           queryClient.invalidateQueries({
             queryKey: ["subjects", "batch", courseId],
-          }),
+          });
+          setDeleteSubjectDialog(null);
+        },
       });
     }
   };
@@ -337,6 +354,30 @@ export function CourseDetailPage({
         }}
         selectedSchedule={selectedSchedule}
         onScheduleCreated={handleScheduleCreated}
+      />
+
+      {/* Delete Teacher Confirmation Dialog */}
+      <ConfirmationDialog
+        open={!!deleteTeacherDialog}
+        onOpenChange={(open) => !open && setDeleteTeacherDialog(null)}
+        title="Remove Teacher"
+        description={`Are you sure you want to remove ${deleteTeacherDialog?.name}? This action cannot be undone.`}
+        confirmText="Remove"
+        onConfirm={confirmDeleteTeacher}
+        variant="destructive"
+        isLoading={deleteTeacherMutation.isPending}
+      />
+
+      {/* Delete Subject Confirmation Dialog */}
+      <ConfirmationDialog
+        open={!!deleteSubjectDialog}
+        onOpenChange={(open) => !open && setDeleteSubjectDialog(null)}
+        title="Delete Subject"
+        description={`Are you sure you want to delete ${deleteSubjectDialog?.name}? This action cannot be undone.`}
+        confirmText="Delete"
+        onConfirm={confirmDeleteSubject}
+        variant="destructive"
+        isLoading={deleteSubjectMutation.isPending}
       />
 
       <style jsx global>{`

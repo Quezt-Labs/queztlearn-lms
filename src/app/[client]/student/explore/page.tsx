@@ -7,6 +7,8 @@ import { PageHeader } from "@/components/common/page-header";
 import { Button } from "@/components/ui/button";
 import { useGetExploreBatches, useGetExploreTestSeries } from "@/hooks";
 import { ExploreCardsGridShimmer } from "@/components/common/explore-card-shimmer";
+import { LottieAnimation } from "@/components/common/lottie-animation";
+import { LOTTIE_ANIMATIONS } from "@/lib/constants/lottie-animations";
 
 // Dynamic imports for code splitting
 const ExploreBatchCard = lazy(() =>
@@ -143,8 +145,27 @@ export default function ExplorePage() {
               {isBatchesLoading && !isBatchesFetched ? (
                 <ExploreCardsGridShimmer count={3} />
               ) : batches.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  No batches available at the moment
+                <div className="text-center py-12">
+                  {LOTTIE_ANIMATIONS.emptyState ? (
+                    <div className="w-56 h-56 mx-auto mb-6">
+                      <LottieAnimation
+                        animationUrl={LOTTIE_ANIMATIONS.emptyState}
+                        loop={true}
+                        autoplay={true}
+                        fallbackIcon={
+                          <BookOpen className="h-20 w-20 text-muted-foreground/50" />
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <BookOpen className="h-20 w-20 mx-auto text-muted-foreground/50 mb-6" />
+                  )}
+                  <h3 className="text-lg font-semibold mb-2 text-foreground">
+                    No batches available
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Check back later for new courses
+                  </p>
                 </div>
               ) : (
                 <Suspense
@@ -165,8 +186,27 @@ export default function ExplorePage() {
               {isTestSeriesLoading && !isTestSeriesFetched ? (
                 <ExploreCardsGridShimmer count={3} />
               ) : testSeries.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  No test series available at the moment
+                <div className="text-center py-12">
+                  {LOTTIE_ANIMATIONS.emptyState ? (
+                    <div className="w-56 h-56 mx-auto mb-6">
+                      <LottieAnimation
+                        animationUrl={LOTTIE_ANIMATIONS.emptyState}
+                        loop={true}
+                        autoplay={true}
+                        fallbackIcon={
+                          <FileText className="h-20 w-20 text-muted-foreground/50" />
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <FileText className="h-20 w-20 mx-auto text-muted-foreground/50 mb-6" />
+                  )}
+                  <h3 className="text-lg font-semibold mb-2 text-foreground">
+                    No test series available
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Check back later for new test series
+                  </p>
                 </div>
               ) : (
                 <Suspense fallback={<ExploreCardsGridShimmer count={3} />}>
@@ -244,7 +284,20 @@ export default function ExplorePage() {
                 <ExploreCardsGridShimmer count={6} />
               ) : batches.length === 0 ? (
                 <div className="text-center py-20">
-                  <BookOpen className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
+                  {LOTTIE_ANIMATIONS.emptyState ? (
+                    <div className="w-72 h-72 mx-auto mb-6">
+                      <LottieAnimation
+                        animationUrl={LOTTIE_ANIMATIONS.emptyState}
+                        loop={true}
+                        autoplay={true}
+                        fallbackIcon={
+                          <BookOpen className="h-32 w-32 text-muted-foreground/50" />
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <BookOpen className="h-32 w-32 mx-auto text-muted-foreground/50 mb-6" />
+                  )}
                   <h3 className="text-lg font-semibold mb-2">
                     No Batches Available
                   </h3>
@@ -272,7 +325,20 @@ export default function ExplorePage() {
                 <ExploreCardsGridShimmer count={6} />
               ) : testSeries.length === 0 ? (
                 <div className="text-center py-20">
-                  <FileText className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
+                  {LOTTIE_ANIMATIONS.emptyState ? (
+                    <div className="w-72 h-72 mx-auto mb-6">
+                      <LottieAnimation
+                        animationUrl={LOTTIE_ANIMATIONS.emptyState}
+                        loop={true}
+                        autoplay={true}
+                        fallbackIcon={
+                          <FileText className="h-32 w-32 text-muted-foreground/50" />
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <FileText className="h-32 w-32 mx-auto text-muted-foreground/50 mb-6" />
+                  )}
                   <h3 className="text-lg font-semibold mb-2">
                     No Test Series Available
                   </h3>

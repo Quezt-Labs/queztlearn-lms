@@ -22,6 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ConfirmationDialog } from "@/components/common/confirmation-dialog";
 import {
   ArrowLeft,
   Plus,
@@ -64,6 +65,7 @@ export default function ChapterTopicsPage() {
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedTopicId, setCopiedTopicId] = useState<string | null>(null);
+  const [deleteTopicDialog, setDeleteTopicDialog] = useState<Topic | null>(null);
 
   const { data: chapter, isLoading: chapterLoading } = useGetChapter(chapterId);
   const { data: topics, isLoading: topicsLoading } =
@@ -119,17 +121,18 @@ export default function ChapterTopicsPage() {
     queryClient.invalidateQueries({ queryKey: ["contents"] });
   };
 
-  const handleDeleteTopic = async (topic: Topic) => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete "${topic.name}"? This action cannot be undone.`
-      )
-    ) {
+  const handleDeleteTopic = (topic: Topic) => {
+    setDeleteTopicDialog(topic);
+  };
+
+  const confirmDeleteTopic = async () => {
+    if (deleteTopicDialog) {
       try {
-        await deleteTopicMutation.mutateAsync(topic.id);
+        await deleteTopicMutation.mutateAsync(deleteTopicDialog.id);
         queryClient.invalidateQueries({
           queryKey: ["topics", "chapter", chapterId],
         });
+        setDeleteTopicDialog(null);
       } catch (error) {
         console.error("Failed to delete topic:", error);
       }
@@ -371,6 +374,18 @@ export default function ChapterTopicsPage() {
         }}
         topicId={selectedTopic?.id || ""}
         onSuccess={handleContentCreated}
+      />
+
+      {/* Delete Topic Confirmation Dialog */}
+      <ConfirmationDialog
+        open={!!deleteTopicDialog}
+        onOpenChange={(open) => !open && setDeleteTopicDialog(null)}
+        title="Delete Topic"
+        description={`Are you sure you want to delete "${deleteTopicDialog?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        onConfirm={confirmDeleteTopic}
+        variant="destructive"
+        isLoading={deleteTopicMutation.isPending}
       />
     </div>
   );

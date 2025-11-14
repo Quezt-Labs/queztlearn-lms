@@ -5,16 +5,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmationDialog } from "@/components/common/confirmation-dialog";
 import { QuestionRenderer } from "./question-renderer";
 import { useRouter } from "next/navigation";
 import { useAttemptTimer } from "@/hooks/use-attempt-timer";
@@ -976,23 +967,16 @@ export function TestEngine({
   return (
     <>
       {/* Submit Confirmation Dialog */}
-      <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Submit Test</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to submit your test? You cannot change
-              answers after submission. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSubmit}>
-              Submit Test
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmationDialog
+        open={showSubmitDialog}
+        onOpenChange={setShowSubmitDialog}
+        title="Submit Test"
+        description="Are you sure you want to submit your test? You cannot change answers after submission. This action cannot be undone."
+        confirmText="Submit Test"
+        onConfirm={confirmSubmit}
+        variant="default"
+        isLoading={submitMutation.isPending}
+      />
 
       <div className="min-h-screen bg-background">
         {/* Premium Header */}

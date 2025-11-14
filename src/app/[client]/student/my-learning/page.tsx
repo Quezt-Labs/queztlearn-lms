@@ -14,6 +14,8 @@ import { useGetMyBatches } from "@/hooks";
 import { useIsMobile } from "@/hooks";
 import { motion } from "framer-motion";
 import { Play, FileText, BookOpen, TrendingUp } from "lucide-react";
+import { LottieAnimation } from "@/components/common/lottie-animation";
+import { LOTTIE_ANIMATIONS } from "@/lib/constants/lottie-animations";
 
 interface Batch {
   id: string;
@@ -255,16 +257,32 @@ export default function MyLearningPage() {
                   ))}
                 </div>
               ) : purchasedBatches.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No batches enrolled yet.</p>
-                  <p className="text-sm mt-2">
+                <div className="text-center py-12">
+                  {LOTTIE_ANIMATIONS.emptyState ? (
+                    <div className="w-64 h-64 mx-auto mb-6">
+                      <LottieAnimation
+                        animationUrl={LOTTIE_ANIMATIONS.emptyState}
+                        loop={true}
+                        autoplay={true}
+                        fallbackIcon={
+                          <BookOpen className="h-24 w-24 text-muted-foreground/50" />
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <BookOpen className="h-24 w-24 mx-auto text-muted-foreground/50 mb-6" />
+                  )}
+                  <h3 className="text-lg font-semibold mb-2 text-foreground">
+                    No batches enrolled yet
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
                     <Link
                       href="/student/explore"
-                      className="text-primary hover:underline"
+                      className="text-primary hover:underline font-medium"
                     >
                       Explore batches
                     </Link>{" "}
-                    to get started.
+                    to get started with your learning journey!
                   </p>
                 </div>
               ) : (
@@ -301,16 +319,32 @@ export default function MyLearningPage() {
                   ))}
                 </div>
               ) : purchasedTestSeries.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No test series enrolled yet.</p>
-                  <p className="text-sm mt-2">
+                <div className="text-center py-12">
+                  {LOTTIE_ANIMATIONS.emptyState ? (
+                    <div className="w-64 h-64 mx-auto mb-6">
+                      <LottieAnimation
+                        animationUrl={LOTTIE_ANIMATIONS.emptyState}
+                        loop={true}
+                        autoplay={true}
+                        fallbackIcon={
+                          <FileText className="h-24 w-24 text-muted-foreground/50" />
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <FileText className="h-24 w-24 mx-auto text-muted-foreground/50 mb-6" />
+                  )}
+                  <h3 className="text-lg font-semibold mb-2 text-foreground">
+                    No test series enrolled yet
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
                     <Link
                       href="/student/explore"
-                      className="text-primary hover:underline"
+                      className="text-primary hover:underline font-medium"
                     >
                       Explore test series
                     </Link>{" "}
-                    to get started.
+                    to practice and improve your skills!
                   </p>
                 </div>
               ) : (

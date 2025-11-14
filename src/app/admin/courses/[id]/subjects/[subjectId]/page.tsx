@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ConfirmationDialog } from "@/components/common/confirmation-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,6 +78,8 @@ export default function SubjectDetailPage() {
   const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedChapterId, setCopiedChapterId] = useState<string | null>(null);
+  const [deleteChapterDialog, setDeleteChapterDialog] =
+    useState<Chapter | null>(null);
 
   const { data: subject, isLoading: subjectLoading } = useGetSubject(subjectId);
   const { data: chapters, isLoading: chaptersLoading } =
@@ -122,17 +125,18 @@ export default function SubjectDetailPage() {
     });
   };
 
-  const handleDeleteChapter = async (chapter: Chapter) => {
-    if (
-      window.confirm(
-        `Are you sure you want to delete "${chapter.name}"? This action cannot be undone.`
-      )
-    ) {
+  const handleDeleteChapter = (chapter: Chapter) => {
+    setDeleteChapterDialog(chapter);
+  };
+
+  const confirmDeleteChapter = async () => {
+    if (deleteChapterDialog) {
       try {
-        await deleteChapterMutation.mutateAsync(chapter.id);
+        await deleteChapterMutation.mutateAsync(deleteChapterDialog.id);
         queryClient.invalidateQueries({
           queryKey: ["chapters", "subject", subjectId],
         });
+        setDeleteChapterDialog(null);
       } catch (error) {
         console.error("Failed to delete chapter:", error);
       }
@@ -243,7 +247,9 @@ export default function SubjectDetailPage() {
                       <TableHead className="min-w-[200px]">
                         Chapter Name
                       </TableHead>
-                      <TableHead className="min-w-[200px]">Chapter ID</TableHead>
+                      <TableHead className="min-w-[200px]">
+                        Chapter ID
+                      </TableHead>
                       <TableHead className="w-[100px]">Topics</TableHead>
                       <TableHead className="w-[120px] text-right">
                         Actions
@@ -370,6 +376,18 @@ export default function SubjectDetailPage() {
             queryKey: ["topics"],
           });
         }}
+      />
+
+      {/* Delete Chapter Confirmation Dialog */}
+      <ConfirmationDialog
+        open={!!deleteChapterDialog}
+        onOpenChange={(open) => !open && setDeleteChapterDialog(null)}
+        title="Delete Chapter"
+        description={`Are you sure you want to delete "${deleteChapterDialog?.name}"? This action cannot be undone.`}
+        confirmText="Delete"
+        onConfirm={confirmDeleteChapter}
+        variant="destructive"
+        isLoading={deleteChapterMutation.isPending}
       />
     </div>
   );
