@@ -29,6 +29,14 @@ export interface User {
   role: "ADMIN" | "TEACHER" | "STUDENT";
   isVerified: boolean;
   createdAt: string;
+  profileImg?: string;
+  gender?: "Male" | "Female" | "Other";
+  phoneNumber?: string;
+  address?: {
+    city?: string;
+    state?: string;
+    pincode?: string;
+  };
 }
 
 // Create axios instance
@@ -285,6 +293,20 @@ export const api = {
 
   getOrganizationConfigAdmin: () =>
     apiClient.get<OrganizationConfigResponse>("/admin/organization-config"),
+
+  // Profile endpoints (Client/Student)
+  getProfile: () => apiClient.get<ApiResponse<User>>("/api/profile"),
+  updateProfile: (data: {
+    username?: string;
+    profileImg?: string;
+    gender?: "Male" | "Female" | "Other";
+    phoneNumber?: string;
+    address?: {
+      city?: string;
+      state?: string;
+      pincode?: string;
+    };
+  }) => apiClient.put<ApiResponse<User>>("/api/profile", data),
 };
 
 export default apiClient;

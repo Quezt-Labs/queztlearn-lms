@@ -68,6 +68,8 @@ export {
   useGetClientTopic,
   useGetClientContentsByTopic,
   useGetClientContent,
+  useProfile,
+  useUpdateProfile,
   queryKeys,
 } from "./api";
 
