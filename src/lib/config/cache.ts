@@ -122,20 +122,62 @@ async function fetchAndCacheConfig(
   subdomain: string,
   apiUrl: string
 ): Promise<OrganizationConfig> {
-  const response = await fetch(
-    `${apiUrl}/api/organizations/config?subdomain=${subdomain}`
-  );
+  try {
+    const response = await fetch(
+      `${apiUrl}/api/organizations/config?subdomain=${subdomain}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch config: ${response.statusText}`);
+    if (!response.ok) {
+      let errorMessage = response.statusText || `HTTP ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (errorData?.message) {
+          errorMessage = errorData.message;
+        }
+      } catch {
+        // If response is not JSON, use statusText
+      }
+
+      const error = new Error(
+        `Failed to fetch config: ${errorMessage} (Status: ${response.status})`
+      );
+      (error as Error & { status?: number }).status = response.status;
+      throw error;
+    }
+
+    const config = await response.json();
+
+    // Validate config structure
+    if (!config || typeof config !== "object") {
+      throw new Error("Invalid config response: expected an object");
+    }
+
+    // Cache it
+    setCachedConfig(subdomain, config);
+
+    return config;
+  } catch (error) {
+    // Re-throw with more context if it's not already our error
+    if (error instanceof Error) {
+      // Check if it's a network error
+      if (
+        error.message.includes("Failed to fetch") ||
+        error.message.includes("NetworkError") ||
+        error.message.includes("network")
+      ) {
+        throw new Error(
+          `Network error while fetching config. Please check your connection.`
+        );
+      }
+      throw error;
+    }
+    throw new Error(`Unknown error while fetching config: ${String(error)}`);
   }
-
-  const config = await response.json();
-
-  // Cache it
-  setCachedConfig(subdomain, config);
-
-  return config;
 }
 
 /**
