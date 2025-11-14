@@ -307,6 +307,36 @@ export const api = {
       pincode?: string;
     };
   }) => apiClient.put<ApiResponse<User>>("/api/profile", data),
+
+  // Upload endpoints (Client/Student)
+  generateSignedUrl: (data: {
+    fileName: string;
+    fileType: string;
+    fileSize: number;
+    folder: string;
+  }) =>
+    apiClient.post<
+      ApiResponse<{
+        signedUrl: string;
+        key: string;
+        bucket: string;
+      }>
+    >("/api/upload/signed-url", data),
+  directUpload: (formData: FormData) =>
+    apiClient.post<
+      ApiResponse<{
+        key: string;
+        url: string;
+        bucket: string;
+        originalName: string;
+        size: number;
+        mimeType: string;
+      }>
+    >("/api/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }),
 };
 
 export default apiClient;

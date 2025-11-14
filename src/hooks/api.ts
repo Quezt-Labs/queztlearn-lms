@@ -633,7 +633,7 @@ export const useRemoveTeacherFromBatch = () => {
   });
 };
 
-// File Upload Hooks
+// File Upload Hooks (Admin)
 export const useGenerateSignedUrl = () => {
   return useMutation({
     mutationFn: (data: {
@@ -656,6 +656,25 @@ export const useDirectUpload = () => {
           },
         })
         .then((res) => res.data),
+  });
+};
+
+// File Upload Hooks (Client/Student)
+export const useClientGenerateSignedUrl = () => {
+  return useMutation({
+    mutationFn: (data: {
+      fileName: string;
+      fileType: string;
+      fileSize: number;
+      folder: string;
+    }) => api.generateSignedUrl(data).then((res) => res.data),
+  });
+};
+
+export const useClientDirectUpload = () => {
+  return useMutation({
+    mutationFn: (formData: FormData) =>
+      api.directUpload(formData).then((res) => res.data),
   });
 };
 

@@ -70,6 +70,8 @@ export {
   useGetClientContent,
   useProfile,
   useUpdateProfile,
+  useClientGenerateSignedUrl,
+  useClientDirectUpload,
   queryKeys,
 } from "./api";
 
