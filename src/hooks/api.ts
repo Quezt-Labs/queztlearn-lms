@@ -1264,8 +1264,11 @@ export const useUpdateProfile = () => {
       if (data.success && data.data) {
         // Update profile cache
         queryClient.setQueryData(["profile"], data);
+        // Invalidate to refetch fresh data
+        queryClient.invalidateQueries({ queryKey: ["profile"] });
         // Also update user cache if it exists
         queryClient.setQueryData(queryKeys.user, data.data);
+        queryClient.invalidateQueries({ queryKey: queryKeys.user });
       }
     },
     onError: (error) => {

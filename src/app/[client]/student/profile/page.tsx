@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { StudentHeader } from "@/components/student/student-header";
 import { PageHeader } from "@/components/common/page-header";
@@ -22,7 +22,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useProfile, useUpdateProfile } from "@/hooks/api";
+import {
+  useProfile,
+  useUpdateProfile,
+  useClientDirectUpload,
+} from "@/hooks/api";
 import { useIsMobile } from "@/hooks";
 import { User, Mail, Phone, MapPin, Save, Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -31,6 +35,8 @@ export default function ProfilePage() {
   const { isMobile, isClient } = useIsMobile();
   const { data: profileResponse, isLoading: isLoadingProfile } = useProfile();
   const updateProfile = useUpdateProfile();
+  const clientUpload = useClientDirectUpload();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const profile = profileResponse?.data;
 
@@ -48,6 +54,7 @@ export default function ProfilePage() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
 
   // Initialize form data when profile loads
   useEffect(() => {
@@ -55,7 +62,9 @@ export default function ProfilePage() {
       const initialData = {
         username: profile.username || "",
         profileImg: profile.profileImg || "",
-        gender: (profile.gender as "Male" | "Female" | "Other") || "",
+        gender: profile.gender
+          ? (profile.gender as "Male" | "Female" | "Other")
+          : ("" as "Male" | "Female" | "Other" | ""),
         phoneNumber: profile.phoneNumber || "",
         address: {
           city: profile.address?.city || "",
@@ -84,6 +93,24 @@ export default function ProfilePage() {
   }, [formData, profile]);
 
   const handleInputChange = (field: string, value: string) => {
+    // Validate phone number
+    if (field === "phoneNumber") {
+      // Only allow digits
+      const digitsOnly = value.replace(/\D/g, "");
+      // Limit to 10 digits
+      const limitedValue = digitsOnly.slice(0, 10);
+
+      if (limitedValue.length > 10) {
+        setPhoneError("Phone number must be maximum 10 digits");
+      } else if (limitedValue.length > 0 && limitedValue.length < 10) {
+        setPhoneError("Phone number must be 10 digits");
+      } else {
+        setPhoneError("");
+      }
+
+      value = limitedValue;
+    }
+
     if (field.includes(".")) {
       const [parent, child] = field.split(".");
       setFormData((prev) => ({
@@ -103,6 +130,15 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate phone number before submit (only if provided)
+    if (formData.phoneNumber && formData.phoneNumber.trim() !== "") {
+      if (formData.phoneNumber.length !== 10) {
+        setPhoneError("Phone number must be exactly 10 digits");
+        toast.error("Please enter a valid 10-digit phone number");
+        return;
+      }
+    }
 
     if (!hasChanges) {
       toast.info("No changes to save");
@@ -177,7 +213,70 @@ export default function ProfilePage() {
         },
       });
     }
+    setPhoneError("");
     setIsEditing(false);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const result = await clientUpload.mutateAsync(formData);
+
+      if (result.success && result.data) {
+        const imageUrl = result.data.url;
+        setFormData((prev) => ({ ...prev, profileImg: imageUrl }));
+
+        // Automatically update profile with the new image URL
+        try {
+          await updateProfile.mutateAsync({
+            profileImg: imageUrl,
+          });
+          toast.success("Profile image updated successfully!");
+        } catch (updateError) {
+          // Image uploaded but profile update failed
+          toast.error("Image uploaded but failed to update profile");
+        }
+      } else {
+        toast.error("Failed to upload image");
+      }
+    } catch (error: unknown) {
+      const errorMessage =
+        error &&
+        typeof error === "object" &&
+        "response" in error &&
+        error.response &&
+        typeof error.response === "object" &&
+        "data" in error.response &&
+        error.response.data &&
+        typeof error.response.data === "object" &&
+        "message" in error.response.data &&
+        typeof error.response.data.message === "string"
+          ? error.response.data.message
+          : "Failed to upload image";
+      toast.error(errorMessage);
+    } finally {
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
   };
 
   // Show nothing during initial render to prevent hydration mismatch
@@ -204,15 +303,41 @@ export default function ProfilePage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center gap-4">
-                  <Avatar className="h-20 w-20">
-                    <AvatarImage
-                      src={formData.profileImg}
-                      alt={formData.username}
-                    />
-                    <AvatarFallback className="text-2xl">
-                      {formData.username?.charAt(0).toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
+                  <div className="relative">
+                    <Avatar className="h-20 w-20">
+                      <AvatarImage
+                        src={formData.profileImg}
+                        alt={formData.username}
+                      />
+                      <AvatarFallback className="text-2xl">
+                        {formData.username?.charAt(0).toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    {isEditing && (
+                      <>
+                        <Button
+                          size="icon"
+                          variant="secondary"
+                          className="absolute bottom-0 right-0 rounded-full h-8 w-8"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={clientUpload.isPending}
+                        >
+                          {clientUpload.isPending ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Camera className="h-3 w-3" />
+                          )}
+                        </Button>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                        />
+                      </>
+                    )}
+                  </div>
                   <div>
                     <CardTitle>{formData.username || "User"}</CardTitle>
                     <CardDescription>{profile?.email}</CardDescription>
@@ -237,18 +362,30 @@ export default function ProfilePage() {
                     <Label htmlFor="phoneNumber">Phone Number</Label>
                     <Input
                       id="phoneNumber"
+                      type="tel"
+                      maxLength={10}
                       value={formData.phoneNumber}
                       onChange={(e) =>
                         handleInputChange("phoneNumber", e.target.value)
                       }
                       disabled={!isEditing}
+                      placeholder="Enter 10-digit phone number"
+                      aria-invalid={!!phoneError}
                     />
+                    {phoneError && (
+                      <p className="text-sm text-destructive">{phoneError}</p>
+                    )}
+                    {!phoneError && formData.phoneNumber && (
+                      <p className="text-xs text-muted-foreground">
+                        {formData.phoneNumber.length}/10 digits
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="gender">Gender</Label>
                     <Select
-                      value={formData.gender}
+                      value={formData.gender || undefined}
                       onValueChange={(value) =>
                         handleInputChange("gender", value)
                       }
@@ -395,17 +532,28 @@ export default function ProfilePage() {
                         </AvatarFallback>
                       </Avatar>
                       {isEditing && (
-                        <Button
-                          size="icon"
-                          variant="secondary"
-                          className="absolute bottom-0 right-0 rounded-full h-10 w-10"
-                          onClick={() => {
-                            // TODO: Implement image upload
-                            toast.info("Image upload coming soon");
-                          }}
-                        >
-                          <Camera className="h-4 w-4" />
-                        </Button>
+                        <>
+                          <Button
+                            size="icon"
+                            variant="secondary"
+                            className="absolute bottom-0 right-0 rounded-full h-10 w-10"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={clientUpload.isPending}
+                          >
+                            {clientUpload.isPending ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Camera className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                        </>
                       )}
                     </div>
                     <div className="space-y-1">
@@ -600,27 +748,6 @@ export default function ProfilePage() {
                         </div>
                       </div>
                     </div>
-
-                    {/* Profile Image URL Section */}
-                    {isEditing && (
-                      <div className="space-y-4 pt-4 border-t">
-                        <h3 className="text-lg font-semibold">Profile Image</h3>
-                        <div className="space-y-2">
-                          <Label htmlFor="profileImg">Profile Image URL</Label>
-                          <Input
-                            id="profileImg"
-                            value={formData.profileImg}
-                            onChange={(e) =>
-                              handleInputChange("profileImg", e.target.value)
-                            }
-                            placeholder="Enter image URL"
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            Enter a URL to your profile image
-                          </p>
-                        </div>
-                      </div>
-                    )}
 
                     {/* Action Buttons */}
                     {isEditing && (

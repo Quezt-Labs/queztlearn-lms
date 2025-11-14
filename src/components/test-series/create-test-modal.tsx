@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -14,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { useCreateTest, Test } from "@/hooks/test-series";
 
 interface CreateTestModalProps {
@@ -33,6 +33,7 @@ export function CreateTestModal({
     title: "",
     slug: "",
     description: "",
+    instructions: "",
     durationMinutes: 60,
     totalMarks: 100,
     passingMarks: 33,
@@ -58,6 +59,11 @@ export function CreateTestModal({
               topics: [],
             }
           : undefined,
+        instructions: formData.instructions
+          ? {
+              html: formData.instructions,
+            }
+          : {},
         durationMinutes: formData.durationMinutes,
         totalMarks: formData.totalMarks,
         passingMarks: formData.passingMarks,
@@ -72,6 +78,7 @@ export function CreateTestModal({
         title: "",
         slug: "",
         description: "",
+        instructions: "",
         durationMinutes: 60,
         totalMarks: 100,
         passingMarks: 33,
@@ -147,15 +154,29 @@ export function CreateTestModal({
           {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              placeholder="Test description covering topics..."
-              rows={3}
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
+            <RichTextEditor
+              content={formData.description}
+              onChange={(content) =>
+                setFormData({ ...formData, description: content })
               }
+              placeholder="Test description covering topics..."
             />
+          </div>
+
+          {/* Instructions */}
+          <div className="space-y-2">
+            <Label htmlFor="instructions">Instructions</Label>
+            <RichTextEditor
+              content={formData.instructions}
+              onChange={(content) =>
+                setFormData({ ...formData, instructions: content })
+              }
+              placeholder="Enter test instructions for students..."
+            />
+            <p className="text-xs text-muted-foreground">
+              Detailed instructions that will be shown to students before
+              starting the test
+            </p>
           </div>
 
           {/* Duration and Marks */}

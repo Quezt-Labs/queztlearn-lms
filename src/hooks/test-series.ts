@@ -58,6 +58,10 @@ export interface Test {
     html?: string;
     topics?: string[];
   };
+  instructions?: {
+    html?: string;
+    topics?: string[];
+  };
   slug: string;
   durationMinutes: number;
   totalMarks: number;
