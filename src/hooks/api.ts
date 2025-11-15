@@ -336,6 +336,115 @@ export const useStudentResendVerification = () => {
   });
 };
 
+// OTP Authentication Hooks
+export const useGetOtp = () => {
+  return useMutation({
+    mutationFn: async (data: {
+      countryCode: string;
+      phoneNumber: string;
+      organizationId: string;
+    }) => {
+      try {
+        const res = await api.getOtp(data);
+        return res.data;
+      } catch (error: unknown) {
+        // Handle 400 response for new users - this is expected behavior
+        // API returns 400 with success: false but isExistingUser: false when OTP is sent to new user
+        if (
+          error &&
+          typeof error === "object" &&
+          "response" in error &&
+          error.response &&
+          typeof error.response === "object" &&
+          "data" in error.response
+        ) {
+          const responseData = error.response.data as {
+            success?: boolean;
+            data?: { isExistingUser?: boolean };
+            message?: string;
+          };
+
+          // If this is the expected 400 response for new users, return it as success
+          if (
+            responseData.data?.isExistingUser === false ||
+            responseData.message?.toLowerCase().includes("new user") ||
+            responseData.message?.toLowerCase().includes("registered")
+          ) {
+            return responseData;
+          }
+        }
+        // Re-throw other errors
+        throw error;
+      }
+    },
+    onError: (error) => {
+      console.error("Get OTP failed:", error);
+    },
+  });
+};
+
+export const useVerifyOtp = () => {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (data: {
+      countryCode: string;
+      phoneNumber: string;
+      otp: string;
+      organizationId: string;
+    }) => api.verifyOtp(data).then((res) => res.data),
+    onSuccess: (data) => {
+      if (data.success && data.data) {
+        // Store complete auth data (token + refreshToken + user) in QUEZT_AUTH cookie
+        tokenManager.setAuthData(
+          data.data.accessToken,
+          data.data.user,
+          data.data.refreshToken
+        );
+
+        // Update user cache
+        queryClient.setQueryData(queryKeys.user, data.data.user);
+      }
+    },
+    onError: (error) => {
+      console.error("Verify OTP failed:", error);
+    },
+  });
+};
+
+export const useRefreshToken = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { refreshToken: string }) =>
+      api.refreshToken(data).then((res) => res.data),
+    onSuccess: (data) => {
+      if (data.success && data.data) {
+        // Update token in auth data
+        const authData = tokenManager.getAuthData();
+        if (authData && authData.user) {
+          tokenManager.setAuthData(
+            data.data.accessToken,
+            authData.user,
+            authData.refreshToken
+          );
+        }
+        // Update user cache if user data is provided
+        if (data.data.user) {
+          queryClient.setQueryData(queryKeys.user, data.data.user);
+        }
+      }
+    },
+    onError: (error) => {
+      console.error("Refresh token failed:", error);
+      // If refresh fails, clear auth and redirect to login
+      tokenManager.clearAuthData();
+      queryClient.clear();
+    },
+  });
+};
+
 export const useInviteTeacher = () => {
   const queryClient = useQueryClient();
 
