@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { PhoneInput } from "@/components/common/phone-input";
-import { Phone, Loader2 } from "lucide-react";
+import { Phone, Loader2, CheckCircle2 } from "lucide-react";
 import { ErrorMessage } from "@/components/common/error-message";
 
 interface PhoneStepProps {
@@ -16,6 +16,8 @@ interface PhoneStepProps {
   error: string | null;
 }
 
+const PHONE_LENGTH = 10;
+
 export function PhoneStep({
   countryCode,
   phoneNumber,
@@ -25,34 +27,75 @@ export function PhoneStep({
   isLoading,
   error,
 }: PhoneStepProps) {
-  const isPhoneValid = phoneNumber.length >= 10;
+  const phoneDigits = phoneNumber.replace(/\D/g, "");
+  const isValid = phoneDigits.length === PHONE_LENGTH;
+
+  const handlePhoneChange = (phone: string) => {
+    onPhoneNumberChange(phone);
+  };
+
+  const handleBlur = () => {
+    // No validation on blur
+  };
+
+  const handleSubmit = async () => {
+    if (isValid) {
+      await onGetOtp();
+    }
+  };
+
+  const displayError = error;
 
   return (
     <div className="space-y-4">
-      <ErrorMessage error={error} />
+      <ErrorMessage error={displayError} />
 
       <div className="space-y-2">
-        <Label htmlFor="phone">Phone Number</Label>
-        <PhoneInput
-          countryCode={countryCode}
-          phoneNumber={phoneNumber}
-          onCountryCodeChange={onCountryCodeChange}
-          onPhoneNumberChange={onPhoneNumberChange}
-          disabled={isLoading}
-          error={!!error}
-        />
-        {phoneNumber && phoneNumber.length < 10 && (
-          <p className="text-sm text-muted-foreground">
-            Phone number must be at least 10 digits
-          </p>
-        )}
+        <Label htmlFor="phone" className="text-base font-medium">
+          Phone Number
+        </Label>
+        <div className="space-y-1">
+          <PhoneInput
+            countryCode={countryCode}
+            phoneNumber={phoneNumber}
+            onCountryCodeChange={onCountryCodeChange}
+            onPhoneNumberChange={handlePhoneChange}
+            onBlur={handleBlur}
+            disabled={isLoading}
+            error={!!displayError}
+            placeholder="Enter 10-digit phone number"
+          />
+
+          {/* Phone number status indicator */}
+          {isValid && phoneDigits.length > 0 && (
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                <span className="text-green-600 font-medium">
+                  Valid phone number
+                </span>
+              </div>
+              <span className="text-muted-foreground">
+                {countryCode} {phoneNumber}
+              </span>
+            </div>
+          )}
+
+          {/* Helper text */}
+          {phoneDigits.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              Enter your 10-digit mobile number to receive OTP
+            </p>
+          )}
+        </div>
       </div>
 
       <Button
         type="button"
-        onClick={onGetOtp}
+        onClick={handleSubmit}
         className="w-full"
-        disabled={!isPhoneValid || isLoading}
+        disabled={!isValid || isLoading}
+        size="lg"
       >
         {isLoading ? (
           <>

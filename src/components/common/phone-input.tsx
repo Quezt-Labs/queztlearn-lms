@@ -35,6 +35,7 @@ interface PhoneInputProps {
   phoneNumber: string;
   onCountryCodeChange: (code: string) => void;
   onPhoneNumberChange: (phone: string) => void;
+  onBlur?: () => void;
   disabled?: boolean;
   error?: boolean;
   className?: string;
@@ -46,6 +47,7 @@ export function PhoneInput({
   phoneNumber,
   onCountryCodeChange,
   onPhoneNumberChange,
+  onBlur,
   disabled = false,
   error = false,
   className,
@@ -54,8 +56,9 @@ export function PhoneInput({
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Only allow digits
     const digits = e.target.value.replace(/\D/g, "");
-    // Limit to 15 digits (international standard)
-    const limitedDigits = digits.slice(0, 15);
+    // For India (+91), limit to 10 digits, otherwise 15 digits (international standard)
+    const maxLength = countryCode === "+91" ? 10 : 15;
+    const limitedDigits = digits.slice(0, maxLength);
     onPhoneNumberChange(limitedDigits);
   };
 
@@ -93,6 +96,7 @@ export function PhoneInput({
         inputMode="numeric"
         value={phoneNumber}
         onChange={handlePhoneChange}
+        onBlur={onBlur}
         disabled={disabled}
         placeholder={placeholder}
         className={cn(
@@ -100,6 +104,7 @@ export function PhoneInput({
           error && "border-destructive focus-visible:border-destructive"
         )}
         aria-label="Phone number"
+        maxLength={countryCode === "+91" ? 10 : 15}
       />
     </div>
   );
