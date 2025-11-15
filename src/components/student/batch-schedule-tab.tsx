@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList } from "@/components/ui/tabs";
+import { PremiumTabsTrigger } from "@/components/common/premium-tabs-trigger";
 import { useGetClientSchedulesByBatch } from "@/hooks";
 import { type Schedule, type ScheduleStatus } from "@/lib/types/schedule";
 import { StudentScheduleList } from "./student-schedule-list";
@@ -134,55 +135,29 @@ export function BatchScheduleTab() {
         }
         className="w-full"
       >
-        <TabsList className="mb-6 inline-flex h-11 items-center justify-start gap-2 rounded-lg bg-transparent p-0 w-full max-w-2xl border-b border-border/60 shrink-0">
-          <TabsTrigger
-            value="all"
-            className="group relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-t-lg px-4 sm:px-5 py-2.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground data-[state=inactive]:hover:bg-muted/50"
-          >
-            <Calendar className="h-4 w-4 transition-transform group-hover:scale-110" />
-            <span className="hidden sm:inline">All</span>
-            <span className="sm:hidden">All</span>
-            <span className="ml-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary transition-colors group-hover:bg-primary/20 data-[state=active]:bg-primary/20">
-              {counts.all}
-            </span>
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full scale-x-0 data-[state=active]:scale-x-100 transition-transform duration-200 origin-center" />
-          </TabsTrigger>
-          <TabsTrigger
-            value="upcoming"
-            className="group relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-t-lg px-4 sm:px-5 py-2.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground data-[state=inactive]:hover:bg-muted/50"
-          >
-            <Calendar className="h-4 w-4 transition-transform group-hover:scale-110" />
-            <span className="hidden sm:inline">Upcoming</span>
-            <span className="sm:hidden">Upcoming</span>
-            <span className="ml-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary transition-colors group-hover:bg-primary/20 data-[state=active]:bg-primary/20">
-              {counts.upcoming}
-            </span>
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full scale-x-0 data-[state=active]:scale-x-100 transition-transform duration-200 origin-center" />
-          </TabsTrigger>
-          <TabsTrigger
+        <TabsList className="mb-6 flex h-11 items-center justify-start gap-2 rounded-lg bg-transparent p-0 w-full border-b border-border/60 shrink-0">
+          <PremiumTabsTrigger value="all" icon={Calendar} count={counts.all}>
+            All
+          </PremiumTabsTrigger>
+          <PremiumTabsTrigger value="upcoming" icon={Calendar} count={counts.upcoming}>
+            Upcoming
+          </PremiumTabsTrigger>
+          <PremiumTabsTrigger
             value="live"
-            className="group relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-t-lg px-4 sm:px-5 py-2.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground data-[state=inactive]:hover:bg-muted/50"
+            icon={Radio}
+            count={counts.live}
+            badgeVariant="danger"
           >
-            <Radio className="h-4 w-4 transition-transform group-hover:scale-110" />
-            <span className="hidden sm:inline">Live</span>
-            <span className="sm:hidden">Live</span>
-            <span className="ml-1.5 rounded-full bg-red-500/10 dark:bg-red-500/20 px-2 py-0.5 text-xs font-semibold text-red-600 dark:text-red-400 transition-colors group-hover:bg-red-500/20 data-[state=active]:bg-red-500/20">
-              {counts.live}
-            </span>
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-600 dark:bg-red-500 rounded-t-full scale-x-0 data-[state=active]:scale-x-100 transition-transform duration-200 origin-center" />
-          </TabsTrigger>
-          <TabsTrigger
+            Live
+          </PremiumTabsTrigger>
+          <PremiumTabsTrigger
             value="completed"
-            className="group relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-t-lg px-4 sm:px-5 py-2.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:text-foreground data-[state=active]:bg-transparent data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground data-[state=inactive]:hover:bg-muted/50"
+            icon={Video}
+            count={counts.completed}
+            mobileLabel="Done"
           >
-            <Video className="h-4 w-4 transition-transform group-hover:scale-110" />
-            <span className="hidden sm:inline">Completed</span>
-            <span className="sm:hidden">Done</span>
-            <span className="ml-1.5 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary transition-colors group-hover:bg-primary/20 data-[state=active]:bg-primary/20">
-              {counts.completed}
-            </span>
-            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full scale-x-0 data-[state=active]:scale-x-100 transition-transform duration-200 origin-center" />
-          </TabsTrigger>
+            Completed
+          </PremiumTabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="mt-0">
