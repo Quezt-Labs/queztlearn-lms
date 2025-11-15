@@ -98,7 +98,10 @@ export function TestSeriesTestsTab({
               durationMinutes={test.durationMinutes}
               totalMarks={test.totalMarks}
               isFree={test.isFree}
-              attemptStatus={test.attemptStatus}
+              attemptStatus={
+                test.attemptStatus ||
+                (test.hasAttempted ? "COMPLETED" : "NOT_STARTED")
+              }
               isEnrolled={isEnrolled}
               isPurchased={isEnrolled}
               testLink={
@@ -108,6 +111,10 @@ export function TestSeriesTestsTab({
                     }`
                   : undefined
               }
+              questionCount={test.questionCount}
+              attemptCount={test.attemptCount}
+              hasAttempted={test.hasAttempted}
+              sectionCount={test.sectionCount}
               index={index}
               showAnimation={false}
             />

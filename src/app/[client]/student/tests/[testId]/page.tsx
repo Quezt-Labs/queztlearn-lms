@@ -11,6 +11,7 @@ import {
   useClientPublishedTestDetails,
 } from "@/hooks/tests-client";
 import { useMyAttemptsByTest } from "@/hooks/test-attempts-client";
+import { TestAttemptsHistory } from "@/components/student/test-attempts-history";
 import {
   Loader2,
   Clock,
@@ -215,52 +216,13 @@ export default function TestPreviewPage() {
           </CardContent>
         </Card>
 
-        {/* Attempt History */}
+        {/* Attempt History - Enhanced View */}
         {hasAttempts && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Previous Attempts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {attempts.slice(0, 5).map((attempt) => (
-                  <div
-                    key={attempt.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
-                  >
-                    <div className="flex items-center gap-3">
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
-                      <div>
-                        <div className="font-medium">
-                          Attempt #
-                          {attempt.attemptNumber ||
-                            attempts.indexOf(attempt) + 1}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(attempt.startedAt).toLocaleDateString()}
-                          {attempt.totalScore !== undefined && (
-                            <> • Score: {attempt.totalScore.toFixed(1)}</>
-                          )}
-                          {attempt.percentage !== undefined && (
-                            <> ({attempt.percentage.toFixed(1)}%)</>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    {attempt.isCompleted && (
-                      <Button variant="outline" size="sm" asChild>
-                        <Link
-                          href={`/student/tests/${testId}/results?attemptId=${attempt.id}`}
-                        >
-                          View Results
-                        </Link>
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <TestAttemptsHistory
+            attempts={attempts}
+            testId={testId}
+            testTitle={testData.title}
+          />
         )}
 
         {/* Actions */}

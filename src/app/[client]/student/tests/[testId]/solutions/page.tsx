@@ -5,22 +5,57 @@ import { StudentHeader } from "@/components/student/student-header";
 import { PageHeader } from "@/components/common/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useAttemptSolutions } from "@/hooks/test-attempts-client";
-import { Loader2, FileText, XCircle, CheckCircle2 } from "lucide-react";
+import { FileText } from "lucide-react";
 import Link from "next/link";
+import { useMemo } from "react";
+import {
+  useAttemptSolutions,
+  useMyAttemptsByTest,
+} from "@/hooks/test-attempts-client";
+import {
+  QuestionSolutionCard,
+  SolutionsLoadingSkeleton,
+  SolutionsEmptyState,
+  type SolutionAnswer,
+} from "@/components/student/solutions";
 
 export default function TestSolutionsPage() {
   const params = useParams<{ testId: string }>();
   const searchParams = useSearchParams();
-  const attemptId = searchParams.get("attemptId") || undefined;
+  const attemptIdFromQuery = searchParams.get("attemptId") || undefined;
   const testId = params.testId;
+
+  // Fetch user's attempts for this test to get latest attempt if attemptId not provided
+  const { data: attemptsData, isLoading: isLoadingAttempts } =
+    useMyAttemptsByTest(testId);
+  const attempts = attemptsData?.data || [];
+
+  // Get latest completed attempt if attemptId not provided
+  const latestAttempt = useMemo(() => {
+    if (attemptIdFromQuery) return null; // If attemptId provided, don't need to find latest
+    const completedAttempts = attempts.filter(
+      (a) => a.isCompleted && a.submittedAt
+    );
+    if (completedAttempts.length === 0) return null;
+    // Sort by submittedAt descending to get latest
+    return completedAttempts.sort(
+      (a, b) =>
+        new Date(b.submittedAt || 0).getTime() -
+        new Date(a.submittedAt || 0).getTime()
+    )[0];
+  }, [attempts, attemptIdFromQuery]);
+
+  // Use provided attemptId or latest attempt's id
+  const attemptId = attemptIdFromQuery || latestAttempt?.id;
 
   // Hooks must be called unconditionally - use enabled option to conditionally fetch
   const {
     data: solutionsData,
-    isLoading,
+    isLoading: isLoadingSolutions,
     error,
   } = useAttemptSolutions(attemptId);
+
+  const isLoading = isLoadingAttempts || isLoadingSolutions;
 
   // Validate testId after hooks are called
   if (!testId) {
@@ -48,6 +83,23 @@ export default function TestSolutionsPage() {
     );
   }
 
+  // Show loading while fetching attempts
+  if (isLoadingAttempts && !attemptIdFromQuery) {
+    return (
+      <div className="w-full min-h-[calc(100vh-4rem)] bg-linear-to-br from-background via-background to-muted/20">
+        <StudentHeader />
+        <div className="container mx-auto px-2 md:px-4 py-4 md:py-6 space-y-6 md:space-y-8 max-w-7xl w-full">
+          <PageHeader
+            title="Test Solutions"
+            description="View solutions and explanations for all questions"
+          />
+          <SolutionsLoadingSkeleton count={2} />
+        </div>
+      </div>
+    );
+  }
+
+  // If no attemptId and no completed attempts found
   if (!attemptId) {
     return (
       <div className="w-full min-h-[calc(100vh-4rem)] bg-linear-to-br from-background via-background to-muted/20">
@@ -57,17 +109,10 @@ export default function TestSolutionsPage() {
             title="Test Solutions"
             description="View solutions and explanations for all questions"
           />
-          <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground mb-4">
-                No attempt ID provided. Please access this page from a completed
-                test.
-              </p>
-              <Button asChild>
-                <Link href="/student/my-learning">Go to My Learning</Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <SolutionsEmptyState
+            testId={testId}
+            attemptsCount={attempts.length}
+          />
         </div>
       </div>
     );
@@ -82,13 +127,7 @@ export default function TestSolutionsPage() {
             title="Test Solutions"
             description="View solutions and explanations for all questions"
           />
-          <Card>
-            <CardContent className="py-12">
-              <div className="flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            </CardContent>
-          </Card>
+          <SolutionsLoadingSkeleton count={3} />
         </div>
       </div>
     );
@@ -103,35 +142,19 @@ export default function TestSolutionsPage() {
             title="Test Solutions"
             description="View solutions and explanations for all questions"
           />
-          <Card>
-            <CardContent className="py-12 text-center">
-              <XCircle className="h-12 w-12 mx-auto text-destructive mb-4" />
-              <p className="text-muted-foreground mb-4">
-                {error
-                  ? "Failed to load solutions. Please try again."
-                  : "Solutions not available yet. They will be available after the test submission period."}
-              </p>
-              <Button asChild>
-                <Link href="/student/my-learning">Go to My Learning</Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <SolutionsEmptyState
+            testId={testId}
+            error={error as Error | null}
+            attemptsCount={attempts.length}
+          />
         </div>
       </div>
     );
   }
 
   // Type assertion for solutions data structure
-  // The API should return questions with solutions and explanations
-  type SolutionQuestion = {
-    id?: string;
-    text?: string;
-    question?: string;
-    isCorrect?: boolean;
-    explanation?: string;
-    correctAnswer?: string;
-  };
-  const solutions = (solutionsData?.data as SolutionQuestion[]) || [];
+  // The API returns an array of answer objects, each containing question and answer data
+  const solutions = (solutionsData?.data as SolutionAnswer[]) || [];
 
   return (
     <div className="w-full min-h-[calc(100vh-4rem)] bg-linear-to-br from-background via-background to-muted/20">
@@ -150,50 +173,20 @@ export default function TestSolutionsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
+            <div className="space-y-8">
               {Array.isArray(solutions) && solutions.length > 0 ? (
-                solutions.map((question: SolutionQuestion, index: number) => (
-                  <div
-                    key={question.id || index}
-                    className="p-4 border rounded-lg space-y-3"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="font-semibold text-sm">
-                            Question {index + 1}
-                          </span>
-                          {question.isCorrect !== undefined &&
-                            (question.isCorrect ? (
-                              <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <XCircle className="h-4 w-4 text-red-600" />
-                            ))}
-                        </div>
-                        <p className="text-sm">
-                          {question.text || question.question}
-                        </p>
-                      </div>
-                    </div>
-
-                    {question.explanation && (
-                      <div className="mt-3 p-3 bg-muted/50 rounded-lg">
-                        <p className="text-sm font-medium mb-1">Explanation:</p>
-                        <p className="text-sm text-muted-foreground">
-                          {question.explanation}
-                        </p>
-                      </div>
-                    )}
-
-                    {question.correctAnswer && (
-                      <div className="mt-2">
-                        <p className="text-sm font-medium">
-                          Correct Answer: {question.correctAnswer}
-                        </p>
-                      </div>
-                    )}
+                <>
+                  <div className="text-sm text-muted-foreground">
+                    Total Questions: {solutions.length}
                   </div>
-                ))
+                  {solutions.map((answer: SolutionAnswer, index: number) => (
+                    <QuestionSolutionCard
+                      key={answer.id || answer.question.id || index}
+                      answer={answer}
+                      index={index}
+                    />
+                  ))}
+                </>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
                   <p>No solutions available at this time.</p>

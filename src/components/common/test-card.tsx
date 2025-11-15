@@ -1,6 +1,14 @@
 "use client";
 
-import { Clock, CheckCircle2, Play, Lock, FileText } from "lucide-react";
+import {
+  Clock,
+  CheckCircle2,
+  Play,
+  Lock,
+  FileText,
+  HelpCircle,
+  Repeat,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -69,6 +77,22 @@ export interface TestCardProps {
    * On action click handler
    */
   onActionClick?: () => void;
+  /**
+   * Number of questions in the test
+   */
+  questionCount?: number;
+  /**
+   * Number of attempts made
+   */
+  attemptCount?: number;
+  /**
+   * Whether user has attempted this test
+   */
+  hasAttempted?: boolean;
+  /**
+   * Number of sections in the test
+   */
+  sectionCount?: number;
 }
 
 /**
@@ -105,6 +129,10 @@ export function TestCard({
   showAction = true,
   actionText,
   onActionClick,
+  questionCount,
+  attemptCount,
+  hasAttempted,
+  sectionCount,
 }: TestCardProps) {
   const getActionText = () => {
     if (actionText) return actionText;
@@ -118,6 +146,31 @@ export function TestCard({
     return "default";
   };
 
+  // For completed tests, link to solutions page
+  // For in-progress, link to attempt page
+  // For not started, link to instructions
+  const getTestLink = () => {
+    if (!testLink) return undefined;
+
+    if (attemptStatus === "COMPLETED") {
+      // Link to solutions page for completed tests
+      // Solutions page will fetch latest attempt if attemptId is not provided
+      const baseUrl = testLink.split("?")[0]; // Remove query params
+      const queryParams = testLink.includes("?") ? testLink.split("?")[1] : "";
+      return `${baseUrl.replace("/instructions", "/solutions")}${
+        queryParams ? `?${queryParams}` : ""
+      }`;
+    }
+
+    if (attemptStatus === "IN_PROGRESS") {
+      // Link to attempt page to resume
+      return testLink.replace("/instructions", "/attempt");
+    }
+
+    // For not started, use the original instructions link
+    return testLink;
+  };
+
   const cardContent = (
     <Card
       className={cn(
@@ -127,7 +180,7 @@ export function TestCard({
     >
       {/* Subtle gradient overlay on hover */}
       <div className="absolute inset-0 bg-linear-to-br from-primary/0 via-primary/0 to-primary/0 group-hover:from-primary/5 group-hover:via-primary/0 group-hover:to-primary/0 transition-all duration-300 pointer-events-none" />
-      
+
       <CardContent className="relative p-6">
         <div className="flex flex-col gap-4">
           {/* Header Section */}
@@ -141,7 +194,7 @@ export function TestCard({
                   <Lock className="h-4 w-4 text-muted-foreground shrink-0" />
                 )}
               </div>
-              
+
               {/* Metadata Row */}
               <div className="flex flex-wrap items-center gap-3 text-sm">
                 <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -152,9 +205,31 @@ export function TestCard({
                   <FileText className="h-4 w-4 shrink-0" />
                   <span className="font-medium">{totalMarks} marks</span>
                 </div>
+                {questionCount !== undefined && (
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <HelpCircle className="h-4 w-4 shrink-0" />
+                    <span className="font-medium">
+                      {questionCount} questions
+                    </span>
+                  </div>
+                )}
+                {sectionCount !== undefined && sectionCount > 1 && (
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <FileText className="h-4 w-4 shrink-0" />
+                    <span className="font-medium">{sectionCount} sections</span>
+                  </div>
+                )}
+                {attemptCount !== undefined && attemptCount > 0 && (
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <Repeat className="h-4 w-4 shrink-0" />
+                    <span className="font-medium">
+                      {attemptCount} attempt{attemptCount > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                )}
                 {isFree && (
-                  <Badge 
-                    variant="secondary" 
+                  <Badge
+                    variant="secondary"
                     className="text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
                   >
                     Free
@@ -196,14 +271,14 @@ export function TestCard({
           {/* Action Button */}
           {showAction && (isEnrolled || testLink) && (
             <div className="flex items-center justify-end pt-2 border-t">
-              {testLink ? (
+              {getTestLink() ? (
                 <Button
                   asChild
                   size="sm"
                   variant={getActionVariant()}
                   className="w-full sm:w-auto font-semibold"
                 >
-                  <Link href={testLink}>
+                  <Link href={getTestLink()!}>
                     <Play className="mr-2 h-4 w-4" />
                     {getActionText()}
                   </Link>

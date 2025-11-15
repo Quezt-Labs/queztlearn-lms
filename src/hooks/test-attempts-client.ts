@@ -14,12 +14,21 @@ export type AttemptSummary = {
   attemptNumber?: number;
   startedAt: string;
   submittedAt?: string | null;
+  timeSpentSeconds?: number;
   totalScore?: number;
   percentage?: number;
+  correctCount?: number;
+  wrongCount?: number;
+  skippedCount?: number;
   isCompleted: boolean;
-  correctAnswers?: number;
-  incorrectAnswers?: number;
-  unattemptedQuestions?: number;
+  isPassed?: boolean | null;
+  rank?: number | null;
+  percentile?: number | null;
+  correctAnswers?: number; // Legacy field
+  incorrectAnswers?: number; // Legacy field
+  unattemptedQuestions?: number; // Legacy field
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type AttemptDetails = AttemptSummary & {

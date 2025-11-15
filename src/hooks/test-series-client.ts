@@ -62,12 +62,32 @@ export type ClientTestSeriesListItem = {
 
 export type ClientTestInSeries = {
   id: string;
+  testSeriesId?: string;
+  organizationId?: string;
   title: string;
   slug: string;
+  description?: {
+    html?: string;
+    topics?: string[];
+  };
+  instructions?: {
+    html?: string;
+  } | null;
   durationMinutes: number;
   totalMarks: number;
   passingMarks: number;
   isFree: boolean;
+  isPublished?: boolean;
+  showAnswersAfterSubmit?: boolean;
+  allowReview?: boolean;
+  shuffleQuestions?: boolean;
+  sectionCount?: number;
+  questionCount?: number;
+  attemptCount?: number;
+  publishedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  hasAttempted?: boolean;
   attemptStatus?: "NOT_STARTED" | "IN_PROGRESS" | "COMPLETED";
 };
 
