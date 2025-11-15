@@ -44,10 +44,11 @@ export default function NotFound() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
-      {/* Decorative gradient background elements */}
+      {/* Decorative gradient background elements - using both primary and secondary */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl animate-pulse [animation-delay:1s]" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl animate-pulse [animation-delay:1s]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-primary/5 to-secondary/5 rounded-full blur-3xl animate-pulse [animation-delay:0.5s]" />
       </div>
 
       <div className="max-w-2xl w-full text-center relative z-10">
@@ -65,8 +66,9 @@ export default function NotFound() {
             className="flex justify-center"
           >
             <div className="w-full max-w-md h-80 md:h-96 relative">
-              {/* Decorative ring around animation */}
+              {/* Decorative ring around animation - gradient from primary to secondary */}
               <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-pulse" />
+              <div className="absolute inset-0 rounded-full border-2 border-secondary/20 animate-pulse [animation-delay:0.5s]" />
               {animationData ? (
                 <Lottie
                   animationData={animationData}
@@ -87,7 +89,7 @@ export default function NotFound() {
                   }}
                   className="w-full h-full flex items-center justify-center"
                 >
-                  <div className="text-9xl font-bold bg-gradient-to-br from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
+                  <div className="text-9xl font-bold bg-gradient-to-br from-primary via-primary/80 to-secondary bg-clip-text text-transparent">
                     404
                   </div>
                 </motion.div>
@@ -102,7 +104,7 @@ export default function NotFound() {
             transition={{ delay: 0.4 }}
             className="space-y-4"
           >
-            <h1 className="text-6xl md:text-8xl font-bold bg-gradient-to-br from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent">
+            <h1 className="text-6xl md:text-8xl font-bold bg-gradient-to-br from-primary via-primary/90 to-secondary bg-clip-text text-transparent">
               404
             </h1>
             <h2 className="text-2xl md:text-3xl font-semibold text-foreground">
@@ -125,7 +127,7 @@ export default function NotFound() {
               onClick={() => router.back()}
               variant="outline"
               size="lg"
-              className="w-full sm:w-auto border-primary/20 hover:border-primary/40 hover:bg-primary/5"
+              className="w-full sm:w-auto border-secondary/20 hover:border-secondary/40 hover:bg-secondary/5"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Go Back
@@ -133,7 +135,7 @@ export default function NotFound() {
             <Button
               onClick={() => router.push("/")}
               size="lg"
-              className="w-full sm:w-auto bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20"
+              className="w-full sm:w-auto bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 shadow-lg shadow-primary/20"
             >
               <Home className="mr-2 h-4 w-4" />
               Go Home
