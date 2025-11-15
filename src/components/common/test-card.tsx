@@ -297,7 +297,7 @@ export function TestCard({
 
           {/* Action Buttons */}
           {showAction && (isEnrolled || testLink) && (
-            <div className="flex items-center justify-end gap-2 pt-2 border-t">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t flex-wrap">
               {/* Show both Reattempt and Review buttons if canReattempt */}
               {canReattempt ? (
                 <>
@@ -306,7 +306,7 @@ export function TestCard({
                       asChild
                       size="sm"
                       variant="default"
-                      className="w-full sm:w-auto font-semibold"
+                      className="flex-1 sm:flex-none font-semibold min-w-[100px]"
                     >
                       <Link href={getReattemptLink()!}>
                         <Play className="mr-2 h-4 w-4" />
@@ -319,7 +319,7 @@ export function TestCard({
                       asChild
                       size="sm"
                       variant="outline"
-                      className="w-full sm:w-auto font-semibold"
+                      className="flex-1 sm:flex-none font-semibold min-w-[100px]"
                     >
                       <Link href={getReviewLink()!}>
                         <Eye className="mr-2 h-4 w-4" />

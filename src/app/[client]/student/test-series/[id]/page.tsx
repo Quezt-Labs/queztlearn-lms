@@ -18,6 +18,7 @@ import {
   TestSeriesStickyTabs,
 } from "@/components/student/test-series-detail-header";
 import { MobileTestSeriesHero } from "@/components/student/mobile-test-series-hero";
+import { MobileTestSeriesTabs } from "@/components/student/mobile-test-series-tabs";
 import {
   useClientTestSeriesDetail,
   useClientTestsInSeries,
@@ -265,6 +266,15 @@ export default function StudentTestSeriesDetailPage() {
           isHotDeal={isHotDeal}
           onBack={() => router.back()}
           isEnrolled={isEnrolled}
+        />
+      </div>
+
+      {/* Mobile Tabs */}
+      <div className="lg:hidden">
+        <MobileTestSeriesTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          testCount={testCount}
         />
       </div>
 
