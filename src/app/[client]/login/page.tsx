@@ -20,7 +20,7 @@ import Image from "next/image";
 import { useLoadingState } from "@/hooks/common";
 import { getFriendlyErrorMessage } from "@/lib/utils/error-handling";
 import { ErrorMessage } from "@/components/common/error-message";
-import { useGetOtp, useVerifyOtp } from "@/hooks/api";
+import { useGetOtp, useVerifyOtp, useUpdateProfile } from "@/hooks/api";
 import { useRouter } from "next/navigation";
 import { cookieStorage } from "@/lib/utils/storage";
 import { PhoneInput } from "@/components/common/phone-input";
@@ -45,6 +45,7 @@ function ClientLoginContent() {
 
   const getOtpMutation = useGetOtp();
   const verifyOtpMutation = useVerifyOtp();
+  const updateProfileMutation = useUpdateProfile();
 
   // Loading state management
   const {
@@ -126,61 +127,74 @@ function ClientLoginContent() {
           organizationId: client.organizationId,
         });
 
-        if (result.success) {
-          setIsExistingUser(result.data?.isExistingUser ?? false);
+        // Both indicate OTP was sent successfully
+        if (result?.data?.isExistingUser !== undefined) {
+          setIsExistingUser(result.data.isExistingUser);
           setOtpSent(true);
           setStep("otp");
           setResendTimer(60); // 60 seconds cooldown
           setError(null);
+        } else {
+          // Fallback: if we don't have isExistingUser, assume existing user
+          setIsExistingUser(true);
+          setOtpSent(true);
+          setStep("otp");
+          setResendTimer(60);
+          setError(null);
         }
       });
     } catch (error: unknown) {
+      // For other errors, show the error message
       const errorMessage = getFriendlyErrorMessage(error);
-      // Handle 400 response for new users (this is expected)
-      if (
-        errorMessage.includes("new user") ||
-        errorMessage.includes("registered")
-      ) {
-        setIsExistingUser(false);
-        setOtpSent(true);
-        setStep("otp");
-        setResendTimer(60);
-        setError(null);
-      } else {
-        setError(errorMessage);
-      }
+      setError(errorMessage);
     }
   };
 
-  const handleVerifyOtp = async () => {
+  const handleVerifyOtp = async (otpValue?: string) => {
     if (!client?.organizationId) {
       setError("Client information is missing. Please try again.");
       return;
     }
 
-    if (otp.length !== 6) {
+    // Use provided OTP value or fallback to state
+    const currentOtp = otpValue || otp;
+
+    if (!currentOtp || currentOtp.length !== 6) {
       setError("Please enter the complete 6-digit OTP");
       return;
     }
 
-    // If new user and no username, show username step
-    if (isExistingUser === false && !username && step === "otp") {
-      setStep("username");
-      return;
-    }
+    // Call verify-otp API (without username)
+    console.log("handleVerifyOtp: About to call API", {
+      countryCode,
+      phoneNumber,
+      otp: currentOtp,
+      organizationId: client.organizationId,
+      isExistingUser,
+    });
 
     try {
       await executeWithLoading(async () => {
-        await verifyOtpMutation.mutateAsync({
+        console.log("Calling verifyOtpMutation.mutateAsync");
+        const result = await verifyOtpMutation.mutateAsync({
           countryCode,
           phoneNumber,
-          otp,
+          otp: currentOtp,
           organizationId: client.organizationId,
-          username: isExistingUser === false ? username : undefined,
+          // No username in verify-otp call
         });
-        // onSuccess in hook will handle redirect
+        console.log("verifyOtpMutation completed successfully");
+
+        // If new user, show username step after successful OTP verification
+        if (isExistingUser === false) {
+          setStep("username");
+        } else {
+          // For existing users, redirect to dashboard
+          router.push("/student/my-learning");
+        }
       });
     } catch (error: unknown) {
+      console.error("handleVerifyOtp error:", error);
       setError(getFriendlyErrorMessage(error));
     }
   };
@@ -192,12 +206,39 @@ function ClientLoginContent() {
   };
 
   const handleOtpComplete = (value: string) => {
+    console.log("handleOtpComplete called with:", value);
     setOtp(value);
-    // Auto-submit when OTP is complete
+    // Auto-submit when OTP is complete - no need to click verify button
     if (value.length === 6) {
+      // Use the value directly to avoid state timing issues
+      // Small delay to ensure state is updated
       setTimeout(() => {
-        handleVerifyOtp();
-      }, 300);
+        console.log("OTP complete, calling handleVerifyOtp");
+        // Always call verify-otp API first
+        handleVerifyOtp(value);
+      }, 100);
+    }
+  };
+
+  const handleUsernameSubmit = async () => {
+    if (!username.trim()) {
+      setError("Please enter a username");
+      return;
+    }
+
+    try {
+      await executeWithLoading(async () => {
+        console.log("Updating profile with username:", username);
+        await updateProfileMutation.mutateAsync({
+          username: username.trim(),
+        });
+        console.log("Profile updated successfully, redirecting...");
+        // Redirect to student dashboard
+        router.push("/student/my-learning");
+      });
+    } catch (error: unknown) {
+      console.error("Update profile error:", error);
+      setError(getFriendlyErrorMessage(error));
     }
   };
 
@@ -335,15 +376,15 @@ function ClientLoginContent() {
                 {step === "phone"
                   ? "Sign In / Register"
                   : step === "otp"
-                    ? "Enter OTP"
-                    : "Choose Username"}
+                  ? "Enter OTP"
+                  : "Choose Username"}
               </CardTitle>
               <CardDescription>
                 {step === "phone"
                   ? "Enter your phone number to get started"
                   : step === "otp"
-                    ? `We've sent a 6-digit OTP to ${countryCode} ${phoneNumber}`
-                    : "Choose a username for your account"}
+                  ? `We've sent a 6-digit OTP to ${countryCode} ${phoneNumber}`
+                  : "Choose a username for your account"}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -433,10 +474,19 @@ function ClientLoginContent() {
                         onChange={setOtp}
                         onComplete={handleOtpComplete}
                         disabled={
-                          isSubmitting || verifyOtpMutation.isPending
+                          isSubmitting || updateProfileMutation.isPending
                         }
                         error={!!submitError || !!verifyOtpMutation.error}
                       />
+                      {(isSubmitting || verifyOtpMutation.isPending) && (
+                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Verifying OTP...</span>
+                        </div>
+                      )}
+                      <p className="text-xs text-center text-muted-foreground">
+                        OTP will be verified automatically
+                      </p>
                     </div>
 
                     <div className="flex gap-2">
@@ -444,30 +494,13 @@ function ClientLoginContent() {
                         type="button"
                         variant="outline"
                         onClick={handleBackToPhone}
-                        className="flex-1"
-                        disabled={isSubmitting || verifyOtpMutation.isPending}
+                        className="w-full"
+                        disabled={
+                          isSubmitting || updateProfileMutation.isPending
+                        }
                       >
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Change Number
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={handleVerifyOtp}
-                        className="flex-1"
-                        disabled={
-                          otp.length !== 6 ||
-                          isSubmitting ||
-                          verifyOtpMutation.isPending
-                        }
-                      >
-                        {isSubmitting || verifyOtpMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Verifying...
-                          </>
-                        ) : (
-                          "Verify OTP"
-                        )}
                       </Button>
                     </div>
 
@@ -505,10 +538,15 @@ function ClientLoginContent() {
                         placeholder="Choose a username"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        disabled={isSubmitting || verifyOtpMutation.isPending}
-                        onKeyDown={(e) => {
+                        disabled={
+                          isSubmitting || updateProfileMutation.isPending
+                        }
+                        onKeyDown={async (e) => {
                           if (e.key === "Enter" && username.trim()) {
-                            handleVerifyOtp();
+                            console.log(
+                              "Enter key pressed, calling handleUsernameSubmit"
+                            );
+                            await handleUsernameSubmit();
                           }
                         }}
                         autoFocus
@@ -524,22 +562,24 @@ function ClientLoginContent() {
                         variant="outline"
                         onClick={handleBackToOtp}
                         className="flex-1"
-                        disabled={isSubmitting || verifyOtpMutation.isPending}
+                        disabled={
+                          isSubmitting || updateProfileMutation.isPending
+                        }
                       >
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Back
                       </Button>
                       <Button
                         type="button"
-                        onClick={handleVerifyOtp}
+                        onClick={handleUsernameSubmit}
                         className="flex-1"
                         disabled={
                           !username.trim() ||
                           isSubmitting ||
-                          verifyOtpMutation.isPending
+                          updateProfileMutation.isPending
                         }
                       >
-                        {isSubmitting || verifyOtpMutation.isPending ? (
+                        {isSubmitting || updateProfileMutation.isPending ? (
                           <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             Creating Account...

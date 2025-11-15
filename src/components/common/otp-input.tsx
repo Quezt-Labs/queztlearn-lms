@@ -41,8 +41,10 @@ export function OtpInput({
     // Only allow digits
     const digit = newValue.replace(/\D/g, "").slice(-1);
 
+    const newOtp = [...otp];
+
     if (digit) {
-      const newOtp = [...otp];
+      // Add digit
       newOtp[index] = digit;
       setOtp(newOtp);
 
@@ -55,9 +57,19 @@ export function OtpInput({
       } else {
         // All inputs filled, trigger onComplete
         if (otpValue.length === length && onComplete) {
+          console.log(
+            "OTP Input: All digits filled, calling onComplete with:",
+            otpValue
+          );
           onComplete(otpValue);
         }
       }
+    } else {
+      // Clear current digit
+      newOtp[index] = "";
+      setOtp(newOtp);
+      const otpValue = newOtp.join("").slice(0, length);
+      onChange(otpValue);
     }
   };
 
@@ -65,9 +77,18 @@ export function OtpInput({
     index: number,
     e: React.KeyboardEvent<HTMLInputElement>
   ) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      // Move to previous input on backspace if current is empty
-      inputRefs.current[index - 1]?.focus();
+    if (e.key === "Backspace") {
+      if (otp[index]) {
+        // Clear current digit if it has a value
+        const newOtp = [...otp];
+        newOtp[index] = "";
+        setOtp(newOtp);
+        const otpValue = newOtp.join("").slice(0, length);
+        onChange(otpValue);
+      } else if (index > 0) {
+        // Move to previous input on backspace if current is empty
+        inputRefs.current[index - 1]?.focus();
+      }
     } else if (e.key === "ArrowLeft" && index > 0) {
       inputRefs.current[index - 1]?.focus();
     } else if (e.key === "ArrowRight" && index < length - 1) {
@@ -98,6 +119,10 @@ export function OtpInput({
 
       // Trigger onComplete if all filled
       if (otpValue.length === length && onComplete) {
+        console.log(
+          "OTP Input: Paste complete, calling onComplete with:",
+          otpValue
+        );
         onComplete(otpValue);
       }
     }

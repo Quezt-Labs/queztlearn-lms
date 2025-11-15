@@ -339,11 +339,44 @@ export const useStudentResendVerification = () => {
 // OTP Authentication Hooks
 export const useGetOtp = () => {
   return useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       countryCode: string;
       phoneNumber: string;
       organizationId: string;
-    }) => api.getOtp(data).then((res) => res.data),
+    }) => {
+      try {
+        const res = await api.getOtp(data);
+        return res.data;
+      } catch (error: unknown) {
+        // Handle 400 response for new users - this is expected behavior
+        // API returns 400 with success: false but isExistingUser: false when OTP is sent to new user
+        if (
+          error &&
+          typeof error === "object" &&
+          "response" in error &&
+          error.response &&
+          typeof error.response === "object" &&
+          "data" in error.response
+        ) {
+          const responseData = error.response.data as {
+            success?: boolean;
+            data?: { isExistingUser?: boolean };
+            message?: string;
+          };
+
+          // If this is the expected 400 response for new users, return it as success
+          if (
+            responseData.data?.isExistingUser === false ||
+            responseData.message?.toLowerCase().includes("new user") ||
+            responseData.message?.toLowerCase().includes("registered")
+          ) {
+            return responseData;
+          }
+        }
+        // Re-throw other errors
+        throw error;
+      }
+    },
     onError: (error) => {
       console.error("Get OTP failed:", error);
     },
@@ -360,7 +393,6 @@ export const useVerifyOtp = () => {
       phoneNumber: string;
       otp: string;
       organizationId: string;
-      username?: string;
     }) => api.verifyOtp(data).then((res) => res.data),
     onSuccess: (data) => {
       if (data.success && data.data) {
@@ -373,9 +405,6 @@ export const useVerifyOtp = () => {
 
         // Update user cache
         queryClient.setQueryData(queryKeys.user, data.data.user);
-
-        // Redirect to student dashboard
-        router.push("/student/my-learning");
       }
     },
     onError: (error) => {

@@ -347,7 +347,6 @@ export const api = {
     phoneNumber: string;
     otp: string;
     organizationId: string;
-    username?: string;
   }) =>
     apiClient.post<
       ApiResponse<{
