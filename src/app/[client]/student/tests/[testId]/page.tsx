@@ -55,10 +55,6 @@ export default function TestPreviewPage() {
           <PageHeader
             title="Test Details"
             description="View test information and instructions"
-            breadcrumbs={[
-              { label: "Student", href: "/student/my-learning" },
-              { label: "Test Details" },
-            ]}
           />
           <Card>
             <CardContent className="py-12 text-center">
@@ -84,10 +80,6 @@ export default function TestPreviewPage() {
           <PageHeader
             title="Test Details"
             description="View test information and instructions"
-            breadcrumbs={[
-              { label: "Student", href: "/student/my-learning" },
-              { label: "Test Details" },
-            ]}
           />
           <Card>
             <CardContent className="py-12">
@@ -109,10 +101,6 @@ export default function TestPreviewPage() {
           <PageHeader
             title="Test Details"
             description="View test information and instructions"
-            breadcrumbs={[
-              { label: "Student", href: "/student/my-learning" },
-              { label: "Test Details" },
-            ]}
           />
           <Card>
             <CardContent className="py-12 text-center">
@@ -154,10 +142,6 @@ export default function TestPreviewPage() {
         <PageHeader
           title={testData.title || "Test Details"}
           description="View test information and instructions"
-          breadcrumbs={[
-            { label: "Student", href: "/student/my-learning" },
-            { label: "Test Details" },
-          ]}
         />
 
         {/* Test Overview */}

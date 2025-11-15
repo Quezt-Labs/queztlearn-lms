@@ -169,10 +169,6 @@ export default function ProfilePage() {
           <PageHeader
             title="My Profile"
             description="Manage your profile information and preferences"
-            breadcrumbs={[
-              { label: "Dashboard", href: "/student/my-learning" },
-              { label: "Profile" },
-            ]}
           />
         </motion.div>
 

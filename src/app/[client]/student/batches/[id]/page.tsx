@@ -157,11 +157,6 @@ export default function BatchDetailPage() {
             <PageHeader
               title={batch.name}
               description={batch.description || undefined}
-              breadcrumbs={[
-                { label: "Student", href: "/student/my-learning" },
-                { label: "Explore", href: "/student/explore" },
-                { label: batch.name },
-              ]}
             />
           </div>
           <Suspense fallback={<DescriptionPageShimmer />}>

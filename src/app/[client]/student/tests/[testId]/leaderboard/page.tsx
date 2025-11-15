@@ -33,10 +33,6 @@ export default function TestLeaderboardPage() {
           <PageHeader
             title="Test Leaderboard"
             description="View rankings and your performance"
-            breadcrumbs={[
-              { label: "Student", href: "/student/my-learning" },
-              { label: "Leaderboard" },
-            ]}
           />
           <Card>
             <CardContent className="py-12 text-center">
@@ -64,10 +60,6 @@ export default function TestLeaderboardPage() {
           <PageHeader
             title="Test Leaderboard"
             description="View rankings and your performance"
-            breadcrumbs={[
-              { label: "Student", href: "/student/my-learning" },
-              { label: "Leaderboard" },
-            ]}
           />
           <Card>
             <CardContent className="py-12">
@@ -89,10 +81,6 @@ export default function TestLeaderboardPage() {
           <PageHeader
             title="Test Leaderboard"
             description="View rankings and your performance"
-            breadcrumbs={[
-              { label: "Student", href: "/student/my-learning" },
-              { label: "Leaderboard" },
-            ]}
           />
           <Card>
             <CardContent className="py-12 text-center">
@@ -123,10 +111,6 @@ export default function TestLeaderboardPage() {
         <PageHeader
           title="Test Leaderboard"
           description="View rankings and your performance"
-          breadcrumbs={[
-            { label: "Student", href: "/student/my-learning" },
-            { label: "Leaderboard" },
-          ]}
         />
 
         {/* User Rank Card */}

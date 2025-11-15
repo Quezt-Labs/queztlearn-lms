@@ -31,10 +31,6 @@ export default function TestSolutionsPage() {
           <PageHeader
             title="Test Solutions"
             description="View solutions and explanations for all questions"
-            breadcrumbs={[
-              { label: "Student", href: "/student/my-learning" },
-              { label: "Solutions" },
-            ]}
           />
           <Card>
             <CardContent className="py-12 text-center">
@@ -60,10 +56,6 @@ export default function TestSolutionsPage() {
           <PageHeader
             title="Test Solutions"
             description="View solutions and explanations for all questions"
-            breadcrumbs={[
-              { label: "Student", href: "/student/my-learning" },
-              { label: "Solutions" },
-            ]}
           />
           <Card>
             <CardContent className="py-12 text-center">
@@ -89,10 +81,6 @@ export default function TestSolutionsPage() {
           <PageHeader
             title="Test Solutions"
             description="View solutions and explanations for all questions"
-            breadcrumbs={[
-              { label: "Student", href: "/student/my-learning" },
-              { label: "Solutions" },
-            ]}
           />
           <Card>
             <CardContent className="py-12">
@@ -114,10 +102,6 @@ export default function TestSolutionsPage() {
           <PageHeader
             title="Test Solutions"
             description="View solutions and explanations for all questions"
-            breadcrumbs={[
-              { label: "Student", href: "/student/my-learning" },
-              { label: "Solutions" },
-            ]}
           />
           <Card>
             <CardContent className="py-12 text-center">
@@ -156,72 +140,68 @@ export default function TestSolutionsPage() {
         <PageHeader
           title="Test Solutions"
           description="View solutions and explanations for all questions"
-          breadcrumbs={[
-            { label: "Student", href: "/student/my-learning" },
-            { label: "Solutions" },
-          ]}
         />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Solutions & Explanations
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {Array.isArray(solutions) && solutions.length > 0 ? (
-              solutions.map((question: SolutionQuestion, index: number) => (
-                <div
-                  key={question.id || index}
-                  className="p-4 border rounded-lg space-y-3"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-semibold text-sm">
-                          Question {index + 1}
-                        </span>
-                        {question.isCorrect !== undefined &&
-                          (question.isCorrect ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-red-600" />
-                          ))}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Solutions & Explanations
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-6">
+              {Array.isArray(solutions) && solutions.length > 0 ? (
+                solutions.map((question: SolutionQuestion, index: number) => (
+                  <div
+                    key={question.id || index}
+                    className="p-4 border rounded-lg space-y-3"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-semibold text-sm">
+                            Question {index + 1}
+                          </span>
+                          {question.isCorrect !== undefined &&
+                            (question.isCorrect ? (
+                              <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-red-600" />
+                            ))}
+                        </div>
+                        <p className="text-sm">
+                          {question.text || question.question}
+                        </p>
                       </div>
-                      <p className="text-sm">
-                        {question.text || question.question}
-                      </p>
                     </div>
+
+                    {question.explanation && (
+                      <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+                        <p className="text-sm font-medium mb-1">Explanation:</p>
+                        <p className="text-sm text-muted-foreground">
+                          {question.explanation}
+                        </p>
+                      </div>
+                    )}
+
+                    {question.correctAnswer && (
+                      <div className="mt-2">
+                        <p className="text-sm font-medium">
+                          Correct Answer: {question.correctAnswer}
+                        </p>
+                      </div>
+                    )}
                   </div>
-
-                  {question.explanation && (
-                    <div className="mt-3 p-3 bg-muted/50 rounded-lg">
-                      <p className="text-sm font-medium mb-1">Explanation:</p>
-                      <p className="text-sm text-muted-foreground">
-                        {question.explanation}
-                      </p>
-                    </div>
-                  )}
-
-                  {question.correctAnswer && (
-                    <div className="mt-2">
-                      <p className="text-sm font-medium">
-                        Correct Answer: {question.correctAnswer}
-                      </p>
-                    </div>
-                  )}
+                ))
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No solutions available at this time.</p>
                 </div>
-              ))
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No solutions available at this time.</p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="flex gap-4">
           <Button variant="outline" asChild className="flex-1">

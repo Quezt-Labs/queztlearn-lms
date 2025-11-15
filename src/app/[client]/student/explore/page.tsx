@@ -232,10 +232,6 @@ export default function ExplorePage() {
           <PageHeader
             title="Explore Courses"
             description="Find the perfect batch or test series to accelerate your learning"
-            breadcrumbs={[
-              { label: "Student", href: "/student/my-learning" },
-              { label: "Explore" },
-            ]}
           />
 
           {/* Filters & Search */}

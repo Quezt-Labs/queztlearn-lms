@@ -89,10 +89,6 @@ export default function TestResultsPage() {
           <PageHeader
             title="Test Results"
             description="View your test results and performance"
-            breadcrumbs={[
-              { label: "Student", href: "/student/my-learning" },
-              { label: "Results" },
-            ]}
           />
           <Card>
             <CardContent className="py-12 text-center">
@@ -121,10 +117,6 @@ export default function TestResultsPage() {
           <PageHeader
             title="Test Results"
             description="View your test results and performance"
-            breadcrumbs={[
-              { label: "Student", href: "/student/my-learning" },
-              { label: "Results" },
-            ]}
           />
           <Card>
             <CardContent className="py-12 text-center">
@@ -150,10 +142,6 @@ export default function TestResultsPage() {
           <PageHeader
             title="Test Results"
             description="View your test results and performance"
-            breadcrumbs={[
-              { label: "Student", href: "/student/my-learning" },
-              { label: "Results" },
-            ]}
           />
           <Card>
             <CardContent className="py-12">
@@ -175,10 +163,6 @@ export default function TestResultsPage() {
           <PageHeader
             title="Test Results"
             description="View your test results and performance"
-            breadcrumbs={[
-              { label: "Student", href: "/student/my-learning" },
-              { label: "Results" },
-            ]}
           />
           <Card>
             <CardContent className="py-12 text-center">
@@ -230,10 +214,6 @@ export default function TestResultsPage() {
         <PageHeader
           title="Test Results"
           description="View your test results and performance"
-          breadcrumbs={[
-            { label: "Student", href: "/student/my-learning" },
-            { label: "Results" },
-          ]}
         />
 
         {/* Test Info Header */}

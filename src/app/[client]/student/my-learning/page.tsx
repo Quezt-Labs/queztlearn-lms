@@ -191,10 +191,6 @@ export default function MyLearningPage() {
               <PageHeader
                 title="My Learning"
                 description="Track your progress and continue your learning journey"
-                breadcrumbs={[
-                  { label: "Dashboard", href: "/student/dashboard" },
-                  { label: "My Learning" },
-                ]}
               />
             </motion.div>
 

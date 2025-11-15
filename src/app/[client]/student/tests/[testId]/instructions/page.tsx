@@ -44,7 +44,7 @@ export default function TestInstructionsPage() {
   const mock = searchParams.get("mock") === "1";
   const testId = params.testId;
   const testSeriesId = searchParams.get("testSeriesId");
-  
+
   // Fetch test series details if testSeriesId is provided
   const { data: testSeriesData } = useClientTestSeriesDetail(
     testSeriesId || ""
@@ -60,10 +60,6 @@ export default function TestInstructionsPage() {
           <PageHeader
             title="Test Instructions"
             description="Please read the instructions carefully before starting your test"
-            breadcrumbs={[
-              { label: "Student", href: "/student/my-learning" },
-              { label: "Instructions" },
-            ]}
           />
           <Card>
             <CardContent className="py-12 text-center">
@@ -125,22 +121,6 @@ export default function TestInstructionsPage() {
         <PageHeader
           title="Test Instructions"
           description="Please read the following instructions carefully before starting your test"
-          breadcrumbs={
-            testSeries
-              ? [
-                  { label: "Student", href: "/student/my-learning" },
-                  {
-                    label: "Test Series",
-                    href: `/student/test-series/${testSeriesId}`,
-                  },
-                  { label: testSeries.title || "Test Series" },
-                  { label: "Instructions" },
-                ]
-              : [
-                  { label: "Student", href: "/student/my-learning" },
-                  { label: "Instructions" },
-                ]
-          }
         />
 
         <div className="space-y-6">
