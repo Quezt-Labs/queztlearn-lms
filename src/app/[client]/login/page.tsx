@@ -2,31 +2,18 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { ArrowLeft, GraduationCap, Phone, Shield, Loader2 } from "lucide-react";
+import { AnimatePresence } from "framer-motion";
 import { ClientProvider, useClient } from "@/components/client/client-provider";
+import { useOtpAuth } from "@/hooks/auth/use-otp-auth";
+import { PhoneStep } from "@/components/auth/phone-step";
+import { OtpStep } from "@/components/auth/otp-step";
+import { UsernameStep } from "@/components/auth/username-step";
+import { AuthLayout } from "@/components/auth/auth-layout";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import Image from "next/image";
-import { useLoadingState } from "@/hooks/common";
-import { getFriendlyErrorMessage } from "@/lib/utils/error-handling";
-import { ErrorMessage } from "@/components/common/error-message";
-import { useGetOtp, useVerifyOtp, useUpdateProfile } from "@/hooks/api";
-import { useRouter } from "next/navigation";
 import { cookieStorage } from "@/lib/utils/storage";
-import { PhoneInput } from "@/components/common/phone-input";
-import { OtpInput } from "@/components/common/otp-input";
-
-type Step = "phone" | "otp" | "username";
+import { useRouter } from "next/navigation";
 
 // Client Login Component
 function ClientLoginContent() {
@@ -34,28 +21,6 @@ function ClientLoginContent() {
   const params = useParams();
   const { client, isLoading, error } = useClient();
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const [step, setStep] = useState<Step>("phone");
-  const [countryCode, setCountryCode] = useState("+91");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [otp, setOtp] = useState("");
-  const [username, setUsername] = useState("");
-  const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
-  const [otpSent, setOtpSent] = useState(false);
-  const [resendTimer, setResendTimer] = useState(0);
-
-  const getOtpMutation = useGetOtp();
-  const verifyOtpMutation = useVerifyOtp();
-  const updateProfileMutation = useUpdateProfile();
-
-  // Loading state management
-  const {
-    isLoading: isSubmitting,
-    error: submitError,
-    setError,
-    executeWithLoading,
-  } = useLoadingState({
-    autoReset: true,
-  });
 
   // Check if user is already authenticated and redirect to My Learning
   useEffect(() => {
@@ -63,7 +28,6 @@ function ClientLoginContent() {
 
     const checkAuthAndRedirect = async () => {
       try {
-        // Check if QUEZT_AUTH token exists in cookies
         const authData = cookieStorage.get<{
           token: string;
           user: { role: string };
@@ -91,7 +55,6 @@ function ClientLoginContent() {
       }
     };
 
-    // Only check after client is loaded
     if (!isLoading && client) {
       const timer = setTimeout(checkAuthAndRedirect, 100);
       return () => clearTimeout(timer);
@@ -100,158 +63,20 @@ function ClientLoginContent() {
     }
   }, [router, params.client, isLoading, client]);
 
-  // Resend timer countdown
-  useEffect(() => {
-    if (resendTimer > 0) {
-      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [resendTimer]);
-
-  const handleGetOtp = async () => {
-    if (!client?.organizationId) {
-      setError("Client information is missing. Please try again.");
-      return;
-    }
-
-    if (!phoneNumber || phoneNumber.length < 10) {
-      setError("Please enter a valid phone number");
-      return;
-    }
-
-    try {
-      await executeWithLoading(async () => {
-        const result = await getOtpMutation.mutateAsync({
-          countryCode,
-          phoneNumber,
-          organizationId: client.organizationId,
-        });
-
-        // Both indicate OTP was sent successfully
-        if (result?.data?.isExistingUser !== undefined) {
-          setIsExistingUser(result.data.isExistingUser);
-          setOtpSent(true);
-          setStep("otp");
-          setResendTimer(60); // 60 seconds cooldown
-          setError(null);
-        } else {
-          // Fallback: if we don't have isExistingUser, assume existing user
-          setIsExistingUser(true);
-          setOtpSent(true);
-          setStep("otp");
-          setResendTimer(60);
-          setError(null);
-        }
-      });
-    } catch (error: unknown) {
-      // For other errors, show the error message
-      const errorMessage = getFriendlyErrorMessage(error);
-      setError(errorMessage);
-    }
-  };
-
-  const handleVerifyOtp = async (otpValue?: string) => {
-    if (!client?.organizationId) {
-      setError("Client information is missing. Please try again.");
-      return;
-    }
-
-    // Use provided OTP value or fallback to state
-    const currentOtp = otpValue || otp;
-
-    if (!currentOtp || currentOtp.length !== 6) {
-      setError("Please enter the complete 6-digit OTP");
-      return;
-    }
-
-    // Call verify-otp API (without username)
-    console.log("handleVerifyOtp: About to call API", {
-      countryCode,
-      phoneNumber,
-      otp: currentOtp,
-      organizationId: client.organizationId,
-      isExistingUser,
-    });
-
-    try {
-      await executeWithLoading(async () => {
-        console.log("Calling verifyOtpMutation.mutateAsync");
-        const result = await verifyOtpMutation.mutateAsync({
-          countryCode,
-          phoneNumber,
-          otp: currentOtp,
-          organizationId: client.organizationId,
-          // No username in verify-otp call
-        });
-        console.log("verifyOtpMutation completed successfully");
-
-        // If new user, show username step after successful OTP verification
-        if (isExistingUser === false) {
-          setStep("username");
-        } else {
-          // For existing users, redirect to dashboard
-          router.push("/student/my-learning");
-        }
-      });
-    } catch (error: unknown) {
-      console.error("handleVerifyOtp error:", error);
-      setError(getFriendlyErrorMessage(error));
-    }
-  };
-
-  const handleResendOtp = async () => {
-    if (resendTimer > 0) return;
-    setOtp("");
-    await handleGetOtp();
-  };
+  const auth = useOtpAuth({
+    organizationId: client?.organizationId || "",
+    onAuthSuccess: () => {
+      router.push("/student/my-learning");
+    },
+  });
 
   const handleOtpComplete = (value: string) => {
-    console.log("handleOtpComplete called with:", value);
-    setOtp(value);
-    // Auto-submit when OTP is complete - no need to click verify button
+    auth.setOtp(value);
     if (value.length === 6) {
-      // Use the value directly to avoid state timing issues
-      // Small delay to ensure state is updated
       setTimeout(() => {
-        console.log("OTP complete, calling handleVerifyOtp");
-        // Always call verify-otp API first
-        handleVerifyOtp(value);
+        auth.handleVerifyOtp(value);
       }, 100);
     }
-  };
-
-  const handleUsernameSubmit = async () => {
-    if (!username.trim()) {
-      setError("Please enter a username");
-      return;
-    }
-
-    try {
-      await executeWithLoading(async () => {
-        console.log("Updating profile with username:", username);
-        await updateProfileMutation.mutateAsync({
-          username: username.trim(),
-        });
-        console.log("Profile updated successfully, redirecting...");
-        // Redirect to student dashboard
-        router.push("/student/my-learning");
-      });
-    } catch (error: unknown) {
-      console.error("Update profile error:", error);
-      setError(getFriendlyErrorMessage(error));
-    }
-  };
-
-  const handleBackToPhone = () => {
-    setStep("phone");
-    setOtp("");
-    setOtpSent(false);
-    setIsExistingUser(null);
-  };
-
-  const handleBackToOtp = () => {
-    setStep("otp");
-    setUsername("");
   };
 
   if (isLoading || isCheckingAuth) {
@@ -284,333 +109,53 @@ function ClientLoginContent() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-background to-muted/20 flex">
-      {/* Left Side - Client Branding */}
-      <div className="hidden lg:flex lg:w-2/5 bg-linear-to-br from-primary to-primary/80 flex-col justify-center p-8 text-white">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-md"
-        >
-          <div className="mb-6">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
-                <Image
-                  src={client.logo}
-                  alt={client.name}
-                  width={96}
-                  height={96}
-                  quality={100}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">{client.name}</h1>
-                <p className="text-primary-foreground/80">Learning Platform</p>
-              </div>
-            </div>
-            <p className="text-primary-foreground/80">
-              Welcome to {client.name}&apos;s learning platform. Sign in with
-              OTP to access your courses.
-            </p>
-          </div>
+    <AuthLayout
+      client={client}
+      step={auth.step}
+      countryCode={auth.countryCode}
+      phoneNumber={auth.phoneNumber}
+    >
+      <AnimatePresence mode="wait">
+        {auth.step === "phone" && (
+          <PhoneStep
+            countryCode={auth.countryCode}
+            phoneNumber={auth.phoneNumber}
+            onCountryCodeChange={auth.setCountryCode}
+            onPhoneNumberChange={auth.setPhoneNumber}
+            onGetOtp={auth.handleGetOtp}
+            isLoading={auth.isLoading}
+            error={auth.error}
+          />
+        )}
 
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                <Phone className="h-4 w-4" />
-              </div>
-              <span className="text-sm">Quick OTP login</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                <Shield className="h-4 w-4" />
-              </div>
-              <span className="text-sm">Secure authentication</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                <GraduationCap className="h-4 w-4" />
-              </div>
-              <span className="text-sm">Access your courses</span>
-            </div>
-          </div>
-        </motion.div>
-      </div>
+        {auth.step === "otp" && (
+          <OtpStep
+            otp={auth.otp}
+            countryCode={auth.countryCode}
+            phoneNumber={auth.phoneNumber}
+            onOtpChange={auth.setOtp}
+            onOtpComplete={handleOtpComplete}
+            onBack={auth.handleBackToPhone}
+            onResend={auth.handleResendOtp}
+            resendTimer={auth.resendTimer}
+            isLoading={auth.isLoading}
+            isVerifying={auth.isLoading}
+            error={auth.error}
+          />
+        )}
 
-      {/* Right Side - Login Form */}
-      <div className="flex-1 lg:w-3/5 flex items-center justify-center p-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-w-md"
-        >
-          {/* Mobile Header */}
-          <div className="lg:hidden text-center mb-8">
-            <div className="flex items-center justify-center space-x-3 mb-4">
-              <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0">
-                <Image
-                  src={client.logo}
-                  alt={client.name}
-                  width={80}
-                  height={80}
-                  quality={100}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold">{client.name}</h1>
-                <p className="text-sm text-muted-foreground">
-                  Learning Platform
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Login Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {step === "phone"
-                  ? "Sign In / Register"
-                  : step === "otp"
-                  ? "Enter OTP"
-                  : "Choose Username"}
-              </CardTitle>
-              <CardDescription>
-                {step === "phone"
-                  ? "Enter your phone number to get started"
-                  : step === "otp"
-                  ? `We've sent a 6-digit OTP to ${countryCode} ${phoneNumber}`
-                  : "Choose a username for your account"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AnimatePresence mode="wait">
-                {step === "phone" && (
-                  <motion.div
-                    key="phone"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="space-y-4"
-                  >
-                    <ErrorMessage
-                      error={
-                        submitError ||
-                        (getOtpMutation.error
-                          ? getFriendlyErrorMessage(getOtpMutation.error)
-                          : null)
-                      }
-                    />
-
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <PhoneInput
-                        countryCode={countryCode}
-                        phoneNumber={phoneNumber}
-                        onCountryCodeChange={setCountryCode}
-                        onPhoneNumberChange={setPhoneNumber}
-                        disabled={isSubmitting || getOtpMutation.isPending}
-                        error={!!submitError || !!getOtpMutation.error}
-                      />
-                      {phoneNumber && phoneNumber.length < 10 && (
-                        <p className="text-sm text-muted-foreground">
-                          Phone number must be at least 10 digits
-                        </p>
-                      )}
-                    </div>
-
-                    <Button
-                      type="button"
-                      onClick={handleGetOtp}
-                      className="w-full"
-                      disabled={
-                        !phoneNumber ||
-                        phoneNumber.length < 10 ||
-                        isSubmitting ||
-                        getOtpMutation.isPending
-                      }
-                    >
-                      {isSubmitting || getOtpMutation.isPending ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Sending OTP...
-                        </>
-                      ) : (
-                        <>
-                          <Phone className="mr-2 h-4 w-4" />
-                          Send OTP
-                        </>
-                      )}
-                    </Button>
-                  </motion.div>
-                )}
-
-                {step === "otp" && (
-                  <motion.div
-                    key="otp"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="space-y-4"
-                  >
-                    <ErrorMessage
-                      error={
-                        submitError ||
-                        (verifyOtpMutation.error
-                          ? getFriendlyErrorMessage(verifyOtpMutation.error)
-                          : null)
-                      }
-                    />
-
-                    <div className="space-y-2">
-                      <Label>Enter 6-digit OTP</Label>
-                      <OtpInput
-                        length={6}
-                        value={otp}
-                        onChange={setOtp}
-                        onComplete={handleOtpComplete}
-                        disabled={
-                          isSubmitting || updateProfileMutation.isPending
-                        }
-                        error={!!submitError || !!verifyOtpMutation.error}
-                      />
-                      {(isSubmitting || verifyOtpMutation.isPending) && (
-                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Verifying OTP...</span>
-                        </div>
-                      )}
-                      <p className="text-xs text-center text-muted-foreground">
-                        OTP will be verified automatically
-                      </p>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleBackToPhone}
-                        className="w-full"
-                        disabled={
-                          isSubmitting || updateProfileMutation.isPending
-                        }
-                      >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Change Number
-                      </Button>
-                    </div>
-
-                    <div className="text-center">
-                      <Button
-                        type="button"
-                        variant="link"
-                        onClick={handleResendOtp}
-                        disabled={resendTimer > 0}
-                        className="text-sm"
-                      >
-                        {resendTimer > 0
-                          ? `Resend OTP in ${resendTimer}s`
-                          : "Resend OTP"}
-                      </Button>
-                    </div>
-                  </motion.div>
-                )}
-
-                {step === "username" && (
-                  <motion.div
-                    key="username"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    className="space-y-4"
-                  >
-                    <ErrorMessage error={submitError} />
-
-                    <div className="space-y-2">
-                      <Label htmlFor="username">Username</Label>
-                      <Input
-                        id="username"
-                        type="text"
-                        placeholder="Choose a username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        disabled={
-                          isSubmitting || updateProfileMutation.isPending
-                        }
-                        onKeyDown={async (e) => {
-                          if (e.key === "Enter" && username.trim()) {
-                            console.log(
-                              "Enter key pressed, calling handleUsernameSubmit"
-                            );
-                            await handleUsernameSubmit();
-                          }
-                        }}
-                        autoFocus
-                      />
-                      <p className="text-sm text-muted-foreground">
-                        This will be your display name
-                      </p>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleBackToOtp}
-                        className="flex-1"
-                        disabled={
-                          isSubmitting || updateProfileMutation.isPending
-                        }
-                      >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        Back
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={handleUsernameSubmit}
-                        className="flex-1"
-                        disabled={
-                          !username.trim() ||
-                          isSubmitting ||
-                          updateProfileMutation.isPending
-                        }
-                      >
-                        {isSubmitting || updateProfileMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Creating Account...
-                          </>
-                        ) : (
-                          "Create Account"
-                        )}
-                      </Button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div className="mt-6 pt-6 border-t">
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-2">
-                    New users will be automatically registered
-                  </p>
-                  <Button variant="ghost" asChild>
-                    <Link href="/">
-                      <ArrowLeft className="mr-2 h-4 w-4" />
-                      Back to Home
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
-    </div>
+        {auth.step === "username" && (
+          <UsernameStep
+            username={auth.username}
+            onUsernameChange={auth.setUsername}
+            onSubmit={auth.handleUsernameSubmit}
+            onBack={auth.handleBackToOtp}
+            isLoading={auth.isLoading}
+            error={auth.error}
+          />
+        )}
+      </AnimatePresence>
+    </AuthLayout>
   );
 }
 

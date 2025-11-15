@@ -12,6 +12,11 @@ export interface ApiError {
  * Extract error message from various error formats
  */
 export const extractErrorMessage = (error: unknown): string => {
+  // Return empty string if error is null or undefined
+  if (!error) {
+    return "";
+  }
+
   if (error instanceof Error) {
     return error.message;
   }
@@ -116,13 +121,22 @@ export const isValidationError = (error: unknown): boolean => {
 /**
  * Get user-friendly error message
  */
-export const getFriendlyErrorMessage = (error: unknown): string => {
+export const getFriendlyErrorMessage = (error: unknown): string | null => {
+  // Return null if error is null, undefined, or falsy
+  if (!error) {
+    return null;
+  }
+
   // First, try to extract the actual API error message
   const apiMessage = extractErrorMessage(error);
 
+  // If no message extracted or empty string, return null
+  if (!apiMessage || apiMessage.trim() === "") {
+    return null;
+  }
+
   // Only use generic messages if no specific API message is available
   if (
-    apiMessage &&
     apiMessage !== "An error occurred" &&
     apiMessage !== "An unexpected error occurred"
   ) {
@@ -135,15 +149,15 @@ export const getFriendlyErrorMessage = (error: unknown): string => {
   }
 
   if (isAuthError(error)) {
-    // For auth errors, prefer API message if available, otherwise use generic
-    return apiMessage || "Authentication failed. Please sign in again.";
+    return "Authentication failed. Please sign in again.";
   }
 
   if (isValidationError(error)) {
-    return apiMessage || "Please check your input and try again.";
+    return "Please check your input and try again.";
   }
 
-  return apiMessage;
+  // If we have a generic message, return null instead to avoid showing it
+  return null;
 };
 
 /**
