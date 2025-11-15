@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,39 +13,38 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ArrowLeft, Eye, EyeOff, GraduationCap } from "lucide-react";
+import { ArrowLeft, GraduationCap, Phone, Shield, Loader2 } from "lucide-react";
 import { ClientProvider, useClient } from "@/components/client/client-provider";
 import Link from "next/link";
 import Image from "next/image";
-import { useEnhancedFormValidation, useLoadingState } from "@/hooks/common";
+import { useLoadingState } from "@/hooks/common";
 import { getFriendlyErrorMessage } from "@/lib/utils/error-handling";
 import { ErrorMessage } from "@/components/common/error-message";
-import { useStudentLogin } from "@/hooks/api";
+import { useGetOtp, useVerifyOtp } from "@/hooks/api";
 import { useRouter } from "next/navigation";
 import { cookieStorage } from "@/lib/utils/storage";
+import { PhoneInput } from "@/components/common/phone-input";
+import { OtpInput } from "@/components/common/otp-input";
+
+type Step = "phone" | "otp" | "username";
 
 // Client Login Component
 function ClientLoginContent() {
   const router = useRouter();
   const params = useParams();
   const { client, isLoading, error } = useClient();
-  const [showPassword, setShowPassword] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-  const studentLoginMutation = useStudentLogin();
+  const [step, setStep] = useState<Step>("phone");
+  const [countryCode, setCountryCode] = useState("+91");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [otp, setOtp] = useState("");
+  const [username, setUsername] = useState("");
+  const [isExistingUser, setIsExistingUser] = useState<boolean | null>(null);
+  const [otpSent, setOtpSent] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
 
-  // Form validation
-  const {
-    updateField,
-    validateFieldOnBlur,
-    validateAllFields,
-    getFieldValue,
-    getFieldError,
-    isFormValid,
-  } = useEnhancedFormValidation({
-    email: "",
-    password: "",
-    userType: "student", // Default to student for client login
-  });
+  const getOtpMutation = useGetOtp();
+  const verifyOtpMutation = useVerifyOtp();
 
   // Loading state management
   const {
@@ -100,33 +99,125 @@ function ClientLoginContent() {
     }
   }, [router, params.client, isLoading, client]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+  // Resend timer countdown
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendTimer]);
 
-    if (!validateAllFields()) {
-      setError("Please fix the form errors before submitting");
+  const handleGetOtp = async () => {
+    if (!client?.organizationId) {
+      setError("Client information is missing. Please try again.");
+      return;
+    }
+
+    if (!phoneNumber || phoneNumber.length < 10) {
+      setError("Please enter a valid phone number");
       return;
     }
 
     try {
       await executeWithLoading(async () => {
-        // Use student login for client login
-        await studentLoginMutation.mutateAsync({
-          email: getFieldValue("email"),
-          password: getFieldValue("password"),
+        const result = await getOtpMutation.mutateAsync({
+          countryCode,
+          phoneNumber,
+          organizationId: client.organizationId,
         });
+
+        if (result.success) {
+          setIsExistingUser(result.data?.isExistingUser ?? false);
+          setOtpSent(true);
+          setStep("otp");
+          setResendTimer(60); // 60 seconds cooldown
+          setError(null);
+        }
+      });
+    } catch (error: unknown) {
+      const errorMessage = getFriendlyErrorMessage(error);
+      // Handle 400 response for new users (this is expected)
+      if (
+        errorMessage.includes("new user") ||
+        errorMessage.includes("registered")
+      ) {
+        setIsExistingUser(false);
+        setOtpSent(true);
+        setStep("otp");
+        setResendTimer(60);
+        setError(null);
+      } else {
+        setError(errorMessage);
+      }
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!client?.organizationId) {
+      setError("Client information is missing. Please try again.");
+      return;
+    }
+
+    if (otp.length !== 6) {
+      setError("Please enter the complete 6-digit OTP");
+      return;
+    }
+
+    // If new user and no username, show username step
+    if (isExistingUser === false && !username && step === "otp") {
+      setStep("username");
+      return;
+    }
+
+    try {
+      await executeWithLoading(async () => {
+        await verifyOtpMutation.mutateAsync({
+          countryCode,
+          phoneNumber,
+          otp,
+          organizationId: client.organizationId,
+          username: isExistingUser === false ? username : undefined,
+        });
+        // onSuccess in hook will handle redirect
       });
     } catch (error: unknown) {
       setError(getFriendlyErrorMessage(error));
     }
   };
 
+  const handleResendOtp = async () => {
+    if (resendTimer > 0) return;
+    setOtp("");
+    await handleGetOtp();
+  };
+
+  const handleOtpComplete = (value: string) => {
+    setOtp(value);
+    // Auto-submit when OTP is complete
+    if (value.length === 6) {
+      setTimeout(() => {
+        handleVerifyOtp();
+      }, 300);
+    }
+  };
+
+  const handleBackToPhone = () => {
+    setStep("phone");
+    setOtp("");
+    setOtpSent(false);
+    setIsExistingUser(null);
+  };
+
+  const handleBackToOtp = () => {
+    setStep("otp");
+    setUsername("");
+  };
+
   if (isLoading || isCheckingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <Loader2 className="h-8 w-8 animate-spin" />
           <p className="text-muted-foreground">
             {isCheckingAuth ? "Checking authentication..." : "Loading..."}
           </p>
@@ -179,29 +270,29 @@ function ClientLoginContent() {
               </div>
             </div>
             <p className="text-primary-foreground/80">
-              Welcome to {client.name}&apos;s learning platform. Sign in to
-              access your courses and continue your learning journey.
+              Welcome to {client.name}&apos;s learning platform. Sign in with
+              OTP to access your courses.
             </p>
           </div>
 
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                <Phone className="h-4 w-4" />
+              </div>
+              <span className="text-sm">Quick OTP login</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                <Shield className="h-4 w-4" />
+              </div>
+              <span className="text-sm">Secure authentication</span>
+            </div>
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
                 <GraduationCap className="h-4 w-4" />
               </div>
               <span className="text-sm">Access your courses</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                <GraduationCap className="h-4 w-4" />
-              </div>
-              <span className="text-sm">Track your progress</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                <GraduationCap className="h-4 w-4" />
-              </div>
-              <span className="text-sm">Connect with instructors</span>
             </div>
           </div>
         </motion.div>
@@ -240,104 +331,233 @@ function ClientLoginContent() {
           {/* Login Form */}
           <Card>
             <CardHeader>
-              <CardTitle>Sign In</CardTitle>
+              <CardTitle>
+                {step === "phone"
+                  ? "Sign In / Register"
+                  : step === "otp"
+                    ? "Enter OTP"
+                    : "Choose Username"}
+              </CardTitle>
               <CardDescription>
-                Enter your credentials to access your account
+                {step === "phone"
+                  ? "Enter your phone number to get started"
+                  : step === "otp"
+                    ? `We've sent a 6-digit OTP to ${countryCode} ${phoneNumber}`
+                    : "Choose a username for your account"}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <ErrorMessage
-                  error={
-                    submitError ||
-                    (studentLoginMutation.error
-                      ? getFriendlyErrorMessage(studentLoginMutation.error)
-                      : null)
-                  }
-                />
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter your email"
-                    value={getFieldValue("email")}
-                    onChange={(e) => updateField("email", e.target.value)}
-                    onBlur={() => validateFieldOnBlur("email")}
-                    required
-                  />
-                  {getFieldError("email") && (
-                    <p className="text-sm text-destructive">
-                      {getFieldError("email")}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      value={getFieldValue("password")}
-                      onChange={(e) => updateField("password", e.target.value)}
-                      onBlur={() => validateFieldOnBlur("password")}
-                      className="pr-10"
-                      required
+              <AnimatePresence mode="wait">
+                {step === "phone" && (
+                  <motion.div
+                    key="phone"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="space-y-4"
+                  >
+                    <ErrorMessage
+                      error={
+                        submitError ||
+                        (getOtpMutation.error
+                          ? getFriendlyErrorMessage(getOtpMutation.error)
+                          : null)
+                      }
                     />
+
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <PhoneInput
+                        countryCode={countryCode}
+                        phoneNumber={phoneNumber}
+                        onCountryCodeChange={setCountryCode}
+                        onPhoneNumberChange={setPhoneNumber}
+                        disabled={isSubmitting || getOtpMutation.isPending}
+                        error={!!submitError || !!getOtpMutation.error}
+                      />
+                      {phoneNumber && phoneNumber.length < 10 && (
+                        <p className="text-sm text-muted-foreground">
+                          Phone number must be at least 10 digits
+                        </p>
+                      )}
+                    </div>
+
                     <Button
                       type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0"
-                      onClick={() => setShowPassword(!showPassword)}
+                      onClick={handleGetOtp}
+                      className="w-full"
+                      disabled={
+                        !phoneNumber ||
+                        phoneNumber.length < 10 ||
+                        isSubmitting ||
+                        getOtpMutation.isPending
+                      }
                     >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
+                      {isSubmitting || getOtpMutation.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Sending OTP...
+                        </>
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <>
+                          <Phone className="mr-2 h-4 w-4" />
+                          Send OTP
+                        </>
                       )}
                     </Button>
-                  </div>
-                  {getFieldError("password") && (
-                    <p className="text-sm text-destructive">
-                      {getFieldError("password")}
-                    </p>
-                  )}
-                </div>
+                  </motion.div>
+                )}
 
-                <Button
-                  type="submit"
-                  className="w-full"
-                  disabled={
-                    !isFormValid ||
-                    isSubmitting ||
-                    studentLoginMutation.isPending
-                  }
-                >
-                  {isSubmitting || studentLoginMutation.isPending
-                    ? "Signing In..."
-                    : "Sign In"}
-                </Button>
-              </form>
+                {step === "otp" && (
+                  <motion.div
+                    key="otp"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="space-y-4"
+                  >
+                    <ErrorMessage
+                      error={
+                        submitError ||
+                        (verifyOtpMutation.error
+                          ? getFriendlyErrorMessage(verifyOtpMutation.error)
+                          : null)
+                      }
+                    />
 
-              <div className="mt-6 space-y-4">
+                    <div className="space-y-2">
+                      <Label>Enter 6-digit OTP</Label>
+                      <OtpInput
+                        length={6}
+                        value={otp}
+                        onChange={setOtp}
+                        onComplete={handleOtpComplete}
+                        disabled={
+                          isSubmitting || verifyOtpMutation.isPending
+                        }
+                        error={!!submitError || !!verifyOtpMutation.error}
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleBackToPhone}
+                        className="flex-1"
+                        disabled={isSubmitting || verifyOtpMutation.isPending}
+                      >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Change Number
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleVerifyOtp}
+                        className="flex-1"
+                        disabled={
+                          otp.length !== 6 ||
+                          isSubmitting ||
+                          verifyOtpMutation.isPending
+                        }
+                      >
+                        {isSubmitting || verifyOtpMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Verifying...
+                          </>
+                        ) : (
+                          "Verify OTP"
+                        )}
+                      </Button>
+                    </div>
+
+                    <div className="text-center">
+                      <Button
+                        type="button"
+                        variant="link"
+                        onClick={handleResendOtp}
+                        disabled={resendTimer > 0}
+                        className="text-sm"
+                      >
+                        {resendTimer > 0
+                          ? `Resend OTP in ${resendTimer}s`
+                          : "Resend OTP"}
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+
+                {step === "username" && (
+                  <motion.div
+                    key="username"
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className="space-y-4"
+                  >
+                    <ErrorMessage error={submitError} />
+
+                    <div className="space-y-2">
+                      <Label htmlFor="username">Username</Label>
+                      <Input
+                        id="username"
+                        type="text"
+                        placeholder="Choose a username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        disabled={isSubmitting || verifyOtpMutation.isPending}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && username.trim()) {
+                            handleVerifyOtp();
+                          }
+                        }}
+                        autoFocus
+                      />
+                      <p className="text-sm text-muted-foreground">
+                        This will be your display name
+                      </p>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleBackToOtp}
+                        className="flex-1"
+                        disabled={isSubmitting || verifyOtpMutation.isPending}
+                      >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleVerifyOtp}
+                        className="flex-1"
+                        disabled={
+                          !username.trim() ||
+                          isSubmitting ||
+                          verifyOtpMutation.isPending
+                        }
+                      >
+                        {isSubmitting || verifyOtpMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Creating Account...
+                          </>
+                        ) : (
+                          "Create Account"
+                        )}
+                      </Button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <div className="mt-6 pt-6 border-t">
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Don&apos;t have an account?{" "}
-                    <Button
-                      variant="link"
-                      className="p-0 h-auto"
-                      onClick={() => router.push("/register")}
-                    >
-                      Register as Student
-                    </Button>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    New users will be automatically registered
                   </p>
-                </div>
-
-                <div className="text-center">
                   <Button variant="ghost" asChild>
                     <Link href="/">
                       <ArrowLeft className="mr-2 h-4 w-4" />

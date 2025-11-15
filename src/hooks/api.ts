@@ -336,6 +336,86 @@ export const useStudentResendVerification = () => {
   });
 };
 
+// OTP Authentication Hooks
+export const useGetOtp = () => {
+  return useMutation({
+    mutationFn: (data: {
+      countryCode: string;
+      phoneNumber: string;
+      organizationId: string;
+    }) => api.getOtp(data).then((res) => res.data),
+    onError: (error) => {
+      console.error("Get OTP failed:", error);
+    },
+  });
+};
+
+export const useVerifyOtp = () => {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (data: {
+      countryCode: string;
+      phoneNumber: string;
+      otp: string;
+      organizationId: string;
+      username?: string;
+    }) => api.verifyOtp(data).then((res) => res.data),
+    onSuccess: (data) => {
+      if (data.success && data.data) {
+        // Store complete auth data (token + refreshToken + user) in QUEZT_AUTH cookie
+        tokenManager.setAuthData(
+          data.data.accessToken,
+          data.data.user,
+          data.data.refreshToken
+        );
+
+        // Update user cache
+        queryClient.setQueryData(queryKeys.user, data.data.user);
+
+        // Redirect to student dashboard
+        router.push("/student/my-learning");
+      }
+    },
+    onError: (error) => {
+      console.error("Verify OTP failed:", error);
+    },
+  });
+};
+
+export const useRefreshToken = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: { refreshToken: string }) =>
+      api.refreshToken(data).then((res) => res.data),
+    onSuccess: (data) => {
+      if (data.success && data.data) {
+        // Update token in auth data
+        const authData = tokenManager.getAuthData();
+        if (authData && authData.user) {
+          tokenManager.setAuthData(
+            data.data.accessToken,
+            authData.user,
+            authData.refreshToken
+          );
+        }
+        // Update user cache if user data is provided
+        if (data.data.user) {
+          queryClient.setQueryData(queryKeys.user, data.data.user);
+        }
+      }
+    },
+    onError: (error) => {
+      console.error("Refresh token failed:", error);
+      // If refresh fails, clear auth and redirect to login
+      tokenManager.clearAuthData();
+      queryClient.clear();
+    },
+  });
+};
+
 export const useInviteTeacher = () => {
   const queryClient = useQueryClient();
 
