@@ -118,7 +118,105 @@ export default function SchedulePlayerPage() {
   };
 
   const youtubeUrl = normalizeYouTubeUrl(schedule.youtubeLink);
+  const isLive = schedule.status === "LIVE";
 
+  // Fullscreen layout for live videos
+  if (isLive) {
+    return (
+      <div className="fixed inset-0 bg-black z-50 group">
+        {/* Minimal header overlay - fades in on hover */}
+        <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/90 via-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className="container max-w-7xl mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleGoBack}
+                className="text-white hover:bg-white/20"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm",
+                  "bg-red-500/20 text-red-400 border-red-500/50"
+                )}
+              >
+                <StatusIcon className="h-3.5 w-3.5" />
+                {statusConfig.label}
+              </Badge>
+            </div>
+            <div className="mt-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-white">
+                {schedule.title}
+              </h1>
+            </div>
+          </div>
+        </div>
+
+        {/* Always visible minimal header with just back button and live badge */}
+        <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/40 to-transparent pointer-events-none">
+          <div className="container max-w-7xl mx-auto px-4 py-3">
+            <div className="flex items-center justify-between pointer-events-auto">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleGoBack}
+                className="text-white/90 hover:text-white hover:bg-white/20"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm",
+                  "bg-red-500/30 text-red-300 border-red-500/60"
+                )}
+              >
+                <StatusIcon className="h-3.5 w-3.5 animate-pulse" />
+                {statusConfig.label}
+              </Badge>
+            </div>
+          </div>
+        </div>
+
+        {/* Fullscreen Video Player */}
+        <div className="absolute inset-0 w-full h-full">
+          {schedule.youtubeLink ? (
+            <UnifiedVideoPlayer
+              src={youtubeUrl}
+              poster={schedule.thumbnailUrl}
+              type={getVideoType()}
+              className="w-full h-full"
+              autoplay={true}
+              onReady={(player) => {
+                setPlayerInstance(player);
+                const playerEl = player.el() as HTMLElement;
+                if (playerEl) {
+                  playerEl.style.width = "100%";
+                  playerEl.style.height = "100%";
+                  playerEl.style.position = "absolute";
+                  playerEl.style.top = "0";
+                  playerEl.style.left = "0";
+                  player.fluid(false);
+                  player.dimensions("100%", "100%");
+                }
+              }}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full text-white">
+              <p>Video not available</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Regular layout for non-live videos
   return (
     <div className="container max-w-7xl mx-auto px-4 py-4 lg:py-6">
       {/* Header */}
