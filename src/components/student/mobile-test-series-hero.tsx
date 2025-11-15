@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FileText, Clock, Sparkles } from "lucide-react";
+import { FileText, Clock, Sparkles, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ClientTestSeriesListItem } from "@/hooks/test-series-client";
@@ -67,6 +67,12 @@ export function MobileTestSeriesHero({
               <Badge className="bg-linear-to-r from-amber-500 to-orange-500 text-white border-0 shadow-md text-xs px-2 py-0.5">
                 <Sparkles className="h-2.5 w-2.5 mr-1" />
                 Hot Deal
+              </Badge>
+            )}
+            {isEnrolled && (
+              <Badge className="bg-green-600 text-white border-0 shadow-md text-xs px-2 py-0.5 flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3" />
+                Enrolled
               </Badge>
             )}
           </div>
