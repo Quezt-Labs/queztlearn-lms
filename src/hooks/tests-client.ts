@@ -15,6 +15,10 @@ export type PublishedTestDetails = {
   totalMarks: number;
   passingMarks: number;
   isFree: boolean;
+  instructions?: {
+    html?: string;
+    topics?: string[];
+  };
   // preview-only fields (no answers)
   sections?: Array<{
     id: string;
@@ -48,7 +52,8 @@ const testsClientKeys = {
   root: ["client", "tests"] as const,
   publishedDetail: (identifier: string) =>
     [...testsClientKeys.root, identifier] as const,
-  preview: (testId: string) => [...testsClientKeys.root, testId, "preview"] as const,
+  preview: (testId: string) =>
+    [...testsClientKeys.root, testId, "preview"] as const,
 };
 
 // GET /api/tests/{identifier}
@@ -80,5 +85,3 @@ export const useClientTestPreview = (testId?: string) => {
 };
 
 export const testsClientQueryKeys = testsClientKeys;
-
-

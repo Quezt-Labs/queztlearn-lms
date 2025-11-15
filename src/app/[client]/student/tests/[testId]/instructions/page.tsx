@@ -9,16 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   CheckCircle2,
-  Info,
-  Clock,
   FileText,
-  Save,
   AlertTriangle,
-  Monitor,
-  Wifi,
-  Battery,
-  BookOpen,
-  Target,
   ArrowRight,
   X,
 } from "lucide-react";
@@ -31,6 +23,8 @@ import {
   SuccessMessage,
 } from "@/components/common/error-message";
 import { useClientTestSeriesDetail } from "@/hooks/test-series-client";
+import { useClientPublishedTestDetails } from "@/hooks/tests-client";
+import { decodeHtmlEntities } from "@/lib/utils";
 
 export default function TestInstructionsPage() {
   const params = useParams<{ testId: string }>();
@@ -44,6 +38,10 @@ export default function TestInstructionsPage() {
   const mock = searchParams.get("mock") === "1";
   const testId = params.testId;
   const testSeriesId = searchParams.get("testSeriesId");
+
+  // Fetch test details to get instructions
+  const { data: testData } = useClientPublishedTestDetails(testId);
+  const test = testData?.data;
 
   // Fetch test series details if testSeriesId is provided
   const { data: testSeriesData } = useClientTestSeriesDetail(
@@ -140,150 +138,52 @@ export default function TestInstructionsPage() {
             </Alert>
           </motion.div>
 
-          {/* Main Instructions Grid */}
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* General Guidelines */}
+          {/* Test Instructions from API */}
+          {test?.instructions?.html ? (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.15 }}
             >
-              <Card className="h-full">
+              <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
-                    <Info className="h-5 w-5 text-blue-500" />
-                    General Guidelines
+                    <FileText className="h-5 w-5 text-primary" />
+                    Test Instructions
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <InstructionItem
-                    icon={<Clock className="h-4 w-4 text-blue-500" />}
-                    text="Timer starts immediately when you begin the test"
-                  />
-                  <InstructionItem
-                    icon={<FileText className="h-4 w-4 text-green-500" />}
-                    text="Navigate between sections and questions freely"
-                  />
-                  <InstructionItem
-                    icon={<BookOpen className="h-4 w-4 text-purple-500" />}
-                    text="Mark questions for review to revisit later"
-                  />
-                  <InstructionItem
-                    icon={<Save className="h-4 w-4 text-emerald-500" />}
-                    text="Answers are auto-saved as you progress"
-                  />
-                  <InstructionItem
-                    icon={<Target className="h-4 w-4 text-orange-500" />}
-                    text="Submit test before time expires"
+                <CardContent>
+                  <div
+                    className="prose prose-sm dark:prose-invert max-w-none test-instructions"
+                    dangerouslySetInnerHTML={{
+                      __html: decodeHtmlEntities(test.instructions.html),
+                    }}
                   />
                 </CardContent>
               </Card>
             </motion.div>
-
-            {/* Important Don'ts */}
+          ) : (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              transition={{ delay: 0.15 }}
             >
-              <Card className="h-full border-red-200 dark:border-red-900">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <AlertTriangle className="h-5 w-5 text-red-500" />
-                    Important Don&apos;ts
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <DontItem
-                    icon={<X className="h-4 w-4 text-red-500" />}
-                    text="Do not refresh or close the browser tab"
-                  />
-                  <DontItem
-                    icon={<X className="h-4 w-4 text-red-500" />}
-                    text="Do not use browser back button during test"
-                  />
-                  <DontItem
-                    icon={<X className="h-4 w-4 text-red-500" />}
-                    text="Do not switch tabs or minimize window"
-                  />
-                  <DontItem
-                    icon={<X className="h-4 w-4 text-red-500" />}
-                    text="Do not use any unauthorized material"
-                  />
-                  <DontItem
-                    icon={<X className="h-4 w-4 text-red-500" />}
-                    text="Do not attempt from multiple devices"
-                  />
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">
+                    No instructions available for this test.
+                  </p>
                 </CardContent>
               </Card>
             </motion.div>
-
-            {/* System Requirements */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Card className="h-full">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <Monitor className="h-5 w-5 text-indigo-500" />
-                    System Requirements
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <InstructionItem
-                    icon={<Wifi className="h-4 w-4 text-indigo-500" />}
-                    text="Stable internet connection (minimum 2 Mbps)"
-                  />
-                  <InstructionItem
-                    icon={<Monitor className="h-4 w-4 text-indigo-500" />}
-                    text="Updated Chrome, Firefox, Safari or Edge browser"
-                  />
-                  <InstructionItem
-                    icon={<Battery className="h-4 w-4 text-indigo-500" />}
-                    text="Ensure device is charged or plugged in"
-                  />
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Exam Day Tips */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <Card className="h-full border-green-200 dark:border-green-900">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    Pro Tips for Success
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <InstructionItem
-                    icon={<Target className="h-4 w-4 text-green-500" />}
-                    text="Start with questions you know best"
-                  />
-                  <InstructionItem
-                    icon={<Clock className="h-4 w-4 text-green-500" />}
-                    text="Manage your time wisely across sections"
-                  />
-                  <InstructionItem
-                    icon={<BookOpen className="h-4 w-4 text-green-500" />}
-                    text="Review marked questions if time permits"
-                  />
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
+          )}
 
           {/* Agreement Checkbox */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.2 }}
           >
             <Card className="bg-muted/30">
               <CardContent className="pt-6">
@@ -313,7 +213,7 @@ export default function TestInstructionsPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.7 }}
+            transition={{ delay: 0.3 }}
             className="flex flex-col sm:flex-row gap-3 pt-4"
           >
             <Button
@@ -354,31 +254,15 @@ export default function TestInstructionsPage() {
           </motion.div>
         </div>
       </div>
-    </div>
-  );
-}
 
-// Helper Components
-function InstructionItem({
-  icon,
-  text,
-}: {
-  icon: React.ReactNode;
-  text: string;
-}) {
-  return (
-    <div className="flex items-start gap-3 text-sm">
-      <div className="mt-0.5 shrink-0">{icon}</div>
-      <p className="text-muted-foreground leading-relaxed">{text}</p>
-    </div>
-  );
-}
-
-function DontItem({ icon, text }: { icon: React.ReactNode; text: string }) {
-  return (
-    <div className="flex items-start gap-3 text-sm">
-      <div className="mt-0.5 shrink-0">{icon}</div>
-      <p className="text-red-600 dark:text-red-400 leading-relaxed">{text}</p>
+      <style jsx global>{`
+        .dark .test-instructions div[style],
+        .dark .test-instructions p[style],
+        .dark .test-instructions span[style] {
+          background: hsl(var(--background)) !important;
+          color: hsl(var(--foreground)) !important;
+        }
+      `}</style>
     </div>
   );
 }

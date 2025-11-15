@@ -69,6 +69,7 @@ import { CreateSectionModal } from "./create-section-modal";
 import { CreateQuestionModal } from "./create-question-modal";
 import { useTestDetails } from "@/hooks/test-series";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { decodeHtmlEntities } from "@/lib/utils";
 
 interface TestDetailPageProps {
   basePath?: "admin" | "teacher";
@@ -459,7 +460,7 @@ export function TestDetailPage({ basePath = "admin" }: TestDetailPageProps) {
                 <div
                   className="prose prose-sm dark:prose-invert max-w-none text-muted-foreground test-instructions"
                   dangerouslySetInnerHTML={{
-                    __html: test.instructions.html,
+                    __html: decodeHtmlEntities(test.instructions.html),
                   }}
                 />
               ) : (
