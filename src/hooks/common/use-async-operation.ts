@@ -49,7 +49,9 @@ export const useAsyncOperation = <T = unknown>(
         return operationResult;
       } catch (error) {
         const errorMessage = getFriendlyErrorMessage(error);
-        onError?.(errorMessage);
+        if (errorMessage) {
+          onError?.(errorMessage);
+        }
         throw error;
       }
     },
