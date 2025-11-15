@@ -11,6 +11,7 @@ interface MobileTestSeriesHeroProps {
   testCount: number;
   isHotDeal: boolean;
   onBack: () => void;
+  isEnrolled?: boolean;
 }
 
 export function MobileTestSeriesHero({
@@ -18,6 +19,7 @@ export function MobileTestSeriesHero({
   testCount,
   isHotDeal,
   onBack,
+  isEnrolled = false,
 }: MobileTestSeriesHeroProps) {
   return (
     <div className="relative bg-background/95 backdrop-blur-md border-b shadow-sm">
@@ -70,7 +72,7 @@ export function MobileTestSeriesHero({
           </div>
 
           {/* Discount Badge - Smaller and positioned better */}
-          {testSeries.discountPercentage > 0 && (
+          {testSeries.discountPercentage > 0 && !isEnrolled && (
             <div className="absolute top-2 right-2">
               <div className="bg-red-500 text-white px-2.5 py-1 rounded-md text-xs font-bold shadow-md">
                 {testSeries.discountPercentage}% OFF

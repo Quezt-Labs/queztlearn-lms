@@ -138,7 +138,10 @@ export default function BatchDetailPage() {
       {/* Mobile Hero - Sticky on Scroll */}
       <div className="lg:hidden sticky top-0 z-60">
         <MobileBatchHero
-          batch={batch}
+          batch={{
+            ...batch,
+            isPurchased: batch.isPurchased,
+          }}
           isLive={isLive}
           isUpcoming={isUpcoming}
           isEnded={isEnded}

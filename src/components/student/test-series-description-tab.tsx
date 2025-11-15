@@ -361,7 +361,7 @@ Each test includes detailed explanations, performance analytics, and personalize
                         Hot Deal
                       </Badge>
                     )}
-                    {testSeries.discountPercentage > 0 && (
+                    {testSeries.discountPercentage > 0 && !isEnrolled && (
                       <Badge className="bg-red-500 text-white border-0 shadow-lg text-xs ml-auto">
                         {testSeries.discountPercentage}% OFF
                       </Badge>
@@ -420,7 +420,7 @@ Each test includes detailed explanations, performance analytics, and personalize
                                 total
                               </span>
                             </div>
-                            {testCount > 0 && pricePerTest > 0 && (
+                            {testCount > 0 && pricePerTest > 0 && !isEnrolled && (
                               <div className="text-xs text-muted-foreground">
                                 Just {formatPrice(pricePerTest)} per test
                               </div>
@@ -541,7 +541,7 @@ Each test includes detailed explanations, performance analytics, and personalize
                         }`}
                       />
                     )}
-                    {testCount > 0 && pricePerTest > 0 && (
+                    {testCount > 0 && pricePerTest > 0 && !isEnrolled && (
                       <InfoItem
                         icon={Tag}
                         label="Price per Test"

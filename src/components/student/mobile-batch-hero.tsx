@@ -15,6 +15,7 @@ interface MobileBatchHeroProps {
     startDate: Date | string;
     endDate: Date | string;
     discountPercentage: number;
+    isPurchased?: boolean;
   };
   isLive: boolean;
   isUpcoming: boolean;
@@ -97,7 +98,7 @@ export function MobileBatchHero({
           </div>
 
           {/* Discount Badge - Smaller and positioned better */}
-          {batch.discountPercentage > 0 && (
+          {batch.discountPercentage > 0 && !batch.isPurchased && (
             <div className="absolute top-2 right-2">
               <div className="bg-red-500 text-white px-2.5 py-1 rounded-md text-xs font-bold shadow-md">
                 {batch.discountPercentage}% OFF

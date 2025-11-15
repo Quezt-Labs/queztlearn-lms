@@ -244,6 +244,7 @@ export default function StudentTestSeriesDetailPage() {
           onTabChange={setActiveTab}
           onBack={() => router.back()}
           testCount={testCount}
+          isEnrolled={isEnrolled}
         />
       </div>
 
@@ -263,6 +264,7 @@ export default function StudentTestSeriesDetailPage() {
           testCount={testCount}
           isHotDeal={isHotDeal}
           onBack={() => router.back()}
+          isEnrolled={isEnrolled}
         />
       </div>
 

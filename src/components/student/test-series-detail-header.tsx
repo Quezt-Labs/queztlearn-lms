@@ -12,6 +12,7 @@ interface TestSeriesDetailHeaderProps {
   onTabChange: (tab: "description" | "tests") => void;
   onBack: () => void;
   testCount: number;
+  isEnrolled?: boolean;
 }
 
 export function TestSeriesDetailHeader({
@@ -20,6 +21,7 @@ export function TestSeriesDetailHeader({
   onTabChange,
   onBack,
   testCount,
+  isEnrolled = false,
 }: TestSeriesDetailHeaderProps) {
   const isHotDeal = (testSeries.discountPercentage || 0) >= 30;
 
@@ -59,7 +61,7 @@ export function TestSeriesDetailHeader({
                     Hot Deal
                   </Badge>
                 )}
-                {testSeries.discountPercentage > 0 && (
+                {testSeries.discountPercentage > 0 && !isEnrolled && (
                   <Badge className="bg-red-500/90 text-white border-0 shadow-sm text-xs">
                     {testSeries.discountPercentage}% OFF
                   </Badge>

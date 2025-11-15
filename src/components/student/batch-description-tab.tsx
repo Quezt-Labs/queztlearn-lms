@@ -329,7 +329,7 @@ export function BatchDescriptionTab({
                           Hot Deal
                         </Badge>
                       )}
-                      {batch.discountPercentage > 0 && (
+                      {batch.discountPercentage > 0 && !batch.isPurchased && (
                         <Badge className="bg-red-500 text-white border-0 shadow-lg text-xs ml-auto">
                           {batch.discountPercentage}% OFF
                         </Badge>
