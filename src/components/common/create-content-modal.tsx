@@ -22,6 +22,7 @@ import {
 import { useCreateContent } from "@/hooks";
 import { Video, FileText, BookOpen } from "lucide-react";
 import { FileUpload } from "@/components/common/file-upload";
+import { ContentType, VideoType } from "@/components/common/content-form";
 
 interface CreateContentModalProps {
   isOpen: boolean;
@@ -38,10 +39,10 @@ export function CreateContentModal({
 }: CreateContentModalProps) {
   const [formData, setFormData] = useState({
     name: "",
-    type: "Lecture" as "Lecture" | "PDF",
+    type: ContentType.LECTURE,
     pdfUrl: "",
     videoUrl: "",
-    videoType: "YOUTUBE" as "YOUTUBE" | "HLS",
+    videoType: VideoType.YOUTUBE,
     videoThumbnail: "",
     videoDuration: 0,
   });
@@ -61,7 +62,7 @@ export function CreateContentModal({
 
     // Validate videoDuration for Lecture type
     if (
-      formData.type === "Lecture" &&
+      formData.type === ContentType.LECTURE &&
       (!formData.videoDuration || formData.videoDuration <= 0)
     ) {
       return;
@@ -76,12 +77,20 @@ export function CreateContentModal({
         type: formData.type,
         pdfUrl: pdfFile || formData.pdfUrl || undefined,
         videoUrl:
-          formData.videoType === "YOUTUBE"
+          formData.type === ContentType.PDF
+            ? undefined
+            : formData.videoType === VideoType.YOUTUBE
             ? formData.videoUrl
             : videoFile || formData.videoUrl || undefined,
-        videoType: formData.videoType,
-        videoThumbnail: thumbnailFile || formData.videoThumbnail || undefined,
-        videoDuration: formData.videoDuration,
+        videoType:
+          formData.type === ContentType.PDF ? undefined : formData.videoType,
+        videoThumbnail:
+          formData.type === ContentType.PDF
+            ? undefined
+            : thumbnailFile || formData.videoThumbnail || undefined,
+        ...(formData.type === ContentType.PDF
+          ? {}
+          : { videoDuration: formData.videoDuration }),
       };
 
       await createContentMutation.mutateAsync(contentData);
@@ -97,10 +106,10 @@ export function CreateContentModal({
   const handleClose = () => {
     setFormData({
       name: "",
-      type: "Lecture",
+      type: ContentType.LECTURE,
       pdfUrl: "",
       videoUrl: "",
-      videoType: "YOUTUBE",
+      videoType: VideoType.YOUTUBE,
       videoThumbnail: "",
       videoDuration: 0,
     });
@@ -151,13 +160,13 @@ export function CreateContentModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Lecture">
+                <SelectItem value={ContentType.LECTURE}>
                   <div className="flex items-center space-x-2">
                     <BookOpen className="h-4 w-4" />
                     <span>Lecture</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="PDF">
+                <SelectItem value={ContentType.PDF}>
                   <div className="flex items-center space-x-2">
                     <FileText className="h-4 w-4" />
                     <span>PDF</span>
@@ -168,7 +177,7 @@ export function CreateContentModal({
           </div>
 
           {/* Conditional Fields based on Type */}
-          {formData.type === "Lecture" && (
+          {formData.type === ContentType.LECTURE && (
             <>
               <div className="space-y-2">
                 <Label htmlFor="videoType">Video Type *</Label>
@@ -187,19 +196,19 @@ export function CreateContentModal({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="YOUTUBE">
+                    <SelectItem value={VideoType.YOUTUBE}>
                       <div className="flex items-center space-x-2">
                         <Video className="h-4 w-4" />
                         <span>YouTube</span>
                       </div>
                     </SelectItem>
-                    <SelectItem value="HLS">HLS</SelectItem>
+                    <SelectItem value={VideoType.HLS}>HLS</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {/* YouTube URL Input */}
-              {formData.videoType === "YOUTUBE" && (
+              {formData.videoType === VideoType.YOUTUBE && (
                 <div className="space-y-2">
                   <Label htmlFor="videoUrl">YouTube URL *</Label>
                   <Input
@@ -221,7 +230,7 @@ export function CreateContentModal({
               )}
 
               {/* Video Upload for HLS */}
-              {formData.videoType === "HLS" && (
+              {formData.videoType === VideoType.HLS && (
                 <div className="space-y-2">
                   <Label htmlFor="videoUpload">Upload Video *</Label>
                   <FileUpload
@@ -294,7 +303,7 @@ export function CreateContentModal({
             </>
           )}
 
-          {formData.type === "PDF" && (
+          {formData.type === ContentType.PDF && (
             <>
               <div className="space-y-2">
                 <Label htmlFor="pdfFile">Upload PDF</Label>
@@ -328,7 +337,7 @@ export function CreateContentModal({
               disabled={
                 isSubmitting ||
                 !formData.name.trim() ||
-                (formData.type === "Lecture" &&
+                (formData.type === ContentType.LECTURE &&
                   (!formData.videoDuration || formData.videoDuration <= 0))
               }
             >

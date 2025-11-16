@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   FileText,
   Video,
-  Download,
+  Eye,
   PlayCircle,
   Clock,
   CheckCircle2,
@@ -62,11 +63,19 @@ export function ContentCard({
   onPlayVideo,
   animationDelay = 0,
 }: ContentCardProps) {
+  const router = useRouter();
   const isLecture = content.type === "Lecture" && content.videoUrl;
   const isPdf = content.type === "PDF" && content.pdfUrl;
 
-  const handleOpenPdf = (url: string) => {
-    window.open(url, "_blank");
+  const handleViewPdf = () => {
+    // Navigate to PDF viewer route with topicId as query parameter
+    if (content.topicId) {
+      router.push(
+        `/student/content/${content.id}/pdf?topicId=${content.topicId}`
+      );
+    } else {
+      router.push(`/student/content/${content.id}/pdf`);
+    }
   };
 
   const handlePlayVideo = () => {
@@ -80,9 +89,6 @@ export function ContentCard({
       transition={{ duration: 0.3, delay: animationDelay }}
     >
       <Card className="group relative overflow-hidden border-2 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer h-full flex flex-col hover:border-primary/50">
-        {/* Gradient Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
         <CardContent className="relative p-0 flex flex-col h-full">
           {/* Thumbnail/Icon Section */}
           {isLecture && content.videoThumbnail ? (
@@ -213,11 +219,11 @@ export function ContentCard({
                   className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleOpenPdf(content.pdfUrl!);
+                    handleViewPdf();
                   }}
                 >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PDF
+                  <Eye className="h-4 w-4 mr-2" />
+                  View PDF
                 </Button>
               ) : null}
             </div>
