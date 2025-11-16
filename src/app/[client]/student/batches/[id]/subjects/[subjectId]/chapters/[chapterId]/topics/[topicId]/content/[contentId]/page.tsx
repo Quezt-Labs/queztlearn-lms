@@ -8,7 +8,6 @@ import {
   ArrowLeft,
   FileText,
   Video,
-  Clock,
   CheckCircle2,
   BookOpen,
   Search,
