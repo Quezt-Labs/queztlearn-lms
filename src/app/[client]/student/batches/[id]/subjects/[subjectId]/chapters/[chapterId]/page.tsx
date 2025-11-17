@@ -85,7 +85,7 @@ export default function ChapterDetailPage() {
             description="Topics will be available here once they are added to this chapter."
           />
         ) : (
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {topics.map((topic, index) => (
               <HorizontalListItemCard
                 key={topic.id}

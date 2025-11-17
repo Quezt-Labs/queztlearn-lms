@@ -84,7 +84,7 @@ export default function SubjectDetailPage() {
             description="Chapters will be available here once they are added to this subject."
           />
         ) : (
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {chapters.map((chapter, index) => (
               <HorizontalListItemCard
                 key={chapter.id}

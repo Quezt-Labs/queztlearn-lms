@@ -1,16 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -20,23 +13,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useUpdateContent } from "@/hooks";
-import { Video, FileText, BookOpen } from "lucide-react";
-import { FileUpload } from "@/components/common/file-upload";
-
-interface Content {
-  id: string;
-  name: string;
-  topicId: string;
-  type: "Lecture" | "PDF";
-  pdfUrl?: string;
-  videoUrl?: string;
-  videoType?: "YOUTUBE" | "HLS";
-  videoThumbnail?: string;
-  videoDuration?: number;
-  isCompleted?: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import {
+  useContentForm,
+  LectureFields,
+  PdfFields,
+  ContentTypeSelector,
+  formDataToContentData,
+  contentToFormData,
+  Content,
+  ContentType,
+} from "@/components/common/content-form";
 
 interface EditContentModalProps {
   isOpen: boolean;
@@ -51,80 +37,35 @@ export function EditContentModal({
   content,
   onSuccess,
 }: EditContentModalProps) {
-  const [formData, setFormData] = useState({
-    name: "",
-    type: "Lecture" as "Lecture" | "PDF",
-    pdfUrl: "",
-    videoUrl: "",
-    videoType: "YOUTUBE" as "YOUTUBE" | "HLS",
-    videoThumbnail: "",
-    videoDuration: 0,
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pdfFile, setPdfFile] = useState<string>("");
-  const [videoFile, setVideoFile] = useState<string>("");
-  const [thumbnailFile, setThumbnailFile] = useState<string>("");
+  const {
+    formData,
+    files,
+    updateFormDataPartial,
+    updateFile,
+    resetForm,
+    validation,
+    setFormData,
+  } = useContentForm({ initialContent: content });
 
   const updateContentMutation = useUpdateContent();
 
   // Initialize form data when content changes
   useEffect(() => {
     if (content) {
-      // Map old videoType values to new format
-      let videoType: "YOUTUBE" | "HLS" = "YOUTUBE";
-      if (content.videoType) {
-        if (content.videoType === "HLS") {
-          videoType = "HLS";
-        } else if (
-          content.videoType === "YOUTUBE" ||
-          content.videoType === "YouTube"
-        ) {
-          videoType = "YOUTUBE";
-        }
-      }
-
-      setFormData({
-        name: content.name || "",
-        type: content.type || "Lecture",
-        pdfUrl: content.pdfUrl || "",
-        videoUrl: content.videoUrl || "",
-        videoType: videoType,
-        videoThumbnail: content.videoThumbnail || "",
-        videoDuration: content.videoDuration || 0,
-      });
+      const initialFormData = contentToFormData(content);
+      setFormData(initialFormData);
     }
-  }, [content]);
+  }, [content, setFormData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim() || !content) {
+    if (!validation.isValid || !content) {
       return;
     }
-
-    // Validate videoDuration for Lecture type
-    if (
-      formData.type === "Lecture" &&
-      (!formData.videoDuration || formData.videoDuration <= 0)
-    ) {
-      return;
-    }
-
-    setIsSubmitting(true);
 
     try {
-      const contentData = {
-        name: formData.name,
-        type: formData.type,
-        pdfUrl: pdfFile || formData.pdfUrl || undefined,
-        videoUrl:
-          formData.videoType === "YOUTUBE"
-            ? formData.videoUrl
-            : videoFile || formData.videoUrl || undefined,
-        videoType: formData.videoType,
-        videoThumbnail: thumbnailFile || formData.videoThumbnail || undefined,
-        videoDuration: formData.videoDuration,
-      };
+      const contentData = formDataToContentData(formData, files);
 
       await updateContentMutation.mutateAsync({
         id: content.id,
@@ -134,26 +75,15 @@ export function EditContentModal({
       onSuccess?.();
     } catch (error) {
       console.error("Failed to update content:", error);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   const handleClose = () => {
-    setFormData({
-      name: "",
-      type: "Lecture",
-      pdfUrl: "",
-      videoUrl: "",
-      videoType: "YOUTUBE",
-      videoThumbnail: "",
-      videoDuration: 0,
-    });
-    setPdfFile("");
-    setVideoFile("");
-    setThumbnailFile("");
+    resetForm();
     onClose();
   };
+
+  const isSubmitting = updateContentMutation.isPending;
 
   if (!content) return null;
 
@@ -175,195 +105,33 @@ export function EditContentModal({
               id="name"
               placeholder="Enter content name"
               value={formData.name}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, name: e.target.value }))
-              }
+              onChange={(e) => updateFormDataPartial({ name: e.target.value })}
               required
             />
           </div>
 
           {/* Content Type */}
-          <div className="space-y-2">
-            <Label htmlFor="type">Content Type *</Label>
-            <Select
-              value={formData.type}
-              onValueChange={(value) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  type: value as typeof formData.type,
-                }))
-              }
-            >
-              <SelectTrigger id="type" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Lecture">
-                  <div className="flex items-center space-x-2">
-                    <BookOpen className="h-4 w-4" />
-                    <span>Lecture</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="PDF">
-                  <div className="flex items-center space-x-2">
-                    <FileText className="h-4 w-4" />
-                    <span>PDF</span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <ContentTypeSelector
+            value={formData.type}
+            onChange={(value) => updateFormDataPartial({ type: value })}
+          />
 
           {/* Conditional Fields based on Type */}
-          {formData.type === "Lecture" && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="videoType">Video Type *</Label>
-                <Select
-                  value={formData.videoType}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      videoType: value as typeof formData.videoType,
-                      videoUrl: "", // Reset URL when changing type
-                      videoDuration: 0, // Reset duration when changing type
-                    }))
-                  }
-                >
-                  <SelectTrigger id="videoType">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="YOUTUBE">
-                      <div className="flex items-center space-x-2">
-                        <Video className="h-4 w-4" />
-                        <span>YouTube</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="HLS">HLS</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* YouTube URL Input */}
-              {formData.videoType === "YOUTUBE" && (
-                <div className="space-y-2">
-                  <Label htmlFor="videoUrl">YouTube URL *</Label>
-                  <Input
-                    id="videoUrl"
-                    placeholder="https://www.youtube.com/watch?v=..."
-                    value={formData.videoUrl}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        videoUrl: e.target.value,
-                      }))
-                    }
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Enter the full YouTube video URL or video ID
-                  </p>
-                </div>
-              )}
-
-              {/* Video Upload for HLS */}
-              {formData.videoType === "HLS" && (
-                <div className="space-y-2">
-                  <Label htmlFor="videoUpload">Upload Video</Label>
-                  <FileUpload
-                    accept="video/*"
-                    maxSize={500}
-                    onUploadComplete={(fileData) => {
-                      setVideoFile(fileData.url);
-                    }}
-                  />
-                  <div className="space-y-2">
-                    <Label htmlFor="videoUrl">Or Enter Video URL</Label>
-                    <Input
-                      id="videoUrl"
-                      placeholder="Enter video URL (optional)"
-                      value={formData.videoUrl}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          videoUrl: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="videoThumbnail">Video Thumbnail</Label>
-                <FileUpload
-                  accept="image/*"
-                  maxSize={10}
-                  onUploadComplete={(fileData) => {
-                    setThumbnailFile(fileData.url);
-                  }}
-                />
-                <div className="space-y-2">
-                  <Label htmlFor="videoThumbnailUrl">
-                    Or Enter Thumbnail URL
-                  </Label>
-                  <Input
-                    id="videoThumbnailUrl"
-                    placeholder="Enter thumbnail URL (optional)"
-                    value={formData.videoThumbnail}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        videoThumbnail: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="videoDuration">Duration (seconds) *</Label>
-                <Input
-                  id="videoDuration"
-                  type="number"
-                  placeholder="Enter duration in seconds"
-                  value={formData.videoDuration || ""}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      videoDuration: Number(e.target.value) || 0,
-                    }))
-                  }
-                  required
-                  min="1"
-                />
-              </div>
-            </>
+          {formData.type === ContentType.LECTURE && (
+            <LectureFields
+              formData={formData}
+              onUpdate={updateFormDataPartial}
+              onVideoFileUpload={(url) => updateFile("videoFile", url)}
+              onThumbnailFileUpload={(url) => updateFile("thumbnailFile", url)}
+            />
           )}
 
-          {formData.type === "PDF" && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="pdfFile">Upload PDF</Label>
-                <FileUpload
-                  accept=".pdf"
-                  onUploadComplete={(fileData) => {
-                    setPdfFile(fileData.url);
-                  }}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="pdfUrl">Or Enter PDF URL</Label>
-                <Input
-                  id="pdfUrl"
-                  placeholder="Or enter PDF URL"
-                  value={formData.pdfUrl}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, pdfUrl: e.target.value }))
-                  }
-                />
-              </div>
-            </>
+          {formData.type === ContentType.PDF && (
+            <PdfFields
+              formData={formData}
+              onUpdate={updateFormDataPartial}
+              onPdfFileUpload={(url) => updateFile("pdfFile", url)}
+            />
           )}
 
           <DialogFooter>
@@ -372,12 +140,7 @@ export function EditContentModal({
             </Button>
             <Button
               type="submit"
-              disabled={
-                isSubmitting ||
-                !formData.name.trim() ||
-                (formData.type === "Lecture" &&
-                  (!formData.videoDuration || formData.videoDuration <= 0))
-              }
+              disabled={isSubmitting || !validation.isValid}
             >
               {isSubmitting ? "Updating..." : "Update Content"}
             </Button>

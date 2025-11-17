@@ -8,6 +8,7 @@ import {
   FileText,
   HelpCircle,
   Repeat,
+  Eye,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -134,32 +135,58 @@ export function TestCard({
   hasAttempted,
   sectionCount,
 }: TestCardProps) {
+  // Determine if user can reattempt based on hasAttempted
+  // If hasAttempted is true and attemptCount > 0, show "Reattempt"
+  // The API/instructions page will handle validation if max attempts reached
+  const canReattempt =
+    hasAttempted &&
+    attemptCount !== undefined &&
+    attemptCount > 0 &&
+    attemptStatus === "COMPLETED";
+
   const getActionText = () => {
     if (actionText) return actionText;
+    // If user has attempted and test allows multiple attempts, show "Reattempt"
+    if (canReattempt) return "Reattempt";
     if (attemptStatus === "COMPLETED") return "Review";
     if (attemptStatus === "IN_PROGRESS") return "Resume";
     return "Start";
   };
 
   const getActionVariant = () => {
+    // Reattempt should be primary button, Review should be outline
+    if (canReattempt) return "default";
     if (attemptStatus === "COMPLETED") return "outline";
     return "default";
   };
 
-  // For completed tests, link to solutions page
+  // Get reattempt link (instructions page)
+  const getReattemptLink = () => {
+    if (!testLink) return undefined;
+    return testLink; // Instructions page for starting new attempt
+  };
+
+  // Get review link (solutions page)
+  const getReviewLink = () => {
+    if (!testLink) return undefined;
+    const baseUrl = testLink.split("?")[0]; // Remove query params
+    const queryParams = testLink.includes("?") ? testLink.split("?")[1] : "";
+    return `${baseUrl.replace("/instructions", "/solutions")}${
+      queryParams ? `?${queryParams}` : ""
+    }`;
+  };
+
+  // For completed tests with reattempt option, link to instructions page
+  // For completed tests without reattempt, link to solutions page
   // For in-progress, link to attempt page
   // For not started, link to instructions
   const getTestLink = () => {
     if (!testLink) return undefined;
 
     if (attemptStatus === "COMPLETED") {
-      // Link to solutions page for completed tests
+      // Link to solutions page for completed tests (no reattempt available)
       // Solutions page will fetch latest attempt if attemptId is not provided
-      const baseUrl = testLink.split("?")[0]; // Remove query params
-      const queryParams = testLink.includes("?") ? testLink.split("?")[1] : "";
-      return `${baseUrl.replace("/instructions", "/solutions")}${
-        queryParams ? `?${queryParams}` : ""
-      }`;
+      return getReviewLink();
     }
 
     if (attemptStatus === "IN_PROGRESS") {
@@ -268,10 +295,40 @@ export function TestCard({
             )}
           </div>
 
-          {/* Action Button */}
+          {/* Action Buttons */}
           {showAction && (isEnrolled || testLink) && (
-            <div className="flex items-center justify-end pt-2 border-t">
-              {getTestLink() ? (
+            <div className="flex items-center justify-end gap-2 pt-2 border-t flex-wrap">
+              {/* Show both Reattempt and Review buttons if canReattempt */}
+              {canReattempt ? (
+                <>
+                  {getReattemptLink() && (
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="default"
+                      className="flex-1 sm:flex-none font-semibold min-w-[100px]"
+                    >
+                      <Link href={getReattemptLink()!}>
+                        <Play className="mr-2 h-4 w-4" />
+                        Reattempt
+                      </Link>
+                    </Button>
+                  )}
+                  {getReviewLink() && (
+                    <Button
+                      asChild
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 sm:flex-none font-semibold min-w-[100px]"
+                    >
+                      <Link href={getReviewLink()!}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        Review
+                      </Link>
+                    </Button>
+                  )}
+                </>
+              ) : getTestLink() ? (
                 <Button
                   asChild
                   size="sm"
@@ -279,7 +336,11 @@ export function TestCard({
                   className="w-full sm:w-auto font-semibold"
                 >
                   <Link href={getTestLink()!}>
-                    <Play className="mr-2 h-4 w-4" />
+                    {attemptStatus === "COMPLETED" ? (
+                      <Eye className="mr-2 h-4 w-4" />
+                    ) : (
+                      <Play className="mr-2 h-4 w-4" />
+                    )}
                     {getActionText()}
                   </Link>
                 </Button>

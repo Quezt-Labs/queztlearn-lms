@@ -4,6 +4,8 @@ const withBundleAnalyzer = require("@next/bundle-analyzer")({
   enabled: process.env.ANALYZE === "true",
 });
 
+const webpack = require("webpack");
+
 const nextConfig: NextConfig = {
   // Explicitly set the tracing root to this workspace to avoid
   // lockfile root detection warnings when multiple lockfiles exist
@@ -42,6 +44,31 @@ const nextConfig: NextConfig = {
         ],
       },
     ];
+  },
+  webpack: (config, { isServer }) => {
+    // Fix for pdfjs-dist trying to import Node.js modules in browser
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      canvas: false,
+      fs: false,
+      path: false,
+      crypto: false,
+      stream: false,
+      util: false,
+      buffer: false,
+      process: false,
+    };
+
+    // Ignore canvas imports completely
+    config.plugins = config.plugins || [];
+    config.plugins.push(
+      new webpack.IgnorePlugin({
+        resourceRegExp: /^canvas$/,
+        contextRegExp: /pdfjs-dist/,
+      })
+    );
+
+    return config;
   },
 };
 

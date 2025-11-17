@@ -361,7 +361,7 @@ Each test includes detailed explanations, performance analytics, and personalize
                         Hot Deal
                       </Badge>
                     )}
-                    {testSeries.discountPercentage > 0 && (
+                    {testSeries.discountPercentage > 0 && !isEnrolled && (
                       <Badge className="bg-red-500 text-white border-0 shadow-lg text-xs ml-auto">
                         {testSeries.discountPercentage}% OFF
                       </Badge>
@@ -369,17 +369,9 @@ Each test includes detailed explanations, performance analytics, and personalize
                   </div>
                 </div>
 
-                {/* Enrollment Status */}
-                {isEnrolled ? (
-                  <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 text-green-800 rounded-lg dark:bg-green-900/10 dark:border-green-800/20 dark:text-green-400">
-                    <CheckCircle2 className="h-4 w-4 shrink-0" />
-                    <span className="text-sm font-medium">
-                      You are enrolled in this test series.
-                    </span>
-                  </div>
-                ) : (
+                {/* Enhanced Pricing - Only show if not enrolled */}
+                {!isEnrolled && (
                   <>
-                    {/* Enhanced Pricing */}
                     <div className="space-y-4">
                       {testSeries.isFree ? (
                         <div className="text-center space-y-2">
@@ -420,11 +412,13 @@ Each test includes detailed explanations, performance analytics, and personalize
                                 total
                               </span>
                             </div>
-                            {testCount > 0 && pricePerTest > 0 && (
-                              <div className="text-xs text-muted-foreground">
-                                Just {formatPrice(pricePerTest)} per test
-                              </div>
-                            )}
+                            {testCount > 0 &&
+                              pricePerTest > 0 &&
+                              !isEnrolled && (
+                                <div className="text-xs text-muted-foreground">
+                                  Just {formatPrice(pricePerTest)} per test
+                                </div>
+                              )}
                           </div>
                         </>
                       )}
@@ -541,7 +535,7 @@ Each test includes detailed explanations, performance analytics, and personalize
                         }`}
                       />
                     )}
-                    {testCount > 0 && pricePerTest > 0 && (
+                    {testCount > 0 && pricePerTest > 0 && !isEnrolled && (
                       <InfoItem
                         icon={Tag}
                         label="Price per Test"

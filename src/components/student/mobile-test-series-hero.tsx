@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { FileText, Clock, Sparkles } from "lucide-react";
+import { FileText, Clock, Sparkles, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ClientTestSeriesListItem } from "@/hooks/test-series-client";
@@ -11,6 +11,7 @@ interface MobileTestSeriesHeroProps {
   testCount: number;
   isHotDeal: boolean;
   onBack: () => void;
+  isEnrolled?: boolean;
 }
 
 export function MobileTestSeriesHero({
@@ -18,6 +19,7 @@ export function MobileTestSeriesHero({
   testCount,
   isHotDeal,
   onBack,
+  isEnrolled = false,
 }: MobileTestSeriesHeroProps) {
   return (
     <div className="relative bg-background/95 backdrop-blur-md border-b shadow-sm">
@@ -67,10 +69,16 @@ export function MobileTestSeriesHero({
                 Hot Deal
               </Badge>
             )}
+            {isEnrolled && (
+              <Badge className="bg-green-600 text-white border-0 shadow-md text-xs px-2 py-0.5 flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3" />
+                Enrolled
+              </Badge>
+            )}
           </div>
 
           {/* Discount Badge - Smaller and positioned better */}
-          {testSeries.discountPercentage > 0 && (
+          {testSeries.discountPercentage > 0 && !isEnrolled && (
             <div className="absolute top-2 right-2">
               <div className="bg-red-500 text-white px-2.5 py-1 rounded-md text-xs font-bold shadow-md">
                 {testSeries.discountPercentage}% OFF

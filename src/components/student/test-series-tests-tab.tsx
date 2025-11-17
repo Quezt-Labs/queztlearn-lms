@@ -58,14 +58,21 @@ export function TestSeriesTestsTab({
 
   return (
     <div className="space-y-4 lg:space-y-6">
-      {/* Header */}
-      <div className="mb-6">
+      {/* Header - Hidden on mobile, shown on desktop */}
+      <div className="hidden lg:block mb-6">
         <h2 className="text-2xl font-bold text-foreground mb-2">
           All Tests ({tests.length})
         </h2>
         <p className="text-sm text-muted-foreground">
           Complete all tests to master this series
         </p>
+      </div>
+
+      {/* Mobile Header - Compact */}
+      <div className="lg:hidden mb-4">
+        <h2 className="text-lg font-bold text-foreground">
+          Tests ({tests.length})
+        </h2>
       </div>
 
       {/* Tests Grid */}
@@ -81,7 +88,7 @@ export function TestSeriesTestsTab({
             },
           },
         }}
-        className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6"
+        className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 lg:gap-6"
       >
         {tests?.map((test, index) => (
           <motion.div

@@ -138,7 +138,10 @@ export default function BatchDetailPage() {
       {/* Mobile Hero - Sticky on Scroll */}
       <div className="lg:hidden sticky top-0 z-60">
         <MobileBatchHero
-          batch={batch}
+          batch={{
+            ...batch,
+            isPurchased: batch.isPurchased,
+          }}
           isLive={isLive}
           isUpcoming={isUpcoming}
           isEnded={isEnded}
@@ -153,12 +156,6 @@ export default function BatchDetailPage() {
       <div className="px-3 py-4 lg:px-10 lg:py-8 bg-background">
         <div className="container max-w-7xl mx-auto">
           {/* Desktop Page Header */}
-          <div className="hidden lg:block mb-6">
-            <PageHeader
-              title={batch.name}
-              description={batch.description || undefined}
-            />
-          </div>
           <Suspense fallback={<DescriptionPageShimmer />}>
             {activeTab === "description" ? (
               <BatchDescriptionTab

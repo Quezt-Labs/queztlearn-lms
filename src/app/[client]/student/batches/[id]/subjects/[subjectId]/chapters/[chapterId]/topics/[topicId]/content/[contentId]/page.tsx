@@ -3,11 +3,11 @@
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   ArrowLeft,
   FileText,
   Video,
-  Clock,
   CheckCircle2,
   BookOpen,
   Search,
@@ -33,6 +33,22 @@ import { UnifiedVideoPlayer } from "@/components/common/unified-video-player";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import "./video-player.css";
+
+// Dynamically import PDFViewer with SSR disabled to avoid canvas issues
+const PDFViewer = dynamic(
+  () =>
+    import("@/components/common/pdf-viewer").then((mod) => ({
+      default: mod.PDFViewer,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="p-8 text-center text-muted-foreground">
+        Loading PDF viewer...
+      </div>
+    ),
+  }
+);
 
 interface Content {
   id: string;
@@ -358,11 +374,12 @@ export default function ContentPlayerPage() {
                 </div>
               </motion.div>
             ) : isPdf && currentContent.pdfUrl ? (
-              <div className="w-full h-full">
-                <iframe
-                  src={currentContent.pdfUrl}
-                  className="w-full h-full rounded-lg border"
+              <div className="w-full h-full bg-background">
+                <PDFViewer
+                  fileUrl={currentContent.pdfUrl}
                   title={currentContent.name}
+                  height="100%"
+                  className="h-full"
                 />
               </div>
             ) : (

@@ -62,13 +62,32 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle 401 errors
+// Response interceptor to handle 401 errors and token refresh
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void;
+  reject: (error?: unknown) => void;
+}> = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     return response;
   },
   async (error) => {
-    if (error.response?.status === 401) {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
       // Only redirect if not already on login/register pages
       // This prevents redirect loops and allows login errors to be displayed
       const currentPath =
@@ -79,10 +98,54 @@ apiClient.interceptors.response.use(
         currentPath.includes("/set-password") ||
         currentPath.includes("/verify-email");
 
-      if (!isAuthPage) {
-        // Token expired or invalid, redirect to login
-        deleteCookie(QUEZT_AUTH_KEY);
-        window.location.href = "/login";
+      // Try to refresh token if we have a refresh token
+      const refreshToken = tokenManager.getRefreshToken();
+      if (refreshToken && !isAuthPage && !isRefreshing) {
+        originalRequest._retry = true;
+        isRefreshing = true;
+
+        return new Promise((resolve, reject) => {
+          api
+            .refreshToken({ refreshToken })
+            .then((response) => {
+              if (response.data.success && response.data.data) {
+                // Update token in auth data
+                const authData = tokenManager.getAuthData();
+                if (authData && authData.user) {
+                  tokenManager.setAuthData(
+                    response.data.data.accessToken,
+                    authData.user,
+                    authData.refreshToken
+                  );
+                }
+                // Update original request with new token
+                originalRequest.headers.Authorization = `Bearer ${response.data.data.accessToken}`;
+                processQueue(null, response.data.data.accessToken);
+                resolve(apiClient(originalRequest));
+              } else {
+                processQueue(new Error("Token refresh failed"), null);
+                reject(error);
+              }
+            })
+            .catch((refreshError) => {
+              processQueue(refreshError, null);
+              // Refresh failed, clear auth and redirect
+              tokenManager.clearAuthData();
+              if (typeof window !== "undefined" && !isAuthPage) {
+                window.location.href = "/login";
+              }
+              reject(refreshError);
+            })
+            .finally(() => {
+              isRefreshing = false;
+            });
+        });
+      } else if (!isAuthPage) {
+        // No refresh token or refresh failed, redirect to login
+        tokenManager.clearAuthData();
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
       }
     }
 
@@ -96,14 +159,18 @@ export const tokenManager = {
     token: string,
     user: {
       id: string;
-      email: string;
+      email?: string;
       username: string;
       role: string;
       organizationId: string;
-    }
+      phoneNumber?: string;
+      countryCode?: string;
+    },
+    refreshToken?: string
   ) => {
     const authData = {
       token,
+      refreshToken,
       user,
       timestamp: Date.now(),
     };
@@ -114,6 +181,19 @@ export const tokenManager = {
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
     });
+  },
+
+  getRefreshToken: () => {
+    const authData = getCookie(QUEZT_AUTH_KEY);
+    if (authData && typeof authData === "string") {
+      try {
+        const parsed = JSON.parse(authData);
+        return parsed.refreshToken || null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
   },
 
   getToken: () => {
@@ -251,13 +331,54 @@ export const api = {
       data
     ),
 
+  // OTP Auth - Client endpoints
+  getOtp: (data: {
+    countryCode: string;
+    phoneNumber: string;
+    organizationId: string;
+  }) =>
+    apiClient.post<ApiResponse<{ isExistingUser: boolean }>>(
+      "/api/auth/get-otp",
+      data
+    ),
+
+  verifyOtp: (data: {
+    countryCode: string;
+    phoneNumber: string;
+    otp: string;
+    organizationId: string;
+  }) =>
+    apiClient.post<
+      ApiResponse<{
+        accessToken: string;
+        refreshToken: string;
+        user: {
+          id: string;
+          phoneNumber: string;
+          countryCode: string;
+          username: string;
+          role: "STUDENT";
+          organizationId: string;
+          isVerified: boolean;
+        };
+      }>
+    >("/api/auth/verify-otp", data),
+
+  refreshToken: (data: { refreshToken: string }) =>
+    apiClient.post<
+      ApiResponse<{
+        accessToken: string;
+        user: unknown;
+      }>
+    >("/api/auth/refresh-token", data),
+
   inviteUser: (data: { email: string; username: string }) =>
     apiClient.post<ApiResponse<InviteUserResponse>>(
       "/admin/auth/invite-user",
       data
     ),
 
-  refreshToken: (data: { refreshToken: string }) =>
+  adminRefreshToken: (data: { refreshToken: string }) =>
     apiClient.post<ApiResponse<{ accessToken: string; refreshToken: string }>>(
       "/admin/auth/refresh",
       data
