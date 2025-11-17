@@ -5,6 +5,8 @@
  * with progress tracking and error recovery.
  */
 
+import apiClient from "@/lib/api/client";
+
 const CHUNK_SIZE = 50 * 1024 * 1024; // 50MB chunks (better for large files)
 const MAX_CONCURRENT_UPLOADS = 3; // Upload 3 chunks at a time
 
@@ -190,32 +192,34 @@ export class MultipartUploader {
    * Step 1: Initiate multipart upload
    */
   private async initiateUpload(): Promise<{ uploadId: string; key: string }> {
-    const response = await fetch("/api/admin/upload/multipart/initiate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fileName: this.config.fileName,
-        fileType: this.config.fileType,
-        fileSize: this.config.fileSize,
-        folder: this.config.folder,
-      }),
-    });
+    try {
+      const response = await apiClient.post<InitiateResponse>(
+        "/admin/upload/multipart/initiate",
+        {
+          fileName: this.config.fileName,
+          fileType: this.config.fileType,
+          fileSize: this.config.fileSize,
+          folder: this.config.folder,
+        }
+      );
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to initiate upload: ${error}`);
+      const data = response.data;
+
+      if (!data.success) {
+        throw new Error("Failed to initiate upload");
+      }
+
+      return {
+        uploadId: data.data.uploadId,
+        key: data.data.key,
+      };
+    } catch (error: any) {
+      throw new Error(
+        `Failed to initiate upload: ${
+          error.response?.data?.message || error.message
+        }`
+      );
     }
-
-    const data: InitiateResponse = await response.json();
-
-    if (!data.success) {
-      throw new Error("Failed to initiate upload");
-    }
-
-    return {
-      uploadId: data.data.uploadId,
-      key: data.data.key,
-    };
   }
 
   /**
@@ -226,28 +230,30 @@ export class MultipartUploader {
   > {
     const totalParts = this.progress.totalChunks;
 
-    const response = await fetch("/api/admin/upload/multipart/signed-urls", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        uploadId: this.uploadId,
-        key: this.key,
-        totalParts,
-      }),
-    });
+    try {
+      const response = await apiClient.post<SignedUrlsResponse>(
+        "/admin/upload/multipart/signed-urls",
+        {
+          uploadId: this.uploadId,
+          key: this.key,
+          totalParts,
+        }
+      );
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to get signed URLs: ${error}`);
+      const data = response.data;
+
+      if (!data.success) {
+        throw new Error("Failed to get signed URLs");
+      }
+
+      return data.data.urls;
+    } catch (error: any) {
+      throw new Error(
+        `Failed to get signed URLs: ${
+          error.response?.data?.message || error.message
+        }`
+      );
     }
-
-    const data: SignedUrlsResponse = await response.json();
-
-    if (!data.success) {
-      throw new Error("Failed to get signed URLs");
-    }
-
-    return data.data.urls;
   }
 
   /**
@@ -432,28 +438,30 @@ export class MultipartUploader {
    * Step 4: Complete the multipart upload
    */
   private async completeUpload(): Promise<string> {
-    const response = await fetch("/api/admin/upload/multipart/complete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        uploadId: this.uploadId,
-        key: this.key,
-        parts: this.uploadedParts,
-      }),
-    });
+    try {
+      const response = await apiClient.post<CompleteResponse>(
+        "/admin/upload/multipart/complete",
+        {
+          uploadId: this.uploadId,
+          key: this.key,
+          parts: this.uploadedParts,
+        }
+      );
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Failed to complete upload: ${error}`);
+      const data = response.data;
+
+      if (!data.success) {
+        throw new Error("Failed to complete upload");
+      }
+
+      return data.data.cdnUrl;
+    } catch (error: any) {
+      throw new Error(
+        `Failed to complete upload: ${
+          error.response?.data?.message || error.message
+        }`
+      );
     }
-
-    const data: CompleteResponse = await response.json();
-
-    if (!data.success) {
-      throw new Error("Failed to complete upload");
-    }
-
-    return data.data.cdnUrl;
   }
 
   /**
@@ -463,20 +471,15 @@ export class MultipartUploader {
     if (!this.uploadId || !this.key) return;
 
     try {
-      const response = await fetch("/api/admin/upload/multipart/abort", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          uploadId: this.uploadId,
-          key: this.key,
-        }),
+      await apiClient.post("/admin/upload/multipart/abort", {
+        uploadId: this.uploadId,
+        key: this.key,
       });
-
-      if (!response.ok) {
-        console.error("Failed to abort upload:", await response.text());
-      }
-    } catch (error) {
-      console.error("Error aborting upload:", error);
+    } catch (error: any) {
+      console.error(
+        "Error aborting upload:",
+        error.response?.data?.message || error.message
+      );
     }
   }
 
