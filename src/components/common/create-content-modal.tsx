@@ -22,7 +22,7 @@ import {
 import { useCreateContent } from "@/hooks";
 import { Video, FileText, BookOpen } from "lucide-react";
 import { FileUpload } from "@/components/common/file-upload";
-import { HLSVideoUpload } from "@/components/common/hls-video-upload";
+import { DetailedHLSUpload } from "@/components/common/detailed-hls-upload";
 import { ContentType, VideoType } from "@/components/common/content-form";
 
 interface CreateContentModalProps {
@@ -236,11 +236,11 @@ export function CreateContentModal({
                   <div className="space-y-2">
                     <Label htmlFor="videoUpload">Upload Video *</Label>
                     <p className="text-xs text-muted-foreground">
-                      Large videos will be split into chunks and uploaded in
-                      parallel
+                      Large videos will be split into 50MB chunks and uploaded
+                      in parallel with detailed progress
                     </p>
-                    <HLSVideoUpload
-                      onUploadComplete={(cdnUrl) => {
+                    <DetailedHLSUpload
+                      onUploadComplete={(cdnUrl: string) => {
                         setVideoFile(cdnUrl);
                         setFormData((prev) => ({
                           ...prev,
@@ -248,7 +248,7 @@ export function CreateContentModal({
                         }));
                       }}
                       folder="course-videos"
-                      maxSize={2000} // 2GB max
+                      maxSize={5000} // 5GB max
                     />
                   </div>
 

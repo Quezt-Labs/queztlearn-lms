@@ -5,8 +5,17 @@
  * with progress tracking and error recovery.
  */
 
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB chunks
+const CHUNK_SIZE = 50 * 1024 * 1024; // 50MB chunks (better for large files)
 const MAX_CONCURRENT_UPLOADS = 3; // Upload 3 chunks at a time
+
+export interface ChunkProgress {
+  partNumber: number;
+  status: "pending" | "uploading" | "completed" | "error";
+  uploadedBytes: number;
+  totalBytes: number;
+  percentage: number;
+  error?: string;
+}
 
 export interface UploadProgress {
   uploadedBytes: number;
@@ -15,6 +24,7 @@ export interface UploadProgress {
   uploadedChunks: number;
   totalChunks: number;
   currentChunk?: number;
+  chunks: ChunkProgress[];
   status:
     | "idle"
     | "initiating"
@@ -86,12 +96,20 @@ export class MultipartUploader {
       ...config,
       folder: config.folder || "course-videos",
     };
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
     this.progress = {
       uploadedBytes: 0,
       totalBytes: file.size,
       percentage: 0,
       uploadedChunks: 0,
-      totalChunks: Math.ceil(file.size / CHUNK_SIZE),
+      totalChunks,
+      chunks: Array.from({ length: totalChunks }, (_, i) => ({
+        partNumber: i + 1,
+        status: "pending" as const,
+        uploadedBytes: 0,
+        totalBytes: Math.min(CHUNK_SIZE, file.size - i * CHUNK_SIZE),
+        percentage: 0,
+      })),
       status: "idle",
     };
   }
@@ -283,48 +301,131 @@ export class MultipartUploader {
   }
 
   /**
-   * Upload a single chunk to S3
+   * Upload a single chunk to S3 with progress tracking
    */
   private async uploadChunk(
     chunk: Blob,
     uploadUrl: string,
     partNumber: number
   ): Promise<string> {
+    const chunkIndex = partNumber - 1;
+
+    // Update chunk status to uploading
+    this.updateChunkProgress(partNumber, {
+      status: "uploading",
+      uploadedBytes: 0,
+      percentage: 0,
+    });
+
     this.updateProgress({ currentChunk: partNumber });
 
-    const response = await fetch(uploadUrl, {
-      method: "PUT",
-      body: chunk,
-      headers: {
-        "Content-Type": "application/octet-stream",
-      },
+    return new Promise<string>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+
+      // Track upload progress for this chunk
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable) {
+          const chunkPercentage = Math.round((e.loaded / e.total) * 100);
+
+          this.updateChunkProgress(partNumber, {
+            uploadedBytes: e.loaded,
+            percentage: chunkPercentage,
+          });
+
+          // Calculate total progress
+          const totalUploadedBytes = this.progress.chunks.reduce(
+            (sum, c) => sum + c.uploadedBytes,
+            0
+          );
+          const totalPercentage = Math.round(
+            (totalUploadedBytes / this.progress.totalBytes) * 100
+          );
+
+          this.updateProgress({
+            uploadedBytes: totalUploadedBytes,
+            percentage: totalPercentage,
+          });
+        }
+      });
+
+      xhr.addEventListener("load", () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const etag = xhr.getResponseHeader("ETag");
+          if (!etag) {
+            this.updateChunkProgress(partNumber, {
+              status: "error",
+              error: "No ETag returned",
+            });
+            reject(new Error(`No ETag returned for chunk ${partNumber}`));
+            return;
+          }
+
+          // Mark chunk as completed
+          this.updateChunkProgress(partNumber, {
+            status: "completed",
+            uploadedBytes: chunk.size,
+            percentage: 100,
+          });
+
+          // Update total uploaded chunks count
+          const uploadedChunks = this.progress.chunks.filter(
+            (c) => c.status === "completed"
+          ).length;
+
+          this.updateProgress({
+            uploadedChunks,
+          });
+
+          resolve(etag);
+        } else {
+          this.updateChunkProgress(partNumber, {
+            status: "error",
+            error: `Upload failed: ${xhr.statusText}`,
+          });
+          reject(
+            new Error(`Failed to upload chunk ${partNumber}: ${xhr.statusText}`)
+          );
+        }
+      });
+
+      xhr.addEventListener("error", () => {
+        this.updateChunkProgress(partNumber, {
+          status: "error",
+          error: "Network error",
+        });
+        reject(new Error(`Network error uploading chunk ${partNumber}`));
+      });
+
+      xhr.addEventListener("abort", () => {
+        this.updateChunkProgress(partNumber, {
+          status: "error",
+          error: "Upload aborted",
+        });
+        reject(new Error(`Upload aborted for chunk ${partNumber}`));
+      });
+
+      xhr.open("PUT", uploadUrl);
+      xhr.setRequestHeader("Content-Type", "application/octet-stream");
+      xhr.send(chunk);
     });
+  }
 
-    if (!response.ok) {
-      throw new Error(
-        `Failed to upload chunk ${partNumber}: ${response.statusText}`
-      );
+  /**
+   * Update progress for a specific chunk
+   */
+  private updateChunkProgress(
+    partNumber: number,
+    updates: Partial<ChunkProgress>
+  ): void {
+    const chunkIndex = partNumber - 1;
+    if (chunkIndex >= 0 && chunkIndex < this.progress.chunks.length) {
+      this.progress.chunks[chunkIndex] = {
+        ...this.progress.chunks[chunkIndex],
+        ...updates,
+      };
+      // Notify progress listener
+      this.config.onProgress?.(this.progress);
     }
-
-    const etag = response.headers.get("ETag");
-    if (!etag) {
-      throw new Error(`No ETag returned for chunk ${partNumber}`);
-    }
-
-    // Update progress
-    const uploadedBytes = this.progress.uploadedBytes + chunk.size;
-    const uploadedChunks = this.progress.uploadedChunks + 1;
-    const percentage = Math.round(
-      (uploadedBytes / this.progress.totalBytes) * 100
-    );
-
-    this.updateProgress({
-      uploadedBytes,
-      uploadedChunks,
-      percentage,
-    });
-
-    return etag;
   }
 
   /**

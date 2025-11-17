@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FileUpload } from "@/components/common/file-upload";
-import { HLSVideoUpload } from "@/components/common/hls-video-upload";
+import { DetailedHLSUpload } from "@/components/common/detailed-hls-upload";
 import { Video } from "lucide-react";
 import { ContentFormData, VideoType } from "./types";
 
@@ -79,14 +79,15 @@ export function LectureFields({
           <div className="space-y-2">
             <Label htmlFor="videoUpload">Upload Video *</Label>
             <p className="text-xs text-muted-foreground">
-              Large videos will be automatically split into chunks and uploaded
+              Large videos will be split into 50MB chunks and uploaded in
+              parallel
             </p>
-            <HLSVideoUpload
-              onUploadComplete={(cdnUrl) => {
+            <DetailedHLSUpload
+              onUploadComplete={(cdnUrl: string) => {
                 onVideoFileUpload(cdnUrl);
               }}
               folder="course-videos"
-              maxSize={2000} // 2GB max for HLS videos
+              maxSize={5000} // 5GB max for HLS videos
             />
           </div>
 
