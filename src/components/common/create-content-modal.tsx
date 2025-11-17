@@ -22,6 +22,7 @@ import {
 import { useCreateContent } from "@/hooks";
 import { Video, FileText, BookOpen } from "lucide-react";
 import { FileUpload } from "@/components/common/file-upload";
+import { HLSVideoUpload } from "@/components/common/hls-video-upload";
 import { ContentType, VideoType } from "@/components/common/content-form";
 
 interface CreateContentModalProps {
@@ -231,20 +232,42 @@ export function CreateContentModal({
 
               {/* Video Upload for HLS */}
               {formData.videoType === VideoType.HLS && (
-                <div className="space-y-2">
-                  <Label htmlFor="videoUpload">Upload Video *</Label>
-                  <FileUpload
-                    accept="video/*"
-                    maxSize={500}
-                    onUploadComplete={(fileData) => {
-                      setVideoFile(fileData.url);
-                    }}
-                  />
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="videoUrl">Or Enter Video URL</Label>
+                    <Label htmlFor="videoUpload">Upload Video *</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Large videos will be split into chunks and uploaded in
+                      parallel
+                    </p>
+                    <HLSVideoUpload
+                      onUploadComplete={(cdnUrl) => {
+                        setVideoFile(cdnUrl);
+                        setFormData((prev) => ({
+                          ...prev,
+                          videoUrl: cdnUrl,
+                        }));
+                      }}
+                      folder="course-videos"
+                      maxSize={2000} // 2GB max
+                    />
+                  </div>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-background px-2 text-muted-foreground">
+                        Or
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="videoUrl">Enter Video URL (Optional)</Label>
                     <Input
                       id="videoUrl"
-                      placeholder="Enter video URL (optional)"
+                      placeholder="https://cdn.example.com/video.mp4 or .m3u8"
                       value={formData.videoUrl}
                       onChange={(e) =>
                         setFormData((prev) => ({
@@ -253,6 +276,9 @@ export function CreateContentModal({
                         }))
                       }
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Enter a direct video URL or HLS manifest URL (.m3u8)
+                    </p>
                   </div>
                 </div>
               )}

@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FileUpload } from "@/components/common/file-upload";
+import { HLSVideoUpload } from "@/components/common/hls-video-upload";
 import { Video } from "lucide-react";
 import { ContentFormData, VideoType } from "./types";
 
@@ -74,21 +75,43 @@ export function LectureFields({
 
       {/* Video Upload for HLS */}
       {formData.videoType === VideoType.HLS && (
-        <div className="space-y-2">
-          <Label htmlFor="videoUpload">Upload Video *</Label>
-          <FileUpload
-            accept="video/*"
-            maxSize={500}
-            onUploadComplete={(fileData) => onVideoFileUpload(fileData.url)}
-          />
+        <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="videoUrl">Or Enter Video URL</Label>
+            <Label htmlFor="videoUpload">Upload Video *</Label>
+            <p className="text-xs text-muted-foreground">
+              Large videos will be automatically split into chunks and uploaded
+            </p>
+            <HLSVideoUpload
+              onUploadComplete={(cdnUrl) => {
+                onVideoFileUpload(cdnUrl);
+              }}
+              folder="course-videos"
+              maxSize={2000} // 2GB max for HLS videos
+            />
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="videoUrl">Enter Video URL (Optional)</Label>
             <Input
               id="videoUrl"
-              placeholder="Enter video URL (optional)"
+              placeholder="https://cdn.example.com/video.mp4 or .m3u8"
               value={formData.videoUrl}
               onChange={(e) => onUpdate({ videoUrl: e.target.value })}
             />
+            <p className="text-xs text-muted-foreground">
+              Enter a direct video URL or HLS manifest URL (.m3u8)
+            </p>
           </div>
         </div>
       )}
