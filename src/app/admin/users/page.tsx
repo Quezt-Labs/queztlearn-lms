@@ -138,7 +138,9 @@ export default function UsersPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Total Users</p>
+              <p className="text-xs font-medium text-muted-foreground mb-1">
+                Total Users
+              </p>
               <p className="text-xl font-bold">{users.length}</p>
             </div>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -147,7 +149,9 @@ export default function UsersPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Verified Users</p>
+              <p className="text-xs font-medium text-muted-foreground mb-1">
+                Verified Users
+              </p>
               <p className="text-xl font-bold">
                 {users.filter((user) => user.isVerified).length}
               </p>
@@ -158,7 +162,9 @@ export default function UsersPage() {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Admins</p>
+              <p className="text-xs font-medium text-muted-foreground mb-1">
+                Admins
+              </p>
               <p className="text-xl font-bold">
                 {users.filter((user) => user.role === "ADMIN").length}
               </p>
@@ -194,13 +200,13 @@ export default function UsersPage() {
                     <div className="flex items-center space-x-3">
                       <Avatar className="h-8 w-8">
                         <AvatarFallback>
-                          {user.username.charAt(0).toUpperCase()}
+                          {user?.username?.charAt(0)?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="font-medium">{user.username}</div>
                         <div className="text-sm text-muted-foreground">
-                          {user.email}
+                          {user?.email}
                         </div>
                       </div>
                     </div>
