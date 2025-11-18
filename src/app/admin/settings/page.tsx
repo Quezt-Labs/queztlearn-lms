@@ -34,10 +34,21 @@ import {
   Home,
   Eye,
   EyeOff,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { THEME_OPTIONS } from "@/lib/constants";
 import { FileUpload } from "@/components/common/file-upload";
 import Image from "next/image";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function AdminSettingsPage() {
   const { data: currentUser } = useCurrentUser();
@@ -53,6 +64,8 @@ export default function AdminSettingsPage() {
 
   const [showRazorpayKeyId, setShowRazorpayKeyId] = useState(false);
   const [showRazorpayKeySecret, setShowRazorpayKeySecret] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   const [formData, setFormData] = useState<CreateOrganizationConfigData>({
     organizationId: currentUser?.organizationId || "",
@@ -177,10 +190,10 @@ export default function AdminSettingsPage() {
       };
       const result = await updateMutation.mutateAsync(submitData);
       if (result.success) {
-        alert("Settings saved successfully!");
+        setShowSuccessModal(true);
       }
     } catch (error) {
-      alert("Failed to update settings. Please try again.");
+      setShowErrorModal(true);
       console.error("Failed to update settings:", error);
     }
   };
@@ -1004,6 +1017,50 @@ export default function AdminSettingsPage() {
           </Button>
         </div>
       </form>
+
+      {/* Success Modal */}
+      <AlertDialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/20">
+                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
+              <AlertDialogTitle>Settings Saved Successfully!</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="pt-2">
+              Your organization settings have been updated successfully.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowSuccessModal(false)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Error Modal */}
+      <AlertDialog open={showErrorModal} onOpenChange={setShowErrorModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
+                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <AlertDialogTitle>Failed to Update Settings</AlertDialogTitle>
+            </div>
+            <AlertDialogDescription className="pt-2">
+              There was an error updating your settings. Please try again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowErrorModal(false)}>
+              OK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
