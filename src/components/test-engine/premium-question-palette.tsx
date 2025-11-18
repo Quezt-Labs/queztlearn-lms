@@ -21,7 +21,6 @@ export function PremiumQuestionPalette({
   onSelect,
 }: PremiumQuestionPaletteProps) {
   const answeredCount = Object.values(answeredMap).filter(Boolean).length;
-  const reviewCount = Object.values(reviewMap).filter(Boolean).length;
 
   return (
     <Card className="border shadow-md">
@@ -104,4 +103,3 @@ export function PremiumQuestionPalette({
     </Card>
   );
 }
-
