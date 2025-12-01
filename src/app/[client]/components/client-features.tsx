@@ -2,13 +2,6 @@
 
 import { motion, useMotionTemplate, useMotionValue } from "framer-motion";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   GraduationCap,
   Brain,
   TrendingUp,
@@ -19,7 +12,7 @@ import {
   BarChart3,
   Users,
 } from "lucide-react";
-import type { ClientHomepageData } from "../types";
+import type { ClientHomepageData, ClientHomepageFeature } from "../types";
 import type { Client } from "@/lib/types/client";
 import React from "react";
 
@@ -46,7 +39,7 @@ function getFeatureIcon(iconName: string) {
   return <IconComponent className="h-6 w-6" />;
 }
 
-function FeatureCard({ feature, index }: { feature: any; index: number }) {
+function FeatureCard({ feature, index }: { feature: ClientHomepageFeature; index: number }) {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
