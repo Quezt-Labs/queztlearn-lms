@@ -17,7 +17,10 @@ export function extractOrganizationSlug(): string | null {
   const hostname = window.location.hostname;
 
   // Handle production subdomains (e.g., stanford.queztlearn.com)
-  if (hostname.endsWith(".queztlearn.com")) {
+  if (
+    hostname.endsWith(".queztlearn.com") ||
+    hostname.endsWith(".queztlearn.in")
+  ) {
     const parts = hostname.split(".");
     if (parts.length > 2) {
       return parts[0];
@@ -61,5 +64,9 @@ export function isOrganizationSubdomain(): boolean {
   }
 
   const hostname = window.location.hostname;
-  return hostname.endsWith(".queztlearn.com") && hostname.split(".").length > 2;
+  return (
+    (hostname.endsWith(".queztlearn.com") ||
+      hostname.endsWith(".queztlearn.in")) &&
+    hostname.split(".").length > 2
+  );
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { ClientConfigWrapper } from "@/components/client/config-wrapper";
 import type { OrganizationConfigResponse } from "@/lib/types/api";
 
@@ -8,6 +9,33 @@ interface ClientLayoutProps {
   children: React.ReactNode;
 }
 
+// Extract subdomain from host header as fallback
+function extractSubdomainFromHost(host: string | null): string | null {
+  if (!host) return null;
+  const hostname = host.split(":")?.[0] || "";
+
+  // Handle production subdomains (e.g., mityy.queztlearn.com)
+  if (
+    hostname.endsWith(".queztlearn.com") ||
+    hostname.endsWith(".queztlearn.in")
+  ) {
+    const parts = hostname.split(".");
+    if (parts.length > 2) {
+      return parts[0];
+    }
+  }
+
+  // Handle localhost subdomain (e.g., mityy.localhost)
+  if (hostname.endsWith(".localhost")) {
+    const parts = hostname.split(".");
+    if (parts.length >= 2) {
+      return parts[0];
+    }
+  }
+
+  return null;
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -15,7 +43,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { client: slug } = await params;
 
-  if (!API_BASE_URL || !slug) {
+  // Fallback: try to extract from headers if slug is missing
+  const headersList = await headers();
+  const host = headersList.get("host");
+  const subdomainFromHost = extractSubdomainFromHost(host);
+  const finalSlug = slug || subdomainFromHost;
+
+  if (!API_BASE_URL || !finalSlug) {
     return {
       title: "QueztLearn LMS",
       description: "Modern learning platform powered by QueztLearn.",
@@ -23,16 +57,28 @@ export async function generateMetadata({
   }
 
   try {
-    const res = await fetch(`${API_BASE_URL}/api/organization-config/${slug}`, {
-      // Cache for 5 minutes, then revalidate
-      next: { revalidate: 300 },
+    // Normalize API URL to avoid double slashes
+    const baseUrl = API_BASE_URL.endsWith("/")
+      ? API_BASE_URL.slice(0, -1)
+      : API_BASE_URL;
+    const apiUrl = `${baseUrl}/api/organization-config/${finalSlug}`;
+
+    const res = await fetch(apiUrl, {
+      cache: "no-store",
     });
 
     if (!res.ok) {
-      throw new Error(`Failed to fetch organization config for slug: ${slug}`);
+      throw new Error(
+        `Failed to fetch organization config for slug: ${finalSlug} (${res.status})`
+      );
     }
 
     const json = (await res.json()) as OrganizationConfigResponse;
+
+    if (!json.success || !json.data) {
+      throw new Error("Invalid organization config response");
+    }
+
     const config = json.data;
 
     const title =
@@ -69,7 +115,7 @@ export async function generateMetadata({
         images: ogImage ? [ogImage] : undefined,
       },
     };
-  } catch {
+  } catch (error) {
     return {
       title: "QueztLearn LMS",
       description: "Modern learning platform powered by QueztLearn.",

@@ -28,7 +28,11 @@ export function middleware(request: NextRequest) {
   }
 
   // Handle subdomain requests (e.g., mit.queztlearn.com)
-  if (hostname.endsWith(".queztlearn.com") && subdomain) {
+  if (
+    (hostname.endsWith(".queztlearn.com") ||
+      hostname.endsWith(".queztlearn.in")) &&
+    subdomain
+  ) {
     const url = new URL(request.url);
 
     // Add subdomain to search params for client identification
