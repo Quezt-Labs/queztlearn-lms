@@ -1,16 +1,16 @@
 "use client";
 
-import React from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
 
 interface BannerCarouselProps {
   banners: string[];
 }
 
 export function BannerCarousel({ banners }: BannerCarouselProps) {
-  const [index, setIndex] = React.useState(0);
-  const [isHovered, setIsHovered] = React.useState(false);
+  const [index, setIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
 
   const hasBanners = banners.length > 0;
   const current = hasBanners ? banners[index % banners.length] : "";
@@ -22,7 +22,7 @@ export function BannerCarousel({ banners }: BannerCarouselProps) {
   };
 
   // Auto-play
-  React.useEffect(() => {
+  useEffect(() => {
     if (!hasBanners || isHovered || banners.length <= 1) return;
     const id = window.setInterval(() => {
       setIndex((prev) => (prev + 1) % banners.length);
