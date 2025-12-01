@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import useEmblaCarousel from "embla-carousel-react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription } from "@/components/ui/card";
@@ -44,24 +43,13 @@ function TestimonialCard({
 export function ClientTestimonialsSection({
   homepage,
 }: ClientTestimonialsSectionProps) {
-  if (!homepage.testimonials.length) return null;
-
   const testimonials = homepage.testimonials;
   const useCarousel = testimonials.length > 3;
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "start" });
 
-  useEffect(() => {
-    if (!emblaApi) return;
-    const onSelect = () => {
-      setSelectedIndex(emblaApi.selectedScrollSnap());
-    };
-    emblaApi.on("select", onSelect);
-    onSelect();
-    return () => {
-      emblaApi.off("select", onSelect);
-    };
-  }, [emblaApi]);
+  if (!testimonials.length) {
+    return null;
+  }
 
   return (
     <section className="pt-16 md:pt-20 pb-24 md:pb-28 px-4">

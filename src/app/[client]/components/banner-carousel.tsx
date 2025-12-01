@@ -10,8 +10,6 @@ interface BannerCarouselProps {
 }
 
 export function BannerCarousel({ banners }: BannerCarouselProps) {
-  if (!banners.length) return null;
-
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "start" });
@@ -37,6 +35,10 @@ export function BannerCarousel({ banners }: BannerCarouselProps) {
     }, 5000);
     return () => window.clearInterval(id);
   }, [emblaApi, banners.length, isHovered]);
+
+  if (!banners.length) {
+    return null;
+  }
 
   return (
     <div
