@@ -213,12 +213,26 @@ export class MultipartUploader {
         uploadId: data.data.uploadId,
         key: data.data.key,
       };
-    } catch (error: any) {
-      throw new Error(
-        `Failed to initiate upload: ${
-          error.response?.data?.message || error.message
-        }`
-      );
+    } catch (error: unknown) {
+      let message = "Failed to initiate upload";
+      if (
+        error &&
+        typeof error === "object" &&
+        "response" in error &&
+        error.response &&
+        typeof error.response === "object" &&
+        "data" in error.response
+      ) {
+        const responseData = (
+          error as { response?: { data?: { message?: string } } }
+        ).response?.data;
+        if (responseData && typeof responseData.message === "string") {
+          message = `Failed to initiate upload: ${responseData.message}`;
+        }
+      } else if (error instanceof Error) {
+        message = `Failed to initiate upload: ${error.message}`;
+      }
+      throw new Error(message);
     }
   }
 
@@ -247,12 +261,26 @@ export class MultipartUploader {
       }
 
       return data.data.urls;
-    } catch (error: any) {
-      throw new Error(
-        `Failed to get signed URLs: ${
-          error.response?.data?.message || error.message
-        }`
-      );
+    } catch (error: unknown) {
+      let message = "Failed to get signed URLs";
+      if (
+        error &&
+        typeof error === "object" &&
+        "response" in error &&
+        error.response &&
+        typeof error.response === "object" &&
+        "data" in error.response
+      ) {
+        const responseData = (
+          error as { response?: { data?: { message?: string } } }
+        ).response?.data;
+        if (responseData && typeof responseData.message === "string") {
+          message = `Failed to get signed URLs: ${responseData.message}`;
+        }
+      } else if (error instanceof Error) {
+        message = `Failed to get signed URLs: ${error.message}`;
+      }
+      throw new Error(message);
     }
   }
 
@@ -455,12 +483,26 @@ export class MultipartUploader {
       }
 
       return data.data.cdnUrl;
-    } catch (error: any) {
-      throw new Error(
-        `Failed to complete upload: ${
-          error.response?.data?.message || error.message
-        }`
-      );
+    } catch (error: unknown) {
+      let message = "Failed to complete upload";
+      if (
+        error &&
+        typeof error === "object" &&
+        "response" in error &&
+        error.response &&
+        typeof error.response === "object" &&
+        "data" in error.response
+      ) {
+        const responseData = (
+          error as { response?: { data?: { message?: string } } }
+        ).response?.data;
+        if (responseData && typeof responseData.message === "string") {
+          message = `Failed to complete upload: ${responseData.message}`;
+        }
+      } else if (error instanceof Error) {
+        message = `Failed to complete upload: ${error.message}`;
+      }
+      throw new Error(message);
     }
   }
 
@@ -475,11 +517,26 @@ export class MultipartUploader {
         uploadId: this.uploadId,
         key: this.key,
       });
-    } catch (error: any) {
-      console.error(
-        "Error aborting upload:",
-        error.response?.data?.message || error.message
-      );
+    } catch (error: unknown) {
+      let message = "Unknown error";
+      if (
+        error &&
+        typeof error === "object" &&
+        "response" in error &&
+        error.response &&
+        typeof error.response === "object" &&
+        "data" in error.response
+      ) {
+        const responseData = (
+          error as { response?: { data?: { message?: string } } }
+        ).response?.data;
+        if (responseData && typeof responseData.message === "string") {
+          message = responseData.message;
+        }
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+      console.error("Error aborting upload:", message);
     }
   }
 
