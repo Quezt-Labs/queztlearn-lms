@@ -1,38 +1,42 @@
 "use client";
 
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
+import useEmblaCarousel from "embla-carousel-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface BannerCarouselProps {
   banners: string[];
 }
 
 export function BannerCarousel({ banners }: BannerCarouselProps) {
-  const [index, setIndex] = useState(0);
+  if (!banners.length) return null;
+
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "start" });
 
-  const hasBanners = banners.length > 0;
-  const current = hasBanners ? banners[index % banners.length] : "";
-
-  const goTo = (next: number) => {
-    const total = banners.length;
-    const normalized = ((next % total) + total) % total;
-    setIndex(normalized);
-  };
-
-  // Auto-play
+  // Track selected index for dots
   useEffect(() => {
-    if (!hasBanners || isHovered || banners.length <= 1) return;
+    if (!emblaApi) return;
+    const onSelect = () => {
+      setSelectedIndex(emblaApi.selectedScrollSnap());
+    };
+    emblaApi.on("select", onSelect);
+    onSelect();
+    return () => {
+      emblaApi.off("select", onSelect);
+    };
+  }, [emblaApi]);
+
+  // Auto-play with pause on hover
+  useEffect(() => {
+    if (!emblaApi || isHovered || banners.length <= 1) return;
     const id = window.setInterval(() => {
-      setIndex((prev) => (prev + 1) % banners.length);
+      emblaApi.scrollNext();
     }, 5000);
     return () => window.clearInterval(id);
-  }, [banners.length, hasBanners, isHovered]);
-
-  if (!hasBanners) {
-    return null;
-  }
+  }, [emblaApi, banners.length, isHovered]);
 
   return (
     <div
@@ -40,48 +44,51 @@ export function BannerCarousel({ banners }: BannerCarouselProps) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <AnimatePresence initial={false}>
-        <motion.div
-          key={current}
-          initial={{ opacity: 0, scale: 1.02 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.98 }}
-          transition={{ duration: 0.6 }}
-          className="absolute inset-0"
-        >
-          <Image
-            src={current}
-            alt={`Banner ${index + 1}`}
-            fill
-            className="object-cover"
-            priority={index === 0}
-          />
-        </motion.div>
-      </AnimatePresence>
+      <div className="overflow-hidden h-full" ref={emblaRef}>
+        <div className="flex h-full">
+          {banners.map((banner, index) => (
+            <div key={banner} className="relative h-full w-full shrink-0">
+              <Image
+                src={banner}
+                alt={`Banner ${index + 1}`}
+                fill
+                className="object-cover"
+                priority={index === 0}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
       {banners.length > 1 && (
         <>
+          {/* Prev / Next buttons */}
           <button
             type="button"
-            onClick={() => goTo(index - 1)}
-            className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-background/80 hover:bg-background px-3 py-1 text-xs"
+            onClick={() => emblaApi?.scrollPrev()}
+            className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-background/80 hover:bg-background px-3 py-1 text-xs shadow-sm"
+            aria-label="Previous banner"
           >
-            ‹
+            <ChevronLeft className="h-4 w-4" />
           </button>
           <button
             type="button"
-            onClick={() => goTo(index + 1)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-background/80 hover:bg-background px-3 py-1 text-xs"
+            onClick={() => emblaApi?.scrollNext()}
+            className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-background/80 hover:bg-background px-3 py-1 text-xs shadow-sm"
+            aria-label="Next banner"
           >
-            ›
+            <ChevronRight className="h-4 w-4" />
           </button>
+
+          {/* Dots */}
           <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-            {banners.map((_, i) => (
+            {banners.map((banner, i) => (
               <button
-                key={i}
+                key={banner}
                 type="button"
-                onClick={() => goTo(i)}
+                onClick={() => emblaApi?.scrollTo(i)}
                 className={`h-1.5 w-5 rounded-full transition ${
-                  i === index ? "bg-primary" : "bg-muted/70"
+                  i === selectedIndex ? "bg-primary" : "bg-muted/70"
                 }`}
                 aria-label={`Go to slide ${i + 1}`}
               />

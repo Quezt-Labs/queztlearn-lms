@@ -1,12 +1,44 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import useEmblaCarousel from "embla-carousel-react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription } from "@/components/ui/card";
-import { Star, Quote } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ClientHomepageData } from "../types";
 
 interface ClientTestimonialsSectionProps {
   homepage: ClientHomepageData;
+}
+
+function TestimonialCard({
+  name,
+  role,
+  content,
+}: {
+  name: string;
+  role: string;
+  content: string;
+}) {
+  return (
+    <Card className="h-full border-muted/70 bg-background/90">
+      <CardContent className="pt-6 pb-6 flex h-full flex-col justify-between gap-4">
+        <CardDescription className="text-sm md:text-base leading-relaxed">
+          {content}
+        </CardDescription>
+
+        <div className="flex items-center space-x-3 pt-2">
+          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <span className="text-sm font-medium">{name.charAt(0)}</span>
+          </div>
+          <div className="text-left">
+            <p className="font-medium text-sm md:text-base">{name}</p>
+            <p className="text-xs md:text-sm text-muted-foreground">{role}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export function ClientTestimonialsSection({
@@ -14,8 +46,25 @@ export function ClientTestimonialsSection({
 }: ClientTestimonialsSectionProps) {
   if (!homepage.testimonials.length) return null;
 
+  const testimonials = homepage.testimonials;
+  const useCarousel = testimonials.length > 3;
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: "start" });
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => {
+      setSelectedIndex(emblaApi.selectedScrollSnap());
+    };
+    emblaApi.on("select", onSelect);
+    onSelect();
+    return () => {
+      emblaApi.off("select", onSelect);
+    };
+  }, [emblaApi]);
+
   return (
-    <section className="py-16 md:py-20 px-4">
+    <section className="pt-16 md:pt-20 pb-24 md:pb-28 px-4">
       <div className="container mx-auto max-w-6xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -32,55 +81,64 @@ export function ClientTestimonialsSection({
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-          {homepage.testimonials.map((testimonial, index) => (
-            <motion.div
-              key={testimonial.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 * index }}
+        {!useCarousel && (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {testimonials.map((testimonial, index) => (
+              <motion.div
+                key={testimonial.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 * index }}
+              >
+                <TestimonialCard
+                  name={testimonial.name}
+                  role={testimonial.role}
+                  content={testimonial.content}
+                />
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {useCarousel && (
+          <div className="relative">
+            <div className="overflow-hidden" ref={emblaRef}>
+              <div className="flex gap-6 md:gap-8">
+                {testimonials.map((testimonial) => (
+                  <div
+                    key={testimonial.id}
+                    className="min-w-0 w-full md:w-1/2 lg:w-1/3 shrink-0 py-1 px-2 md:px-3"
+                  >
+                    <TestimonialCard
+                      name={testimonial.name}
+                      role={testimonial.role}
+                      content={testimonial.content}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Prev / Next buttons */}
+            <button
+              type="button"
+              onClick={() => emblaApi?.scrollPrev()}
+              className="hidden md:flex absolute -left-6 top-1/2 -translate-y-1/2 h-9 w-9 items-center justify-center rounded-full border bg-background/90 shadow-sm hover:bg-muted transition"
+              aria-label="Previous testimonial"
             >
-              <Card className="h-full border-muted/70 bg-background/90">
-                <CardContent className="pt-6 flex h-full flex-col justify-between gap-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className="h-4 w-4 fill-yellow-400 text-yellow-400"
-                        />
-                      ))}
-                    </div>
-                    <Quote className="h-5 w-5 text-primary/60" />
-                  </div>
-
-                  <CardDescription className="text-sm md:text-base leading-relaxed">
-                    {testimonial.content}
-                  </CardDescription>
-
-                  <div className="flex items-center space-x-3 pt-2">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-sm font-medium">
-                        {testimonial.name.charAt(0)}
-                      </span>
-                    </div>
-                    <div className="text-left">
-                      <p className="font-medium text-sm md:text-base">
-                        {testimonial.name}
-                      </p>
-                      <p className="text-xs md:text-sm text-muted-foreground">
-                        {testimonial.role}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => emblaApi?.scrollNext()}
+              className="hidden md:flex absolute -right-6 top-1/2 -translate-y-1/2 h-9 w-9 items-center justify-center rounded-full border bg-background/90 shadow-sm hover:bg-muted transition"
+              aria-label="Next testimonial"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
 }
-
-

@@ -22,3 +22,5 @@ declare global {
     modal?: { ondismiss: () => void };
   }
 }
+
+declare module "embla-carousel-react";
