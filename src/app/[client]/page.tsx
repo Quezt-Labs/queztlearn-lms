@@ -25,61 +25,44 @@ import {
   Star,
 } from "lucide-react";
 import { ClientProvider, useClient } from "@/components/client/client-provider";
-// Removed client-hooks import - using mock data for now
+import { useOrganizationConfigStore } from "@/lib/store/organization-config";
 import Link from "next/link";
 import Image from "next/image";
 
 // Client Homepage Component
-function ClientHomepageContent() {
+function ClientHomepageContent({ slug }: { slug: string }) {
   const { client, isLoading, error } = useClient();
 
-  // Mock homepage data for now
+  // Get organization configuration from global store (populated by ClientConfigWrapper)
+  const { config, isLoading: isOrgConfigLoading } =
+    useOrganizationConfigStore();
+
   const homepage = {
-    title: "Welcome to " + (client?.name || "Our Platform"),
-    tagline: "Transform Your Learning Experience",
+    title:
+      config?.heroTitle ||
+      `Welcome to ${client?.name || config?.name || "Our Platform"}`,
+    tagline:
+      config?.heroSubtitle || "Transform Your Learning Experience with Mityy.",
     description:
+      config?.description ||
       "Join thousands of learners who have already started their journey with us.",
-    ctaText: "Get Started",
-    features: [
-      {
-        id: 1,
-        title: "Interactive Learning",
-        description: "Engage with interactive content and hands-on exercises.",
-        icon: "brain",
-      },
-      {
-        id: 2,
-        title: "Expert Instructors",
-        description:
-          "Learn from industry experts and experienced professionals.",
-        icon: "graduation-cap",
-      },
-      {
-        id: 3,
-        title: "Flexible Schedule",
-        description: "Learn at your own pace with flexible scheduling options.",
-        icon: "clock",
-      },
-    ],
-    testimonials: [
-      {
-        id: 1,
-        name: "Sarah Johnson",
-        role: "Student",
-        content:
-          "This platform has completely transformed my learning experience. The interactive content makes everything so engaging!",
-      },
-      {
-        id: 2,
-        name: "Mike Chen",
-        role: "Professional",
-        content:
-          "The flexibility to learn at my own pace while having access to expert instructors is exactly what I needed.",
-      },
-    ],
+    ctaText: config?.ctaText || "Get Started",
+    ctaUrl: config?.ctaUrl || "/login",
+    features: (config?.features || []).map((feature, index) => ({
+      id: index,
+      title: feature.title,
+      description: feature.description,
+      icon: feature.icon || "brain",
+    })),
+    testimonials: (config?.testimonials || []).map((t, index) => ({
+      id: index,
+      name: t.name,
+      role: "Learner",
+      content: t.message,
+    })),
   };
 
-  if (isLoading) {
+  if (isLoading || isOrgConfigLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -87,7 +70,7 @@ function ClientHomepageContent() {
     );
   }
 
-  if (error || !client) {
+  if (error || !client || !config) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -145,7 +128,7 @@ function ClientHomepageContent() {
                 {client.settings.maxUsers.toLocaleString()} max users
               </Badge>
               <Button asChild>
-                <Link href={`/login`}>
+                <Link href={homepage.ctaUrl}>
                   Login
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
@@ -174,7 +157,7 @@ function ClientHomepageContent() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button size="lg" asChild>
-                <Link href={`/login`}>
+                <Link href={homepage.ctaUrl}>
                   {homepage.ctaText}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
@@ -267,7 +250,7 @@ function ClientHomepageContent() {
                         ))}
                       </div>
                       <p className="text-muted-foreground mb-4">
-                        &ldquo;{testimonial.content}&rdquo;
+                        {testimonial.content}
                       </p>
                       <div className="flex items-center space-x-3">
                         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -345,7 +328,7 @@ export default function ClientHomepage() {
 
   return (
     <ClientProvider subdomain={clientSubdomain}>
-      <ClientHomepageContent />
+      <ClientHomepageContent slug={clientSubdomain} />
     </ClientProvider>
   );
 }
