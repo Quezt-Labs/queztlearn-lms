@@ -29,70 +29,97 @@ export function ClientFooter({ homepage, client }: ClientFooterProps) {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t bg-muted/30 py-8">
+    <footer className="border-t border-border/40 bg-background/50 backdrop-blur-sm py-12">
       <div className="px-4">
-        <div className="container mx-auto max-w-5xl flex flex-col items-center gap-4 text-center">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
-              <Image
-                src={client.logo}
-                alt={client.name}
-                width={32}
-                height={32}
-                className="object-contain"
-              />
+        <div className="container mx-auto max-w-6xl flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="flex flex-col items-center md:items-start gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden ring-1 ring-primary/20">
+                <Image
+                  src={client.logo}
+                  alt={client.name}
+                  width={36}
+                  height={36}
+                  className="object-contain p-0.5"
+                />
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="font-bold text-base tracking-tight">
+                  {client.name}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {client.domain}
+                </span>
+              </div>
             </div>
-            <div className="flex flex-col items-start">
-              <span className="font-semibold text-sm">{client.name}</span>
-              <p className="text-[11px] text-muted-foreground">
-                © {year} {client.name}. Powered by QueztLearn • {client.domain}
-              </p>
-            </div>
+            <p className="text-xs text-muted-foreground max-w-xs text-center md:text-left">
+              Empowering learners with world-class education technology.
+            </p>
           </div>
 
-          {(homepage.contactEmail ||
-            homepage.supportEmail ||
-            homepage.contactPhone) && (
-            <div className="mt-1 text-[11px] text-muted-foreground space-x-4">
-              {(homepage.contactEmail || homepage.supportEmail) && (
-                <span>
-                  <span className="font-semibold text-foreground">Email:</span>{" "}
-                  {homepage.supportEmail || homepage.contactEmail}
-                </span>
-              )}
-              {homepage.contactPhone && (
-                <span>
-                  <span className="font-semibold text-foreground">Phone:</span>{" "}
-                  {homepage.contactPhone}
-                </span>
-              )}
-            </div>
-          )}
-
-          {socialEntries.length > 0 && (
-            <div className="mt-2 flex items-center gap-3">
-              {socialEntries.map(([platform, url]) => {
-                const key = platform.toLowerCase();
-                const Icon = socialIconMap[key];
-                return (
-                  <Link
-                    key={platform}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                    aria-label={platform}
+          <div className="flex flex-col items-center md:items-end gap-4">
+            {(homepage.contactEmail ||
+              homepage.supportEmail ||
+              homepage.contactPhone) && (
+              <div className="flex flex-col items-center md:items-end gap-1 text-sm text-muted-foreground">
+                {(homepage.contactEmail || homepage.supportEmail) && (
+                  <a
+                    href={`mailto:${
+                      homepage.supportEmail || homepage.contactEmail
+                    }`}
+                    className="hover:text-primary transition-colors"
                   >
-                    {Icon ? (
-                      <Icon className="h-4 w-4" />
-                    ) : (
-                      <span className="text-[11px] capitalize">{platform}</span>
-                    )}
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+                    {homepage.supportEmail || homepage.contactEmail}
+                  </a>
+                )}
+                {homepage.contactPhone && <span>{homepage.contactPhone}</span>}
+              </div>
+            )}
+
+            {socialEntries.length > 0 && (
+              <div className="flex items-center gap-4">
+                {socialEntries.map(([platform, url]) => {
+                  const key = platform.toLowerCase();
+                  const Icon = socialIconMap[key];
+                  return (
+                    <Link
+                      key={platform}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-8 w-8 flex items-center justify-center rounded-full bg-muted hover:bg-primary hover:text-primary-foreground transition-all duration-300"
+                      aria-label={platform}
+                    >
+                      {Icon ? (
+                        <Icon className="h-4 w-4" />
+                      ) : (
+                        <span className="text-[10px] capitalize font-bold">
+                          {platform.slice(0, 1)}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="container mx-auto max-w-6xl mt-12 pt-8 border-t border-border/40 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
+          <p>
+            © {year} {client.name}. All rights reserved.
+          </p>
+          <div className="flex items-center gap-1">
+            <span>Powered by</span>
+            <a
+              href="https://queztlearn.com"
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold hover:text-primary transition-colors"
+            >
+              QueztLearn
+            </a>
+          </div>
         </div>
       </div>
     </footer>

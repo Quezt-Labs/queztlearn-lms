@@ -10,6 +10,8 @@ interface ClientTestimonialsSectionProps {
   homepage: ClientHomepageData;
 }
 
+import { Quote } from "lucide-react";
+
 function TestimonialCard({
   name,
   role,
@@ -20,19 +22,22 @@ function TestimonialCard({
   content: string;
 }) {
   return (
-    <Card className="h-full border-muted/70 bg-background/90">
-      <CardContent className="pt-6 pb-6 flex h-full flex-col justify-between gap-4">
-        <CardDescription className="text-sm md:text-base leading-relaxed">
-          {content}
+    <Card className="h-full border-muted/40 bg-background/60 backdrop-blur-sm hover:border-primary/30 transition-all duration-300 relative overflow-hidden group">
+      <div className="absolute top-4 right-4 text-primary/5 group-hover:text-primary/10 transition-colors duration-300">
+        <Quote className="h-12 w-12 rotate-180" />
+      </div>
+      <CardContent className="pt-8 pb-8 flex h-full flex-col justify-between gap-6 relative z-10">
+        <CardDescription className="text-base md:text-lg leading-relaxed font-medium text-foreground/80 italic">
+          &quot;{content}&quot;
         </CardDescription>
 
-        <div className="flex items-center space-x-3 pt-2">
-          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-            <span className="text-sm font-medium">{name.charAt(0)}</span>
+        <div className="flex items-center space-x-4 pt-2 border-t border-border/40 mt-auto">
+          <div className="h-12 w-12 rounded-full bg-linear-to-br from-primary to-primary/60 flex items-center justify-center shadow-md text-primary-foreground">
+            <span className="text-lg font-bold">{name.charAt(0)}</span>
           </div>
           <div className="text-left">
-            <p className="font-medium text-sm md:text-base">{name}</p>
-            <p className="text-xs md:text-sm text-muted-foreground">{role}</p>
+            <p className="font-semibold text-base text-foreground">{name}</p>
+            <p className="text-sm text-muted-foreground">{role}</p>
           </div>
         </div>
       </CardContent>

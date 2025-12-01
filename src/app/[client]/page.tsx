@@ -86,18 +86,20 @@ function ClientHomepageContent({ slug }: { slug: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-background to-muted/20">
+    <div className="min-h-screen bg-background font-sans antialiased selection:bg-primary/10 selection:text-primary">
       <ClientHeader
         client={client}
         homepage={homepage}
         theme={theme}
         onToggleTheme={() => setTheme(theme === "dark" ? "light" : "dark")}
       />
-      <ClientHeroSection homepage={homepage} />
-      <ClientFeaturesSection homepage={homepage} client={client} />
-      <ClientTestimonialsSection homepage={homepage} />
-      <ClientFAQSection homepage={homepage} client={client} />
-      <ClientCTASection homepage={homepage} client={client} />
+      <main className="flex flex-col">
+        <ClientHeroSection homepage={homepage} />
+        <ClientFeaturesSection homepage={homepage} client={client} />
+        <ClientTestimonialsSection homepage={homepage} />
+        <ClientFAQSection homepage={homepage} client={client} />
+        <ClientCTASection homepage={homepage} client={client} />
+      </main>
       <ClientFooter homepage={homepage} client={client} />
     </div>
   );
