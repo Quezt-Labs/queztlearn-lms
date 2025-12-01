@@ -124,7 +124,7 @@ async function fetchAndCacheConfig(
 ): Promise<OrganizationConfig> {
   try {
     const response = await fetch(
-      `${apiUrl}/api/organizations/config?subdomain=${subdomain}`,
+      `${apiUrl}api/organization-config/${subdomain}`,
       {
         headers: {
           "Content-Type": "application/json",
