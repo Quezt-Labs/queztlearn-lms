@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, X } from "lucide-react";
 import { CreateOrganizationConfigData } from "@/lib/types/api";
 import { FileUpload } from "@/components/common/file-upload";
 import { THEME_OPTIONS } from "@/lib/constants";
@@ -70,23 +70,26 @@ export function ThemeBrandingTab({
                   type="button"
                   variant="destructive"
                   size="sm"
-                  className="absolute top-2 right-2"
+                  className="absolute top-2 right-2 h-7 w-7 p-0"
                   onClick={() =>
                     setFormData((prev) => ({ ...prev, logoUrl: undefined }))
                   }
                 >
+                  <X className="h-3 w-3" aria-hidden="true" />
                   <span className="sr-only">Remove logo</span>
                 </Button>
               </div>
             )}
 
-            <FileUpload
-              onUploadComplete={onLogoUpload}
-              accept="image/*"
-              maxSize={5}
-              folder="organization-logos"
-              className="w-full"
-            />
+            {!formData.logoUrl && (
+              <FileUpload
+                onUploadComplete={onLogoUpload}
+                accept="image/*"
+                maxSize={5}
+                folder="organization-logos"
+                className="w-full"
+              />
+            )}
 
             {isUploadingLogo && (
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -124,18 +127,21 @@ export function ThemeBrandingTab({
                     setFormData((prev) => ({ ...prev, faviconUrl: undefined }))
                   }
                 >
+                  <X className="h-3 w-3" aria-hidden="true" />
                   <span className="sr-only">Remove favicon</span>
                 </Button>
               </div>
             )}
 
-            <FileUpload
-              onUploadComplete={onFaviconUpload}
-              accept="image/*"
-              maxSize={1}
-              folder="organization-favicons"
-              className="w-full"
-            />
+            {!formData.faviconUrl && (
+              <FileUpload
+                onUploadComplete={onFaviconUpload}
+                accept="image/*"
+                maxSize={1}
+                folder="organization-favicons"
+                className="w-full"
+              />
+            )}
 
             {isUploadingFavicon && (
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">

@@ -12,9 +12,8 @@ export function BannerCarousel({ banners }: BannerCarouselProps) {
   const [index, setIndex] = React.useState(0);
   const [isHovered, setIsHovered] = React.useState(false);
 
-  if (!banners.length) return null;
-
-  const current = banners[index];
+  const hasBanners = banners.length > 0;
+  const current = hasBanners ? banners[index % banners.length] : "";
 
   const goTo = (next: number) => {
     const total = banners.length;
@@ -24,12 +23,16 @@ export function BannerCarousel({ banners }: BannerCarouselProps) {
 
   // Auto-play
   React.useEffect(() => {
-    if (isHovered || banners.length <= 1) return;
+    if (!hasBanners || isHovered || banners.length <= 1) return;
     const id = window.setInterval(() => {
-      setIndex((prev) => ((prev + 1) % banners.length));
+      setIndex((prev) => (prev + 1) % banners.length);
     }, 5000);
     return () => window.clearInterval(id);
-  }, [banners.length, isHovered]);
+  }, [banners.length, hasBanners, isHovered]);
+
+  if (!hasBanners) {
+    return null;
+  }
 
   return (
     <div
@@ -89,5 +92,3 @@ export function BannerCarousel({ banners }: BannerCarouselProps) {
     </div>
   );
 }
-
-
