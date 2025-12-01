@@ -179,9 +179,6 @@ function ClientHomepageContent() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href={`/register`}>Register as Student</Link>
-              </Button>
             </div>
           </motion.div>
         </div>
