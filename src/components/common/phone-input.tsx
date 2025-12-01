@@ -36,6 +36,7 @@ interface PhoneInputProps {
   onCountryCodeChange: (code: string) => void;
   onPhoneNumberChange: (phone: string) => void;
   onBlur?: () => void;
+  onEnter?: () => void;
   disabled?: boolean;
   error?: boolean;
   className?: string;
@@ -48,6 +49,7 @@ export function PhoneInput({
   onCountryCodeChange,
   onPhoneNumberChange,
   onBlur,
+  onEnter,
   disabled = false,
   error = false,
   className,
@@ -96,6 +98,12 @@ export function PhoneInput({
         inputMode="numeric"
         value={phoneNumber}
         onChange={handlePhoneChange}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !disabled && onEnter) {
+            e.preventDefault();
+            onEnter();
+          }
+        }}
         onBlur={onBlur}
         disabled={disabled}
         placeholder={placeholder}

@@ -60,6 +60,7 @@ export function PhoneStep({
             phoneNumber={phoneNumber}
             onCountryCodeChange={onCountryCodeChange}
             onPhoneNumberChange={handlePhoneChange}
+            onEnter={handleSubmit}
             onBlur={handleBlur}
             disabled={isLoading}
             error={!!displayError}
