@@ -14,8 +14,9 @@ interface ClientCTASectionProps {
 
 export function ClientCTASection({ homepage, client }: ClientCTASectionProps) {
   return (
-    <section className="py-20 px-4 bg-primary/5">
-      <div className="container mx-auto text-center">
+    <section className="py-20 bg-primary/5">
+      <div className="px-4">
+        <div className="container mx-auto text-center">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -28,13 +29,21 @@ export function ClientCTASection({ homepage, client }: ClientCTASectionProps) {
             Join thousands of learners who have already started their journey
             with {client.name}.
           </p>
-          <Button size="lg" asChild>
-            <Link href={homepage.ctaUrl}>
-              {homepage.ctaText}
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-          </Button>
+          <motion.div
+            whileHover={{ scale: 1.03, y: -2 }}
+            whileTap={{ scale: 0.97, y: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 20 }}
+            className="inline-block"
+          >
+            <Button size="lg" asChild>
+              <Link href={homepage.ctaUrl}>
+                {homepage.ctaText}
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
+          </motion.div>
         </motion.div>
+        </div>
       </div>
     </section>
   );
