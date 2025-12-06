@@ -233,6 +233,14 @@ export const API_ENDPOINTS = {
   ORDERS: {
     HISTORY: "/api/orders/history",
   },
+  CONTENT_PROGRESS: {
+    RECENTLY_WATCHED: "/api/content/recently-watched",
+    TRACK_PROGRESS: "/api/content/:contentId/progress",
+    GET_PROGRESS: "/api/content/:contentId/progress",
+    WATCH_STATS: "/api/content/watch-stats",
+    MARK_COMPLETE: "/api/content/:contentId/complete",
+    BATCH_PROGRESS: "/api/content/batch-progress",
+  },
 } as const;
 
 export const PAGINATION_DEFAULTS = {

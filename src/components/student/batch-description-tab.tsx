@@ -25,8 +25,10 @@ import { CollapsibleDescription } from "@/components/common/collapsible-descript
 import { MobilePricingCard } from "@/components/common/mobile-pricing-card";
 import { useBatchRazorpayPayment } from "@/hooks/use-batch-payment";
 import { useEnrollFreeBatch } from "@/hooks";
+import { useBatchProgress } from "@/hooks/api";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Progress } from "@/components/ui/progress";
 
 interface BatchDescriptionTabProps {
   batch: {
@@ -60,6 +62,11 @@ export function BatchDescriptionTab({
   const enrollFreeMutation = useEnrollFreeBatch();
   const startDate = new Date(batch.startDate);
   const endDate = new Date(batch.endDate);
+
+  // Fetch batch progress if purchased
+  const { data: batchProgress } = useBatchProgress(
+    batch.isPurchased ? batch.id : ""
+  );
 
   // Check if batch is free (finalPrice is 0)
   const isFree = finalPrice === 0;
@@ -188,6 +195,52 @@ export function BatchDescriptionTab({
       {/* 1. At-a-Glance Card (Mobile Only) */}
       <AtAGlanceCard items={atAGlanceItems} title="Batch Details" />
 
+      {/* Batch Progress Card (Show if purchased) */}
+      {batch.isPurchased && batchProgress?.data && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                Your Progress
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-muted-foreground">Overall Progress</span>
+                  <span className="font-semibold">
+                    {batchProgress.data.progressPercentage.toFixed(1)}%
+                  </span>
+                </div>
+                <Progress
+                  value={batchProgress.data.progressPercentage}
+                  className="h-3"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {batchProgress.data.completedVideos} of{" "}
+                  {batchProgress.data.totalVideos} videos completed
+                </p>
+                {batchProgress.data.totalWatchTimeSeconds > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Total watch time:{" "}
+                    {Math.floor(batchProgress.data.totalWatchTimeSeconds / 3600)}h{" "}
+                    {Math.floor(
+                      (batchProgress.data.totalWatchTimeSeconds % 3600) / 60
+                    )}
+                    m
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
       {/* 2. Mobile Pricing Card (Mobile Only) - Hide if purchased */}
       {!batch.isPurchased && (
         <MobilePricingCard
@@ -298,6 +351,50 @@ export function BatchDescriptionTab({
 
         {/* Right: Price Card & Info (Desktop Only) */}
         <div className="lg:col-span-1 space-y-4 hidden lg:block">
+          {/* Batch Progress Card (Desktop) - Show if purchased */}
+          {batch.isPurchased && batchProgress?.data && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <Card className="shadow-xl border-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    Your Progress
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">Overall Progress</span>
+                    <span className="font-semibold">
+                      {batchProgress.data.progressPercentage.toFixed(1)}%
+                    </span>
+                  </div>
+                  <Progress
+                    value={batchProgress.data.progressPercentage}
+                    className="h-3"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {batchProgress.data.completedVideos} of{" "}
+                    {batchProgress.data.totalVideos} videos completed
+                  </p>
+                  {batchProgress.data.totalWatchTimeSeconds > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Total watch time:{" "}
+                      {Math.floor(batchProgress.data.totalWatchTimeSeconds / 3600)}h{" "}
+                      {Math.floor(
+                        (batchProgress.data.totalWatchTimeSeconds % 3600) / 60
+                      )}
+                      m
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
           {/* Price Card - Hide if purchased */}
           {!batch.isPurchased && (
             <motion.div

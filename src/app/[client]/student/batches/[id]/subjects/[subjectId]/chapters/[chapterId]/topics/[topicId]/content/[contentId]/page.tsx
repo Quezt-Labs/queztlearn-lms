@@ -20,6 +20,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import type Player from "video.js/dist/types/player";
 import {
   useGetClientTopic,
@@ -29,6 +30,11 @@ import {
   useGetClientChaptersBySubject,
   useGetClientContentsByTopic,
 } from "@/hooks";
+import {
+  useContentProgress,
+  useTrackContentProgress,
+  useMarkContentComplete,
+} from "@/hooks/api";
 import { UnifiedVideoPlayer } from "@/components/common/unified-video-player";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -98,8 +104,41 @@ export default function ContentPlayerPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Refs for auto-scroll
+  // Refs for auto-scroll and progress tracking
   const currentContentRef = useRef<HTMLAnchorElement>(null);
+  const lastTrackedTime = useRef<number>(0);
+  const hasResumed = useRef<boolean>(false);
+
+  // Content progress hooks
+  const { data: progressData } = useContentProgress(contentId);
+  const trackProgress = useTrackContentProgress();
+  const markComplete = useMarkContentComplete();
+
+  // Handle manual mark as complete
+  const handleMarkAsComplete = () => {
+    if (progressData?.data?.isCompleted) {
+      toast.info("Content already completed");
+      return;
+    }
+
+    markComplete.mutate(contentId, {
+      onSuccess: () => {
+        toast.success("Content marked as completed! 🎉");
+      },
+      onError: (error: any) => {
+        const errorMessage =
+          error?.response?.data?.message ||
+          error?.message ||
+          "Failed to mark as complete. Please try again.";
+        toast.error("Error", {
+          description: errorMessage,
+        });
+      },
+    });
+  };
+
+  // Check if content is completed (from API progress data)
+  const isCompleted = progressData?.data?.isCompleted || false;
 
   // Fetch current content
   const { data: topicResponse } = useGetClientTopic(topicId);
@@ -117,6 +156,12 @@ export default function ContentPlayerPage() {
   const chapters: Chapter[] = chaptersResponse?.data || [];
 
   const currentContent = contents.find((c) => c.id === contentId);
+
+  // Reset resume state when content changes
+  useEffect(() => {
+    hasResumed.current = false;
+    lastTrackedTime.current = 0;
+  }, [contentId]);
 
   // Auto-scroll to current content in sidebar
   useEffect(() => {
@@ -302,11 +347,22 @@ export default function ContentPlayerPage() {
                 <PanelLeftOpen className="h-5 w-5" />
               )}
             </Button>
-            {currentContent.isCompleted && (
+            {isCompleted ? (
               <Badge className="bg-green-600 text-white">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
                 Completed
               </Badge>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleMarkAsComplete}
+                disabled={markComplete.isPending}
+                className="shrink-0"
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                {markComplete.isPending ? "Marking..." : "Mark as Complete"}
+              </Button>
             )}
           </div>
         </div>
@@ -338,7 +394,7 @@ export default function ContentPlayerPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.8, delay: 0.2 }}
-                  className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent pointer-events-none"
+                  className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent pointer-events-none"
                 />
 
                 <div className="w-full h-full relative z-10">
@@ -360,8 +416,76 @@ export default function ContentPlayerPage() {
                         // Set dimensions
                         player.dimensions("100%", "100%");
                       }
+
+                      // Resume from last watched position
+                      if (
+                        progressData?.data &&
+                        !progressData.data.isCompleted &&
+                        !hasResumed.current
+                      ) {
+                        const resumeTime = progressData.data.watchedSeconds;
+                        const totalDuration = player.duration() || 0;
+                        if (
+                          resumeTime > 0 &&
+                          resumeTime < totalDuration &&
+                          totalDuration > 0
+                        ) {
+                          // Small delay to ensure player is ready
+                          setTimeout(() => {
+                            player.currentTime(resumeTime);
+                            hasResumed.current = true;
+                          }, 500);
+                        }
+                      }
+                    }}
+                    onTimeUpdate={(currentTime) => {
+                      if (!playerInstance) return;
+
+                      const totalDuration = playerInstance.duration() || 0;
+                      if (totalDuration === 0) return;
+
+                      // Track progress every 10 seconds
+                      if (currentTime - lastTrackedTime.current >= 10) {
+                        trackProgress.mutate({
+                          contentId,
+                          data: {
+                            watchedSeconds: Math.floor(currentTime),
+                            totalDuration: Math.floor(totalDuration),
+                          },
+                        });
+                        lastTrackedTime.current = currentTime;
+
+                        // Auto-complete at 95%
+                        const watchPercentage =
+                          (currentTime / totalDuration) * 100;
+                        if (
+                          watchPercentage >= 95 &&
+                          progressData?.data &&
+                          !progressData.data.isCompleted
+                        ) {
+                          markComplete.mutate(contentId, {
+                            onSuccess: () => {
+                              toast.success(
+                                "Content completed automatically! 🎉"
+                              );
+                            },
+                          });
+                        }
+                      }
                     }}
                     onEnded={() => {
+                      // Mark as complete if not already
+                      if (
+                        progressData?.data &&
+                        !progressData.data.isCompleted
+                      ) {
+                        markComplete.mutate(contentId, {
+                          onSuccess: () => {
+                            toast.success("Content completed! 🎉");
+                          },
+                        });
+                      }
+
                       // Auto-advance to next content if available
                       if (nextContent) {
                         handleNavigateContent(

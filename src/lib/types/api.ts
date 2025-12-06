@@ -352,3 +352,80 @@ export interface OrderHistoryResponse {
   };
   message?: string;
 }
+
+// Content Progress API Types
+export interface ContentProgress {
+  watchedSeconds: number;
+  totalDuration: number;
+  watchPercentage: number;
+  isCompleted: boolean;
+  completedAt?: string;
+  watchCount?: number;
+  lastWatchedAt?: string;
+}
+
+export interface RecentlyWatchedVideo {
+  content: Record<string, unknown>;
+  progress: ContentProgress;
+}
+
+export interface WatchStats {
+  totalVideosWatched: number;
+  completedVideosCount: number;
+  totalWatchTimeSeconds: number;
+  totalWatchTimeFormatted: string;
+  averageCompletionRate: number;
+}
+
+export interface RecentlyWatchedResponse {
+  success: boolean;
+  data: {
+    videos: RecentlyWatchedVideo[];
+    stats: WatchStats;
+  };
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    limit: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
+export interface TrackProgressRequest {
+  watchedSeconds: number;
+  totalDuration: number;
+}
+
+export interface TrackProgressResponse {
+  success: boolean;
+  data: Record<string, unknown>;
+}
+
+export interface ContentProgressResponse {
+  success: boolean;
+  data: ContentProgress;
+}
+
+export interface WatchStatsResponse {
+  success: boolean;
+  data: WatchStats;
+}
+
+export interface BatchProgress {
+  totalVideos: number;
+  completedVideos: number;
+  progressPercentage: number;
+  totalWatchTimeSeconds: number;
+}
+
+export interface BatchProgressResponse {
+  success: boolean;
+  data: BatchProgress;
+}
+
+export interface MarkCompleteResponse {
+  success: boolean;
+  data?: Record<string, unknown>;
+}

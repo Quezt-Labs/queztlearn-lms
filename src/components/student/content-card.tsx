@@ -13,6 +13,8 @@ import {
   Clock,
   CheckCircle2,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { useContentProgress } from "@/hooks/api";
 
 export interface Content {
   id: string;
@@ -36,6 +38,8 @@ export interface ContentCardProps {
   onPlayVideo: (content: Content) => void;
   /** Optional animation delay */
   animationDelay?: number;
+  /** Whether to show progress tracking (default: true) */
+  showProgress?: boolean;
 }
 
 /**
@@ -62,10 +66,20 @@ export function ContentCard({
   formatDuration,
   onPlayVideo,
   animationDelay = 0,
+  showProgress = true,
 }: ContentCardProps) {
   const router = useRouter();
   const isLecture = content.type === "Lecture" && content.videoUrl;
   const isPdf = content.type === "PDF" && content.pdfUrl;
+
+  // Fetch progress data if enabled
+  const { data: progressData } = useContentProgress(
+    showProgress && content.id ? content.id : ""
+  );
+
+  const progressPercentage = progressData?.data?.watchPercentage || 0;
+  const isCompleted =
+    progressData?.data?.isCompleted || content.isCompleted || false;
 
   const handleViewPdf = () => {
     // Navigate to PDF viewer route with topicId as query parameter
@@ -136,7 +150,7 @@ export function ContentCard({
                   </motion.div>
                 </motion.div>
               </motion.div>
-              {content.isCompleted && (
+              {isCompleted && (
                 <div className="absolute top-2 right-2">
                   <Badge className="bg-green-600 text-white">
                     <CheckCircle2 className="h-3 w-3 mr-1" />
@@ -144,6 +158,18 @@ export function ContentCard({
                   </Badge>
                 </div>
               )}
+              {/* Progress bar overlay */}
+              {showProgress &&
+                progressPercentage > 0 &&
+                !isCompleted &&
+                isLecture && (
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
+                    <Progress
+                      value={progressPercentage}
+                      className="h-1 rounded-none"
+                    />
+                  </div>
+                )}
             </div>
           ) : (
             <div className="relative aspect-video bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
@@ -156,7 +182,7 @@ export function ContentCard({
                   <FileText className="h-8 w-8 text-purple-600" />
                 </div>
               )}
-              {content.isCompleted && (
+              {isCompleted && (
                 <div className="absolute top-2 right-2">
                   <Badge className="bg-green-600 text-white">
                     <CheckCircle2 className="h-3 w-3 mr-1" />

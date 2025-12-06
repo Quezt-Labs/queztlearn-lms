@@ -19,6 +19,8 @@ interface VideoCardProps {
   lastWatchedAt: Date;
   batchName: string;
   index?: number;
+  /** Optional href for navigation. If provided, will be used instead of constructing from id */
+  href?: string;
 }
 
 export function VideoCard({
@@ -29,8 +31,12 @@ export function VideoCard({
   watchedDuration,
   batchName,
   index = 0,
+  href,
 }: VideoCardProps) {
   const progressPercentage = (watchedDuration / duration) * 100;
+
+  // Use provided href or fallback to generic route
+  const videoHref = href || `/student/videos/${id}`;
 
   return (
     <motion.div
@@ -39,7 +45,7 @@ export function VideoCard({
       transition={{ duration: 0.3, delay: index * 0.05 }}
       className="w-full"
     >
-      <Link href={`/student/videos/${id}`}>
+      <Link href={videoHref}>
         <Card className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-primary/50 cursor-pointer h-full p-0">
           <CardContent className="px-4 py-4 sm:p-4 h-full flex items-center">
             <div className="flex items-center gap-4 w-full">

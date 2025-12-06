@@ -14,6 +14,13 @@ import {
   CreateOrganizationConfigData,
   CreateOrganizationConfigResponse,
   OrderHistoryResponse,
+  RecentlyWatchedResponse,
+  TrackProgressRequest,
+  TrackProgressResponse,
+  ContentProgressResponse,
+  WatchStatsResponse,
+  BatchProgressResponse,
+  MarkCompleteResponse,
 } from "@/lib/types/api";
 
 // API Configuration
@@ -468,6 +475,41 @@ export const api = {
   }) =>
     apiClient.get<OrderHistoryResponse>("/api/orders/history", {
       params,
+    }),
+
+  // Content Progress endpoints (Client/Student)
+  getRecentlyWatched: (params?: {
+    page?: number;
+    limit?: number;
+    batchId?: string;
+    completedOnly?: boolean;
+  }) =>
+    apiClient.get<RecentlyWatchedResponse>("/api/content/recently-watched", {
+      params,
+    }),
+
+  trackContentProgress: (contentId: string, data: TrackProgressRequest) =>
+    apiClient.post<TrackProgressResponse>(
+      `/api/content/${contentId}/progress`,
+      data
+    ),
+
+  getContentProgress: (contentId: string) =>
+    apiClient.get<ContentProgressResponse>(
+      `/api/content/${contentId}/progress`
+    ),
+
+  getWatchStats: (params?: { batchId?: string }) =>
+    apiClient.get<WatchStatsResponse>("/api/content/watch-stats", {
+      params,
+    }),
+
+  markContentComplete: (contentId: string) =>
+    apiClient.post<MarkCompleteResponse>(`/api/content/${contentId}/complete`),
+
+  getBatchProgress: (batchId: string) =>
+    apiClient.get<BatchProgressResponse>("/api/content/batch-progress", {
+      params: { batchId },
     }),
 };
 
