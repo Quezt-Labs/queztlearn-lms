@@ -13,6 +13,7 @@ import {
   OrganizationConfigResponse,
   CreateOrganizationConfigData,
   CreateOrganizationConfigResponse,
+  OrderHistoryResponse,
 } from "@/lib/types/api";
 
 // API Configuration
@@ -457,6 +458,16 @@ export const api = {
       headers: {
         "Content-Type": "multipart/form-data",
       },
+    }),
+
+  // Order endpoints (Client/Student)
+  getOrderHistory: (params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+  }) =>
+    apiClient.get<OrderHistoryResponse>("/api/orders/history", {
+      params,
     }),
 };
 

@@ -230,6 +230,9 @@ export const API_ENDPOINTS = {
     STATS: "/api/dashboard/stats",
     ACTIVITY: "/api/dashboard/activity",
   },
+  ORDERS: {
+    HISTORY: "/api/orders/history",
+  },
 } as const;
 
 export const PAGINATION_DEFAULTS = {

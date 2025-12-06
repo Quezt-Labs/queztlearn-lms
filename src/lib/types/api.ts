@@ -306,3 +306,49 @@ export interface CreateOrganizationConfigResponse {
   data: OrganizationConfig;
   message?: string;
 }
+
+// Order API Types
+export type PaymentStatus =
+  | "SUCCESS"
+  | "FAILED"
+  | "PENDING"
+  | "PROCESSING"
+  | "REFUNDED";
+
+export type EntityType = "BATCH" | "TEST_SERIES";
+
+export interface Order {
+  id: string;
+  entityType: EntityType;
+  entityId: string;
+  amount: number;
+  currency: string;
+  paymentProvider: string;
+  paymentStatus: PaymentStatus;
+  providerOrderId: string;
+  providerPaymentId: string;
+  receiptId: string;
+  failureReason?: string;
+  refundId?: string;
+  refundAmount?: number;
+  refundedAt?: string;
+  initiatedAt: string;
+  completedAt?: string;
+  failedAt?: string;
+  createdAt: string;
+  entityDetails?: Record<string, unknown>;
+}
+
+export interface OrderHistoryResponse {
+  success: boolean;
+  data: Order[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    limit: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+  message?: string;
+}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Bell, LogOut, User, Sun, Moon } from "lucide-react";
+import { Bell, LogOut, User, Sun, Moon, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -113,7 +113,13 @@ export function StudentHeader() {
                 Profile
               </Link>
             </DropdownMenuItem>
-
+            <DropdownMenuItem asChild>
+              <Link href="/student/orders">
+                <Receipt className="mr-2 h-4 w-4" />
+                Orders
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive"
               onClick={() => {

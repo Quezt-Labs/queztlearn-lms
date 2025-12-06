@@ -9,6 +9,7 @@ import {
   LoginResponse,
   CreateOrganizationConfigData,
   CreateOrganizationConfigResponse,
+  OrderHistoryResponse,
 } from "@/lib/types/api";
 import { useRouter } from "next/navigation";
 
@@ -1317,6 +1318,24 @@ export const useGetClientContent = (id: string) => {
     queryKey: ["client", "contents", id],
     queryFn: () => apiClient.get(`/api/contents/${id}`).then((res) => res.data),
     enabled: !!id && tokenManager.isAuthenticated(),
+  });
+};
+
+// ==========================================
+// Order API Hooks (Client/Student)
+// ==========================================
+
+// Get order history with pagination
+export const useOrderHistory = (params?: {
+  page?: number;
+  limit?: number;
+  status?: string;
+}) => {
+  return useQuery({
+    queryKey: ["orderHistory", params?.page, params?.limit, params?.status],
+    queryFn: () => api.getOrderHistory(params).then((res) => res.data),
+    enabled: tokenManager.isAuthenticated(),
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
 };
 
