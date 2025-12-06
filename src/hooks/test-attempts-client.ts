@@ -1,5 +1,9 @@
 import apiClient from "@/lib/api/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  RecentCompletedTestsResponse,
+  TestAttemptStatsResponse,
+} from "@/lib/types/api";
 
 export type AttemptApiResponse<T> = {
   success: boolean;
@@ -87,6 +91,14 @@ const attemptKeys = {
       "leaderboard",
       { page, limit },
     ] as const,
+  recentCompleted: (filters: {
+    page?: number;
+    limit?: number;
+    testSeriesId?: string;
+    isPassed?: boolean;
+  }) => [...attemptKeys.root, "recent-completed", filters] as const,
+  stats: (testSeriesId?: string) =>
+    [...attemptKeys.root, "stats", testSeriesId || "all"] as const,
 };
 
 export const useStartAttempt = () => {
@@ -210,6 +222,55 @@ export const useLeaderboard = (
       return data;
     },
     enabled: Boolean(testId),
+  });
+};
+
+export const useRecentCompletedTests = (filters?: {
+  page?: number;
+  limit?: number;
+  testSeriesId?: string;
+  isPassed?: boolean;
+}) => {
+  const page = filters?.page ?? 1;
+  const limit = filters?.limit ?? 20;
+
+  return useQuery({
+    queryKey: attemptKeys.recentCompleted(filters || {}),
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        page: String(page),
+        limit: String(limit),
+      });
+
+      if (filters?.testSeriesId) {
+        params.append("testSeriesId", filters.testSeriesId);
+      }
+
+      if (filters?.isPassed !== undefined) {
+        params.append("isPassed", String(filters.isPassed));
+      }
+
+      const { data } = await apiClient.get<RecentCompletedTestsResponse>(
+        `/api/attempts/recent-completed?${params.toString()}`
+      );
+      return data;
+    },
+  });
+};
+
+export const useTestAttemptStats = (testSeriesId?: string) => {
+  return useQuery({
+    queryKey: attemptKeys.stats(testSeriesId),
+    queryFn: async () => {
+      const params = testSeriesId
+        ? new URLSearchParams({ testSeriesId })
+        : new URLSearchParams();
+
+      const { data } = await apiClient.get<TestAttemptStatsResponse>(
+        `/api/attempts/stats${params.toString() ? `?${params.toString()}` : ""}`
+      );
+      return data;
+    },
   });
 };
 

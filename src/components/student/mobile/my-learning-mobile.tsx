@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { Play, FileText, BookOpen, TrendingUp } from "lucide-react";
 import { VideoCard } from "@/components/student/video-card";
-import { TestAttemptCard } from "@/components/student/test-attempt-card";
+import { RecentCompletedTestCard } from "@/components/student/recent-completed-test-card";
 import { BatchCard } from "@/components/student/batch-card";
 import { TestSeriesCard } from "@/components/student/test-series-card";
 import { SectionHeader } from "@/components/student/section-header";
 import { useClientMyEnrollments } from "@/hooks/test-series-client";
 import { useGetMyBatches } from "@/hooks";
+import { useRecentCompletedTests } from "@/hooks/test-attempts-client";
 
 interface Batch {
   id: string;
@@ -78,35 +79,6 @@ const recentVideos = [
   },
 ];
 
-const recentTests = [
-  {
-    id: "1",
-    title: "Physics Mock Test 1",
-    testSeriesName: "JEE Main Mock Series",
-    totalMarks: 300,
-    obtainedMarks: 245,
-    totalQuestions: 75,
-    attemptedQuestions: 73,
-    accuracy: 82.5,
-    attemptedAt: new Date("2025-10-29T14:00:00"),
-    rank: 145,
-    percentile: 89.5,
-  },
-  {
-    id: "2",
-    title: "Chemistry Full Test",
-    testSeriesName: "NEET Practice Tests",
-    totalMarks: 180,
-    obtainedMarks: 156,
-    totalQuestions: 45,
-    attemptedQuestions: 45,
-    accuracy: 86.7,
-    attemptedAt: new Date("2025-10-27T10:00:00"),
-    rank: 89,
-    percentile: 92.3,
-  },
-];
-
 export function MyLearningMobile() {
   // Fetch enrolled test series from API
   const { data: enrollmentsResponse, isLoading: isLoadingTestSeries } =
@@ -115,6 +87,13 @@ export function MyLearningMobile() {
   // Fetch purchased batches from API
   const { data: batchesResponse, isLoading: isLoadingBatches } =
     useGetMyBatches(1, 10);
+
+  // Fetch recent completed tests from API
+  const { data: recentTestsResponse, isLoading: isLoadingRecentTests } =
+    useRecentCompletedTests({
+      page: 1,
+      limit: 6,
+    });
 
   const purchasedBatches: PurchasedBatch[] = (batchesResponse?.data || []).map(
     (batch: Batch) => ({
@@ -191,25 +170,49 @@ export function MyLearningMobile() {
           </div>
         </section>
 
-        {/* Recently Attempted Tests */}
+        {/* Recently Completed Tests */}
         <section>
           <div className="px-4">
             <SectionHeader
-              title="Recent Test Attempts"
+              title="Recent Completed Tests"
               icon={FileText}
-              viewAllHref={undefined}
+              viewAllHref={
+                recentTestsResponse?.data &&
+                recentTestsResponse.data.length >= 6
+                  ? "/student/tests"
+                  : undefined
+              }
             />
           </div>
-          <div className="flex gap-4 overflow-x-auto px-4 mt-4 pb-2 scrollbar-hide snap-x snap-mandatory">
-            {recentTests.map((test, index) => (
-              <div
-                key={test.id}
-                className="shrink-0 w-[85vw] sm:w-[400px] snap-start"
-              >
-                <TestAttemptCard {...test} index={index} />
-              </div>
-            ))}
-          </div>
+          {isLoadingRecentTests ? (
+            <div className="flex gap-4 overflow-x-auto px-4 mt-4 pb-2">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="shrink-0 w-[85vw] sm:w-[400px] h-64 bg-muted animate-pulse rounded-lg snap-start"
+                />
+              ))}
+            </div>
+          ) : !recentTestsResponse?.data ||
+            recentTestsResponse.data.length === 0 ? (
+            <div className="px-4 py-8 text-center text-muted-foreground">
+              <p className="text-sm">No completed tests yet.</p>
+              <p className="text-xs mt-2">
+                Complete your first test to see results here.
+              </p>
+            </div>
+          ) : (
+            <div className="flex gap-4 overflow-x-auto px-4 mt-4 pb-2 scrollbar-hide snap-x snap-mandatory">
+              {recentTestsResponse.data.map((attempt, index) => (
+                <div
+                  key={attempt.id}
+                  className="shrink-0 w-[85vw] sm:w-[400px] snap-start"
+                >
+                  <RecentCompletedTestCard attempt={attempt} index={index} />
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Purchased Batches */}

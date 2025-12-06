@@ -12,8 +12,20 @@ import { useClientMyEnrollments } from "@/hooks/test-series-client";
 import { useGetMyBatches } from "@/hooks";
 import { useIsMobile } from "@/hooks";
 import { useRecentlyWatched, useWatchStats } from "@/hooks/api";
+import {
+  useRecentCompletedTests,
+  useTestAttemptStats,
+} from "@/hooks/test-attempts-client";
 import { motion } from "framer-motion";
-import { Play, FileText, BookOpen, TrendingUp } from "lucide-react";
+import {
+  Play,
+  FileText,
+  BookOpen,
+  TrendingUp,
+  Award,
+  Clock,
+} from "lucide-react";
+import { RecentCompletedTestCard } from "@/components/student/recent-completed-test-card";
 import { LottieAnimation } from "@/components/common/lottie-animation";
 import { LOTTIE_ANIMATIONS } from "@/lib/constants/lottie-animations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,9 +61,6 @@ interface PurchasedBatch {
   completedSubjects: number;
 }
 
-// Removed hardcoded recentVideos - now using API
-// Removed mock recentTests - no API endpoint available for recent test attempts
-
 export default function MyLearningPage() {
   const { isMobile, isClient } = useIsMobile();
 
@@ -64,6 +73,16 @@ export default function MyLearningPage() {
 
   // Fetch watch statistics
   const { data: watchStats } = useWatchStats();
+
+  // Fetch recent completed tests
+  const { data: recentTestsResponse, isLoading: isLoadingRecentTests } =
+    useRecentCompletedTests({
+      page: 1,
+      limit: 6,
+    });
+
+  // Fetch test attempt statistics
+  const { data: testStatsResponse } = useTestAttemptStats();
 
   // Transform API response to match VideoCard props
   // Note: The API response should include nested path data (batchId, subjectId, chapterId, topicId)
@@ -303,6 +322,172 @@ export default function MyLearningPage() {
                 </Card>
               </motion.section>
             )}
+
+            {/* Test Statistics Section */}
+            {testStatsResponse?.data && (
+              <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Award className="h-5 w-5" />
+                      Test Performance Stats
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">
+                          Tests Completed
+                        </p>
+                        <p className="text-2xl font-bold">
+                          {testStatsResponse.data.totalTestsCompleted}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {testStatsResponse.data.totalTestsAttempted} attempted
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">
+                          Pass Rate
+                        </p>
+                        <p className="text-2xl font-bold text-green-600">
+                          {testStatsResponse.data.passRate.toFixed(1)}%
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {testStatsResponse.data.totalTestsPassed} passed
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">
+                          Average Score
+                        </p>
+                        <p className="text-2xl font-bold">
+                          {testStatsResponse.data.averageScore.toFixed(1)}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {testStatsResponse.data.averagePercentage.toFixed(1)}%
+                          avg
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">
+                          Best Score
+                        </p>
+                        <p className="text-2xl font-bold text-primary">
+                          {testStatsResponse.data.bestScore}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {testStatsResponse.data.bestPercentage.toFixed(1)}%
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">
+                            Total Study Time
+                          </p>
+                          <p className="text-lg font-semibold">
+                            {testStatsResponse.data.totalTimeSpentHours.toFixed(
+                              1
+                            )}{" "}
+                            hours
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <TrendingUp
+                          className={`h-4 w-4 ${
+                            testStatsResponse.data.recentTrend === "improving"
+                              ? "text-green-600"
+                              : testStatsResponse.data.recentTrend ===
+                                "declining"
+                              ? "text-red-600"
+                              : "text-muted-foreground"
+                          }`}
+                        />
+                        <div>
+                          <p className="text-sm text-muted-foreground">
+                            Recent Trend
+                          </p>
+                          <p className="text-lg font-semibold capitalize">
+                            {testStatsResponse.data.recentTrend}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.section>
+            )}
+
+            {/* Recent Completed Tests Section */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+            >
+              <SectionHeader
+                title="Recent Completed Tests"
+                icon={Award}
+                viewAllHref={
+                  recentTestsResponse?.data &&
+                  recentTestsResponse.data.length >= 6
+                    ? "/student/tests"
+                    : undefined
+                }
+              />
+
+              {isLoadingRecentTests ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-64 bg-muted animate-pulse rounded-lg"
+                    />
+                  ))}
+                </div>
+              ) : !recentTestsResponse?.data ||
+                recentTestsResponse.data.length === 0 ? (
+                <div className="text-center py-12">
+                  {LOTTIE_ANIMATIONS.emptyState ? (
+                    <div className="w-64 h-64 mx-auto mb-6">
+                      <LottieAnimation
+                        animationUrl={LOTTIE_ANIMATIONS.emptyState}
+                        loop={true}
+                        autoplay={true}
+                        fallbackIcon={
+                          <Award className="h-24 w-24 text-muted-foreground/50" />
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <Award className="h-24 w-24 mx-auto text-muted-foreground/50 mb-6" />
+                  )}
+                  <h3 className="text-lg font-semibold mb-2 text-foreground">
+                    No completed tests yet
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Complete your first test to see your results here!
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {recentTestsResponse.data.map((attempt, index) => (
+                    <RecentCompletedTestCard
+                      key={attempt.id}
+                      attempt={attempt}
+                      index={index}
+                    />
+                  ))}
+                </div>
+              )}
+            </motion.section>
 
             <motion.section
               initial={{ opacity: 0, y: 20 }}
