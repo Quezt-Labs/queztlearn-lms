@@ -77,15 +77,15 @@ export default function OrdersPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <Card>
-            <CardHeader>
+          <Card className="border-border/60 shadow-lg">
+            <CardHeader className="pb-4 border-b">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Receipt className="h-5 w-5" />
+                <div className="space-y-1">
+                  <CardTitle className="flex items-center gap-2 text-xl">
+                    <Receipt className="h-5 w-5 text-primary" />
                     Orders
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-sm">
                     {pagination
                       ? `Showing ${orders.length} of ${pagination.totalCount} orders`
                       : "Your order history"}
@@ -97,18 +97,20 @@ export default function OrdersPage() {
                 />
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               {isLoading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : orders.length === 0 ? (
-                <div className="text-center py-12">
-                  <Receipt className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <div className="text-center py-16">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                    <Receipt className="h-8 w-8 text-muted-foreground" />
+                  </div>
                   <h3 className="text-lg font-semibold mb-2">
                     No orders found
                   </h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground text-sm">
                     {statusFilter !== "all"
                       ? "No orders match the selected filter"
                       : "You haven't placed any orders yet"}

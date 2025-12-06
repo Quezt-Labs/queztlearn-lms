@@ -14,16 +14,24 @@ interface OrderTableProps {
 
 export function OrderTable({ orders }: OrderTableProps) {
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto rounded-lg border border-border/40">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead className="min-w-[180px]">Order ID</TableHead>
-            <TableHead className="min-w-[100px]">Type</TableHead>
-            <TableHead className="min-w-[140px]">Amount</TableHead>
-            <TableHead className="min-w-[100px]">Status</TableHead>
-            <TableHead className="min-w-[120px]">Payment Provider</TableHead>
-            <TableHead className="min-w-[160px]">Date</TableHead>
+          <TableRow className="bg-muted/30 hover:bg-muted/30">
+            <TableHead className="min-w-[200px] font-semibold">
+              Order ID
+            </TableHead>
+            <TableHead className="min-w-[120px] font-semibold">Type</TableHead>
+            <TableHead className="min-w-[140px] font-semibold text-right">
+              Amount
+            </TableHead>
+            <TableHead className="min-w-[120px] font-semibold">
+              Status
+            </TableHead>
+            <TableHead className="min-w-[140px] font-semibold">
+              Payment Provider
+            </TableHead>
+            <TableHead className="min-w-[180px] font-semibold">Date</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

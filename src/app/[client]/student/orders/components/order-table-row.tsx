@@ -16,10 +16,10 @@ export function OrderTableRow({ order }: OrderTableRowProps) {
   const entityName = getEntityName(order.entityDetails);
 
   return (
-    <TableRow key={order.id}>
-      <TableCell>
-        <div className="space-y-1">
-          <div className="font-mono text-xs">
+    <TableRow key={order.id} className="hover:bg-muted/20 transition-colors">
+      <TableCell className="py-4">
+        <div className="space-y-1.5">
+          <div className="font-mono text-xs font-medium">
             {order.receiptId || order.id.slice(0, 8)}
           </div>
           {entityName && (
@@ -29,23 +29,26 @@ export function OrderTableRow({ order }: OrderTableRowProps) {
           )}
         </div>
       </TableCell>
-      <TableCell>
-        <Badge variant="outline">
+      <TableCell className="py-4">
+        <Badge variant="outline" className="font-medium">
           {order.entityType === "BATCH" ? "Batch" : "Test Series"}
         </Badge>
       </TableCell>
-      <TableCell className="font-medium text-right">
+      <TableCell className="py-4 font-semibold text-right">
         {formatCurrency(order.amount, order.currency)}
       </TableCell>
-      <TableCell>
-        <Badge variant={getStatusBadgeVariant(order.paymentStatus)}>
+      <TableCell className="py-4">
+        <Badge
+          variant={getStatusBadgeVariant(order.paymentStatus)}
+          className="font-medium"
+        >
           {order.paymentStatus}
         </Badge>
       </TableCell>
-      <TableCell className="text-muted-foreground capitalize">
+      <TableCell className="py-4 text-muted-foreground capitalize">
         {order.paymentProvider || "N/A"}
       </TableCell>
-      <TableCell className="text-muted-foreground">
+      <TableCell className="py-4 text-muted-foreground text-sm">
         {formatDate(order.createdAt)}
       </TableCell>
     </TableRow>

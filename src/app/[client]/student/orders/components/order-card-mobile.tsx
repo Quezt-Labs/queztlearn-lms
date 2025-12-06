@@ -22,7 +22,7 @@ export function OrderCardMobile({ order }: OrderCardMobileProps) {
   const entityName = getEntityName(order.entityDetails);
 
   return (
-    <Card>
+    <Card className="border-border/60 shadow-sm hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">

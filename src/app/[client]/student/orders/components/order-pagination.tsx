@@ -21,9 +21,10 @@ export function OrderPagination({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between mt-6 pt-4 border-t">
-      <div className="text-sm text-muted-foreground">
-        Page {currentPage} of {totalPages}
+    <div className="flex items-center justify-between mt-6 pt-6 border-t border-border/40">
+      <div className="text-sm text-muted-foreground font-medium">
+        Page <span className="text-foreground">{currentPage}</span> of{" "}
+        <span className="text-foreground">{totalPages}</span>
       </div>
       <div className="flex items-center gap-2">
         <Button
@@ -31,6 +32,7 @@ export function OrderPagination({
           size="sm"
           onClick={onPrevious}
           disabled={!hasPreviousPage}
+          className="font-medium"
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
           Previous
@@ -40,6 +42,7 @@ export function OrderPagination({
           size="sm"
           onClick={onNext}
           disabled={!hasNextPage}
+          className="font-medium"
         >
           Next
           <ChevronRight className="h-4 w-4 ml-1" />
