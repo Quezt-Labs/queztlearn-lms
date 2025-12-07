@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Award, CheckCircle2, XCircle, Clock, TrendingUp } from "lucide-react";
+import { Award, CheckCircle2, XCircle, Clock } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -77,7 +77,7 @@ export function RecentCompletedTestCard({
               {percentile !== null && (
                 <Badge
                   variant="secondary"
-                  className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground"
+                  className="bg-linear-to-r from-primary to-primary/80 text-primary-foreground"
                 >
                   <Award className="h-3 w-3 mr-1" />
                   {percentile.toFixed(1)}%ile
@@ -104,7 +104,7 @@ export function RecentCompletedTestCard({
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Score Section */}
-          <div className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-linear-to-r from-primary/10 to-primary/5 border border-primary/20">
             <div>
               <p className="text-xs text-muted-foreground mb-1">Score</p>
               <p className="text-2xl font-bold text-primary">

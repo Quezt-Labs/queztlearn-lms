@@ -49,10 +49,15 @@ export function useVideoProgress({
         toast.success("Content marked as completed! 🎉");
         onComplete?.();
       },
-      onError: (error: any) => {
+      onError: (error: unknown) => {
         const errorMessage =
-          error?.response?.data?.message ||
-          error?.message ||
+          (error && typeof error === "object" && "response" in error
+            ? (error as { response?: { data?: { message?: string } } }).response
+                ?.data?.message
+            : null) ||
+          (error && typeof error === "object" && "message" in error
+            ? String((error as { message: unknown }).message)
+            : null) ||
           "Failed to mark as complete. Please try again.";
         toast.error("Error", {
           description: errorMessage,
@@ -102,7 +107,7 @@ export function useVideoProgress({
         },
       },
       {
-        onError: (error: any) => {
+        onError: (error: unknown) => {
           // Don't show error toast for progress tracking failures
           console.error("Progress tracking error:", error);
         },
@@ -255,7 +260,7 @@ export function useVideoProgress({
           toast.success("Content completed automatically! 🎉");
           onComplete?.();
         },
-        onError: (error: any) => {
+        onError: (error: unknown) => {
           console.error("Auto-complete error:", error);
         },
       });
@@ -272,7 +277,7 @@ export function useVideoProgress({
           toast.success("Content completed! 🎉");
           onComplete?.();
         },
-        onError: (error: any) => {
+        onError: (error: unknown) => {
           console.error("Mark complete on ended error:", error);
         },
       });
